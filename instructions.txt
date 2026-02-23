@@ -1,0 +1,65 @@
+For memory problem on NCSA
+
+run du -sh ~/.??* | sort -h
+
+generall cache is the main problem so clear it by rm -rf ~/.cache
+
+Before running:
+# 1. Check disk space
+df -h /path/to/output/directory
+
+# 2. Check GPU memory
+nvidia-smi
+
+# 3. Check if ChromaDB is accessible
+ls -la ./chroma_database/chroma_db
+
+# 4. Test RAG worker initialization (small test)
+python -c "from rag_agent.main import MainAgent; agent = MainAgent(); print('RAG OK')"
+
+# 5. Check API server (if using openai_api_base)
+curl http://localhost:8000/v1/models  # or your endpoint
+
+# 6. Check file permissions
+touch /path/to/output/file.jsonl && rm /path/to/output/file.jsonl
+
+# 7. Monitor system resources
+htop  # or top
+
+During run (monitoring):
+# 1. Monitor output file growth
+watch -n 60 'wc -l output.jsonl'
+
+# 2. Monitor GPU memory
+watch -n 60 'nvidia-smi'
+
+# 3. Monitor process status
+ps aux | grep generate.py
+
+# 4. Check for errors in output
+tail -f output.jsonl | grep -i error
+
+# 5. Monitor RAG worker process
+ps aux | grep rag_worker_process
+
+
+### To setup the environment
+
+module purge
+module load python/3.12.1
+python --version  
+python3 -m venv mirage
+source mirage/bin/activate
+pip install pysqlite3-binary
+pip install --upgrade pip wheel setuptools
+pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+~/MetaMirage/requirements.txt
+pip install -r requirements.txt
+python - << 'EOF'
+import vllm
+print("vLLM OK:", vllm.__version__)
+EOF
+vLLM OK: 0.11.0
+python -m vllm.entrypoints.openai.api_server \
+  --model Qwen/Qwen2.5-14B-Instruct \
+  --port 8000
