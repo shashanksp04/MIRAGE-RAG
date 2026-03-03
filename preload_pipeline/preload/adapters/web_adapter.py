@@ -55,3 +55,5 @@ class WebPageListAdapter(BaseAdapter):
             "items_skipped": skipped,
             "items_failed": failed,
         }
+
+
