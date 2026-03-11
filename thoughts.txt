@@ -43,6 +43,14 @@ CUDA_VISIBLE_DEVICES=1 python -m sglang.launch_server \
 
 Models available : https://github.com/eugeneyan/open-llms?utm_source=chatgpt.com
 
+# Submitting job requests:
+
+1. SSH into Delta node: ssh ssingh38@login.delta.ncsa.illinois.edu, password same as on-demand login password, do duo push
+2. Activate your environment
+3. Create a slurm job request in MetaMirage/job_scripts
+4. Submit job using: sbatch job_request.slurm | You will see: "Submitted batch job 123456"
+5. Use squeue -u $USER to see job status
+
 # Regarding multi-processing issue:
 
 1. run 1 pool worker only - will take a lot of time
