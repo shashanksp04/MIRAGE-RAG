@@ -151,6 +151,7 @@ class ContentUtils:
         filter_attempts: List[Tuple[str, Optional[Dict]]] = []
 
         # Most specific -> least specific -> semantic only
+        # also have metadata filter priority for agro-climatic region, cropping season
         if location and month_year and title:
             filter_attempts.append((
                 "location+month_year+title",
