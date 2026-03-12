@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 from pypdf import PdfReader
 import re
+from rag_agent.utils.metadata import build_canonical_chunk_metadata
 
 
 class PDFAddition:
@@ -162,18 +163,20 @@ class PDFAddition:
                 doc_id = f"{source_id}_p{page_num}_c{chunk_index}"
 
                 documents.append(f"Title: {title}\n\n{chunk}")
-                metadatas.append({
-                    "source_type": "pdf",
-                    "source_id": source_id,
-                    "title": title,
-                    "url": self.null_str,
-                    "page": page_num,
-                    "chunk_index": chunk_index,
-                    "location": self.null_str,
-                    "month_year": self.null_str,
-                    "content_hash": content_hash,
-                    "language": language,
-                })
+                metadatas.append(
+                    build_canonical_chunk_metadata(
+                        source_type="pdf",
+                        source_id=source_id,
+                        title=title,
+                        url=self.null_str,
+                        page=page_num,
+                        chunk_index=chunk_index,
+                        location=self.null_str,
+                        month_year=self.null_str,
+                        content_hash=content_hash,
+                        language=language,
+                    )
+                )
                 ids.append(doc_id)
 
         if not documents:

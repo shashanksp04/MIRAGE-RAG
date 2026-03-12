@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from rag_agent.utils.metadata import build_canonical_chunk_metadata
 from preload.transforms.record_to_text import record_to_text
 from preload.transforms.normalize import normalize_text
 
@@ -62,21 +63,32 @@ def ingest_csv_row_record(
 
         seen_hashes.add(content_hash)
 
-        doc_id = f"{source_name}:{record_id}_c{chunk_index}"
+        source_id = f"{source_name}:{record_id}"
+        doc_id = f"{source_id}_c{chunk_index}"
+        title = source_name
 
         documents.append(chunk)
         metadatas.append(
-            {
-                "source_type": "csv",
-                "source_name": source_name,
-                "path": csv_path,
-                "record_id": record_id,
-                "entity_type": entity_type or "",
-                "source_org": source_org or "",
-                "tags": tags,
-                "chunk_index": chunk_index,
-                "content_hash": content_hash,
-            }
+            build_canonical_chunk_metadata(
+                source_type="csv",
+                source_id=source_id,
+                title=title,
+                url="",
+                page=-1,
+                chunk_index=chunk_index,
+                location="",
+                month_year="",
+                content_hash=content_hash,
+                language="en",
+                extra_metadata={
+                    "source_name": source_name,
+                    "path": csv_path,
+                    "record_id": record_id,
+                    "entity_type": entity_type or "",
+                    "source_org": source_org or "",
+                    "tags": tags,
+                },
+            )
         )
         ids.append(doc_id)
         added += 1

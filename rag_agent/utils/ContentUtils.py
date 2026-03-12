@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple
+from typing import Any, List, Dict, Optional, Tuple
 import re
 import hashlib
 from transformers import AutoTokenizer
@@ -175,6 +175,18 @@ class ContentUtils:
         min_results = int(min_results)
 
 
+        def _format_results(
+            docs: List[str],
+            metadatas: List[Dict[str, Any]],
+            distances: List[float],
+        ) -> List[Dict[str, Any]]:
+            return [
+                {"text": doc, "metadata": metadata, "distance": distance}
+                for doc, metadata, distance in zip(docs, metadatas, distances)
+            ]
+
+        strategy_evaluations: List[Dict[str, Any]] = []
+
         for strategy_name, where_filter in filter_attempts:
             query_args = {
                 "query_texts": [query],
@@ -191,15 +203,47 @@ class ContentUtils:
             metadatas = results.get("metadatas", [[]])[0]
             distances = results.get("distances", [[]])[0]
 
-            if len(docs) >= min_results:
-                return (
-                    where_filter,
-                    strategy_name,
-                    [
-                        {"text": doc, "metadata": metadata, "distance": distance}
-                        for doc, metadata, distance in zip(docs, metadatas, distances)
-                    ],
-                )
+            similarity_scores = []
+            for distance in distances:
+                # Chroma distances are lower-is-better; convert to a higher-is-better score.
+                similarity_scores.append(1.0 / (1.0 + max(float(distance), 0.0)))
+
+            doc_count = len(docs)
+            normalized_score = (
+                sum(similarity_scores) / doc_count
+                if doc_count > 0
+                else 0.0
+            )
+
+            strategy_evaluations.append(
+                {
+                    "strategy_name": strategy_name,
+                    "where_filter": where_filter,
+                    "doc_count": doc_count,
+                    "docs": docs,
+                    "metadatas": metadatas,
+                    "distances": distances,
+                    "similarity_scores": similarity_scores,
+                    "normalized_score": normalized_score,
+                }
+            )
+
+        valid_strategies = [
+            s for s in strategy_evaluations
+            if s["doc_count"] >= min_results
+        ]
+
+        if valid_strategies:
+            best_strategy = max(valid_strategies, key=lambda s: s["normalized_score"])
+            return (
+                best_strategy["where_filter"],
+                best_strategy["strategy_name"],
+                _format_results(
+                    best_strategy["docs"],
+                    best_strategy["metadatas"],
+                    best_strategy["distances"],
+                ),
+            )
 
         return None, "no_results", []
 

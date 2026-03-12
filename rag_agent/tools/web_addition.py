@@ -3,6 +3,7 @@ from typing import Optional
 import re
 import trafilatura
 from bs4 import BeautifulSoup
+from rag_agent.utils.metadata import build_canonical_chunk_metadata
 
 
 class WebAddition:
@@ -246,18 +247,20 @@ class WebAddition:
             doc_id = f"{source_id}_c{chunk_index}"
 
             documents.append(f"Title: {title}\n\n{chunk}")
-            metadatas.append({
-                "source_type": "web",
-                "source_id": source_id,
-                "title": title,
-                "url": url,
-                "page": self.null_int,
-                "chunk_index": chunk_index,
-                "location": location,
-                "month_year": month_year,
-                "content_hash": content_hash,
-                "language": language,
-            })
+            metadatas.append(
+                build_canonical_chunk_metadata(
+                    source_type="web",
+                    source_id=source_id,
+                    title=title,
+                    url=url,
+                    page=self.null_int,
+                    chunk_index=chunk_index,
+                    location=location,
+                    month_year=month_year,
+                    content_hash=content_hash,
+                    language=language,
+                )
+            )
             ids.append(doc_id)
 
         if not documents:
