@@ -1,6 +1,8 @@
-from typing import List, Dict
+from typing import Dict, List, Optional
 import os
 import requests
+
+from rag_agent.utils.metadata import get_filtered_edu_domains_for_search
 import json
 import trafilatura
 from bs4 import BeautifulSoup
@@ -42,7 +44,12 @@ class WebSearch:
 
         return downloaded
 
-    def web_search(self, query: str, results_to_extract_count: int = 20) -> Dict:
+    def web_search(
+        self,
+        query: str,
+        results_to_extract_count: int = 20,
+        location: Optional[str] = None,
+    ) -> Dict:
         """Searches the web for relevant information and extracts clean text.
 
         This tool is used when internal knowledge retrieval does not sufficiently
@@ -51,6 +58,8 @@ class WebSearch:
         Args:
             query: The search query derived from the user's question.
             results_to_extract_count: Number of web results to retrieve and process.
+            location: Optional geographic context (e.g. "Minnesota, Stearns County").
+                When provided, restricts results to .edu domains in that location and hardiness zone.
 
         Returns:
             Success:
@@ -86,9 +95,15 @@ class WebSearch:
         # 🌐 Endpoint
         # URL = "https://ydc-index.io/v1/search"
 
-        # 🔎 Query parameters (same as curl)
-        # Append site restrictions: .edu only, exclude .com and .org
-        search_query = f"{query} site:.edu -site:.com -site:.org"
+        # 🔎 Query parameters: .edu only, exclude .com and .org
+        # Optionally restrict to location/hardiness-filtered .edu domains (max 6)
+        filtered_domains = get_filtered_edu_domains_for_search(location)
+        if filtered_domains:
+            domains_to_use = filtered_domains[:6]
+            site_clause = " OR ".join(f"site:{d}" for d in domains_to_use)
+            search_query = f"{query} ({site_clause}) -site:.com -site:.org"
+        else:
+            search_query = f"{query}"
         params = {
             "query": search_query,
             "count": results_to_extract_count,

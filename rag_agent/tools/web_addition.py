@@ -255,11 +255,13 @@ class WebAddition:
                 "error_message": "Extracted web content is empty",
             }
 
-        if location:
+        state_from_url = self._get_state_from_edu_url(url)
+        if state_from_url:
+            location = state_from_url.upper()
+        elif location:
             location = location.upper()
         else:
-            state_from_url = self._get_state_from_edu_url(url)
-            location = state_from_url.upper() if state_from_url else self.null_str
+            location = self.null_str
         resolved_month_year = self._normalize_month_year(month_year)
         month_year = resolved_month_year if resolved_month_year else self.null_str
 

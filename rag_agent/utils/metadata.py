@@ -4,7 +4,7 @@ import csv
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 _STATE_ABBR_TO_NAME: Dict[str, str] = {
@@ -64,6 +64,122 @@ _STATE_ABBR_TO_NAME: Dict[str, str] = {
 
 _STATE_NAME_TO_ABBR: Dict[str, str] = {v: k for k, v in _STATE_ABBR_TO_NAME.items()}
 _HARDINESS_LOOKUP_CACHE: Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str]]] = None
+_LAND_GRANT_STATE_TO_DOMAINS: Optional[Dict[str, List[str]]] = None
+_HARDINESS_ZONE_TO_DOMAINS: Optional[Dict[str, List[str]]] = None
+
+
+def _land_grant_csv_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "Datasets" / "land_grant_universities.csv"
+
+
+def _hardiness_zone_edu_csv_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "Datasets" / "hardiness_zone_edu_domain.csv"
+
+
+def _load_land_grant_state_to_domains() -> Dict[str, List[str]]:
+    """Load state (canonical) -> list of edu domains from land grant universities CSV."""
+    global _LAND_GRANT_STATE_TO_DOMAINS
+    if _LAND_GRANT_STATE_TO_DOMAINS is not None:
+        return _LAND_GRANT_STATE_TO_DOMAINS
+    state_to_domains: Dict[str, List[str]] = {}
+    csv_path = _land_grant_csv_path()
+    if csv_path.exists():
+        with csv_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                domain = (row.get("Email Domain") or "").strip().lstrip("@").lower()
+                raw_state = (row.get("State") or "").strip()
+                if not domain or not raw_state:
+                    continue
+                state_name = _canonical_state_name(raw_state)
+                if state_name:
+                    if state_name not in state_to_domains:
+                        state_to_domains[state_name] = []
+                    state_to_domains[state_name].append(domain)
+    _LAND_GRANT_STATE_TO_DOMAINS = state_to_domains
+    return _LAND_GRANT_STATE_TO_DOMAINS
+
+
+def _load_hardiness_zone_to_domains() -> Dict[str, List[str]]:
+    """Load phz (hardiness zone) -> list of edu domains from hardiness_zone_edu_domain.csv.
+
+    CSV columns: state, state_abbrev, county_name, university, city, main_domain,
+    extension_domains, phz
+    """
+    global _HARDINESS_ZONE_TO_DOMAINS
+    if _HARDINESS_ZONE_TO_DOMAINS is not None:
+        return _HARDINESS_ZONE_TO_DOMAINS
+    zone_to_domains: Dict[str, List[str]] = {}
+    csv_path = _hardiness_zone_edu_csv_path()
+    if csv_path.exists():
+        with csv_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                zone = (row.get("phz") or "").strip()
+                domain_raw = (row.get("main_domain") or "").strip().lstrip("@").lower()
+                if not zone or not domain_raw:
+                    continue
+                if zone not in zone_to_domains:
+                    zone_to_domains[zone] = []
+                zone_to_domains[zone].append(domain_raw)
+    _HARDINESS_ZONE_TO_DOMAINS = zone_to_domains
+    return _HARDINESS_ZONE_TO_DOMAINS
+
+
+def _extract_state_from_location(location: str) -> str:
+    """Extract canonical state name from location string (State, County or State or County, State)."""
+    location_text = (location or "").strip()
+    if not location_text:
+        return ""
+    parts = [p.strip() for p in location_text.split(",") if p.strip()]
+    if not parts:
+        return ""
+    if len(parts) >= 2:
+        state_name = _canonical_state_name(parts[0])
+        if state_name:
+            return state_name
+        return _canonical_state_name(parts[1])
+    return _canonical_state_name(parts[0])
+
+
+def get_edu_domains_for_state(location: str) -> List[str]:
+    """Return edu domains for the state in the given location string."""
+    state_name = _extract_state_from_location(location)
+    if not state_name:
+        return []
+    state_to_domains = _load_land_grant_state_to_domains()
+    return state_to_domains.get(state_name, [])
+
+
+def get_edu_domains_for_hardiness_zone(zone: str) -> List[str]:
+    """Return edu domains for the given hardiness zone."""
+    zone = (zone or "").strip()
+    if not zone:
+        return []
+    zone_to_domains = _load_hardiness_zone_to_domains()
+    return zone_to_domains.get(zone, [])
+
+
+def get_filtered_edu_domains_for_search(location: Optional[str]) -> List[str]:
+    """
+    Return edu domains filtered by location (state) and hardiness zone.
+    If location is None/empty, returns [] (caller uses broad site:.edu).
+    If union of state + zone domains has more than 6: use intersection (stricter).
+    Otherwise: use union (broader). All results are deduplicated.
+    """
+    location_text = (location or "").strip()
+    if not location_text:
+        return []
+    state_domains = get_edu_domains_for_state(location_text)
+    zone = extract_hardiness_zone_for_location(location_text)
+    zone_domains = get_edu_domains_for_hardiness_zone(zone) if zone else []
+    union = list(dict.fromkeys(state_domains + zone_domains))
+    if len(union) > 6:
+        zone_set = set(zone_domains)
+        result = [d for d in state_domains if d in zone_set]
+        result = list(dict.fromkeys(result)) if result else list(dict.fromkeys(state_domains))
+        return result
+    return union
 
 
 def _normalize_token(value: str) -> str:

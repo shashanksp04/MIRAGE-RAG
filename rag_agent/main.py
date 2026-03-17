@@ -29,7 +29,8 @@ class MainAgent:
         self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
         self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
         self.keyword_extractor = KeywordExtractor(model_name=test_model, openai_api_base=api_base)
-        
+        self.current_location: Optional[str] = None
+
         # Store tools for debugging
         self.tools_list = [
             self._tracked_retrieve_content,
@@ -53,11 +54,12 @@ class MainAgent:
         Use this tool FIRST for every query to retrieve relevant information from the knowledge base.
         """
         print(f"[RAG Tools] retrieve_content: CALLED", flush=True)
+        effective_location = location or getattr(self, "current_location", None)
 
         try:
             result = self.retrieve_content(
                 query=query,
-                location=location,
+                location=effective_location,
                 month_year=month_year,
                 title=title,
             )
@@ -83,7 +85,7 @@ class MainAgent:
                     # Retry once after rebind
                     result = self.retrieve_content(
                         query=query,
-                        location=location,
+                        location=effective_location,
                         month_year=month_year,
                         title=title,
                     )
@@ -169,8 +171,9 @@ class MainAgent:
         """
         import sys
         print(f"[RAG Tools] evaluate_retrieval_confidence: CALLED", flush=True)
+        effective_location = location or getattr(self, "current_location", None)
         result = self.confidence_evaluator.evaluate_retrieval_confidence(
-            query=query, location=location, month_year=month_year, title=title, k=k
+            query=query, location=effective_location, month_year=month_year, title=title, k=k
         )
         status = result.get("status", "unknown")
         if status == "success":
@@ -180,7 +183,13 @@ class MainAgent:
             print(f"[RAG Tools] ✗ evaluate_retrieval_confidence: FAILED - {result.get('error_message', 'Unknown error')}", flush=True)
         return result
     
-    def _tracked_web_search(self, *, query: str, results_to_extract_count: int = 10) -> Dict:
+    def _tracked_web_search(
+        self,
+        *,
+        query: str,
+        results_to_extract_count: int = 10,
+        location: Optional[str] = None,
+    ) -> Dict:
         """Searches the web for relevant information and extracts clean text.
         
         Use this tool ONLY when confidence_level is "low" after evaluating retrieval confidence.
@@ -189,13 +198,18 @@ class MainAgent:
         Args:
             query: The search query (use extract_keywords first to optimize the query)
             results_to_extract_count: Number of web results to retrieve and process (default: 10)
+            location: Optional geographic context (e.g. "Minnesota, Stearns County").
+                When provided, restricts results to .edu domains in that location and hardiness zone.
             
         Returns:
             Dict with status, query, results (list of dicts with title, url), and error_message if failed
         """
         import sys
         print(f"[RAG Tools] web_search: CALLED (query: {query[:50]}...)", flush=True)
-        result = self.web_search.web_search(query, results_to_extract_count)
+        effective_location = location or getattr(self, "current_location", None)
+        result = self.web_search.web_search(
+            query, results_to_extract_count, location=effective_location
+        )
         status = result.get("status", "unknown")
         if status == "success":
             results_count = len(result.get("results", []))
@@ -409,6 +423,13 @@ class MainAgent:
             - Respond exactly with:
                 "No sufficient reliable information available to return."
             - Return no evidence (empty).
+
+            ===================
+            LOCATION HANDLING
+            ===================
+
+            - When the user message begins with "[User location: X]", pass that location (exactly as given) to _tracked_retrieve_content and _tracked_web_search.
+            - When calling _tracked_add_web_content, do NOT pass the location parameter. The tool derives location from each URL's .edu domain (the university's state).
 
             ===================
             TOOL USAGE RULES

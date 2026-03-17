@@ -202,9 +202,14 @@ def rag_worker_process(
             print(f"[RAG Worker] Endpoint {api_base}: Shutting down.")
             break
 
-        item_id, query, attempt = request
+        if len(request) == 4:
+            item_id, query, location, attempt = request
+        else:
+            item_id, query, attempt = request
+            location = None
         request_count += 1
 
+        rag_agent.current_location = location
         print(f"[RAG Worker] Item {item_id}: Received (Attempt {attempt})")
         print(f"[RAG Worker] Item {item_id}: Query length = {len(query)} chars")
 
@@ -309,6 +314,11 @@ class Generate:
 
     def get_prompt(self, item):
         question = item["question"]
+        state = (item.get("meta_data_state") or "").strip()
+        county = (item.get("meta_data_county") or "").strip()
+        location = f"{state}, {county}" if state and county else (state or "")
+        user_message = f"[User location: {location}]\n\n{question}" if location else question
+
         images = item.get("images", [])
         new_images = []
         dir_path = os.path.dirname(os.path.abspath(self.raw_data_file))
@@ -320,7 +330,7 @@ class Generate:
                 continue
             new_images.append(new_path)
 
-        return {"user": question, "images": new_images}
+        return {"user": user_message, "images": new_images, "location": location}
 
     def generate(self):
 
@@ -425,7 +435,7 @@ class Generate:
             idx += 1
             prompt = self.get_prompt(item)
             pending[item["id"]] = (item, prompt, 1)
-            rag_request_q.put((item["id"], prompt["user"], 1))
+            rag_request_q.put((item["id"], prompt["user"], prompt.get("location"), 1))
 
         completed = 0
 
@@ -449,7 +459,7 @@ class Generate:
                 if _is_hard_rag_failure(rag_error) and attempts < self.max_rag_attempts:
                     print(f"[MAIN] Item {item_id}: Retrying RAG...")
                     pending[item_id] = (item, prompt, attempts + 1)
-                    rag_request_q.put((item_id, prompt["user"], attempts + 1))
+                    rag_request_q.put((item_id, prompt["user"], prompt.get("location"), attempts + 1))
                     continue
 
                 if _is_soft_rag_failure(rag_answer, rag_error):
@@ -486,7 +496,7 @@ class Generate:
                 idx += 1
                 prompt = self.get_prompt(item)
                 pending[item["id"]] = (item, prompt, 1)
-                rag_request_q.put((item["id"], prompt["user"], 1))
+                rag_request_q.put((item["id"], prompt["user"], prompt.get("location"), 1))
 
         pool.close()
         pool.join()
