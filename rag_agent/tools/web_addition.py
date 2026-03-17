@@ -1,9 +1,35 @@
+import csv
 import hashlib
+from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
+
 import re
 import trafilatura
 from bs4 import BeautifulSoup
+
 from rag_agent.utils.metadata import build_canonical_chunk_metadata
+
+_LAND_GRANT_CSV = Path(__file__).resolve().parents[2] / "Datasets" / "land_grant_universities.csv"
+_EDU_DOMAIN_TO_STATE: dict[str, str] | None = None
+
+
+def _load_edu_domain_to_state() -> dict[str, str]:
+    """Load domain -> state mapping from land grant universities CSV."""
+    global _EDU_DOMAIN_TO_STATE
+    if _EDU_DOMAIN_TO_STATE is not None:
+        return _EDU_DOMAIN_TO_STATE
+    mapping: dict[str, str] = {}
+    if _LAND_GRANT_CSV.exists():
+        with open(_LAND_GRANT_CSV, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                domain = (row.get("Email Domain") or "").strip().lstrip("@")
+                state = (row.get("State") or "").strip()
+                if domain and state:
+                    mapping[domain.lower()] = state
+    _EDU_DOMAIN_TO_STATE = mapping
+    return mapping
 
 
 class WebAddition:
@@ -139,6 +165,30 @@ class WebAddition:
             return ""
         return raw[:7] if re.match(r"^\d{4}-\d{2}", raw) else ""
 
+    @staticmethod
+    def _extract_domain_from_url(url: str) -> str | None:
+        """Extract hostname from URL, e.g. www.berkeley.edu -> berkeley.edu."""
+        try:
+            parsed = urlparse(url)
+            host = (parsed.netloc or parsed.path or "").strip()
+            if not host:
+                return None
+            host = host.lower()
+            if host.startswith("www."):
+                host = host[4:]
+            return host if host else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _get_state_from_edu_url(url: str) -> str | None:
+        """If URL is from a .edu domain in the land grant CSV, return the state."""
+        domain = WebAddition._extract_domain_from_url(url)
+        if not domain or not domain.endswith(".edu"):
+            return None
+        mapping = _load_edu_domain_to_state()
+        return mapping.get(domain)
+
     def add_web_content(
         self,
         *,
@@ -205,7 +255,11 @@ class WebAddition:
                 "error_message": "Extracted web content is empty",
             }
 
-        location = location.upper() if location else self.null_str
+        if location:
+            location = location.upper()
+        else:
+            state_from_url = self._get_state_from_edu_url(url)
+            location = state_from_url.upper() if state_from_url else self.null_str
         resolved_month_year = self._normalize_month_year(month_year)
         month_year = resolved_month_year if resolved_month_year else self.null_str
 

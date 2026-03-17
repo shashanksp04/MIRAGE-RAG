@@ -166,6 +166,7 @@ Behavior:
 
 * Calls `WebAddition.add_web_content(url)`
 * Passes `location` and `month_year` metadata when present in source config
+* `location` is required for web sources (validated at manifest load); the underlying `add_web_content` also auto-derives location from `.edu` domain when not provided (used by rag-agent when ingesting URLs discovered at runtime)
 * Extraction handled via trafilatura (inside rag_agent)
 * Chunking handled via `ContentUtils.chunk_by_tokens`
 * Deduplication handled via content hash logic
@@ -282,6 +283,7 @@ If desired, you can modify rag_agent tools to accept `extra_metadata` for richer
 Assumptions and enforcement used in this project:
 
 * **Location policy**: `location` is required for preload web/pdf sources, and CSV must provide source-level `location` or `location_field`.
+* **Location rag-agent policy**: when the RAG agent adds web content without an explicit `location`, it auto-derives the state from the URL’s `.edu` domain using `Datasets/land_grant_universities.csv`. For land-grant-university URLs, location is therefore enforced in both the preload pipeline (via manifest) and the rag-agent (via URL-derived state).
 * **Hardiness policy**: `hardiness_zone` is always present as a metadata key and is derived from `location`.
 * **Hardiness non-null expectation**: expected for resolvable locations; unresolved values may still be empty if a location does not map to the county/state lookup.
 * **Month-year preload policy**: for preload web/pdf sources, `month_year` is expected to be provided in the manifest for every source.

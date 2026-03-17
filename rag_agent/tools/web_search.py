@@ -42,7 +42,7 @@ class WebSearch:
 
         return downloaded
 
-    def web_search(self, query: str, results_to_extract_count: int = 10) -> Dict:
+    def web_search(self, query: str, results_to_extract_count: int = 20) -> Dict:
         """Searches the web for relevant information and extracts clean text.
 
         This tool is used when internal knowledge retrieval does not sufficiently
@@ -87,8 +87,10 @@ class WebSearch:
         # URL = "https://ydc-index.io/v1/search"
 
         # 🔎 Query parameters (same as curl)
+        # Append site restrictions: .edu only, exclude .com and .org
+        search_query = f"{query} site:.edu -site:.com -site:.org"
         params = {
-            "query": query,
+            "query": search_query,
             "count": results_to_extract_count,
         }
 
