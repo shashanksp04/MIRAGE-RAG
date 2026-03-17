@@ -1,5 +1,6 @@
 import chromadb
 import time
+import re
 from .tools.pdf_addition import PDFAddition
 from .tools.web_search import WebSearch
 from .tools.web_addition import WebAddition
@@ -206,6 +207,11 @@ class MainAgent:
     def _tracked_add_web_content(self, *, url: str, location: Optional[str] = None,
                                  month_year: Optional[str] = None, language: str = "en") -> Dict:
         """Wrapper around add_web_content that prints success/failure"""
+        if not month_year or not re.match(r"^\d{4}-\d{2}$", month_year.strip()):
+            return {
+                "status": "error",
+                "error_message": "month_year is required for web ingestion and must be in YYYY-MM format.",
+            }
         before = self.collection.count()
         result = self.web_addition.add_web_content(url=url, location=location, 
                 month_year=month_year, language=language)
@@ -218,10 +224,25 @@ class MainAgent:
             print(f"[RAG Tools] ✗ add_web_content: FAILED - {result.get('error_message', 'Unknown error')}")
         return result
     
-    def _tracked_add_pdf_content(self, *, pdf_path: str, source_id: str, title: str, language: str = "en") -> Dict:
+    def _tracked_add_pdf_content(
+        self,
+        *,
+        pdf_path: str,
+        source_id: str,
+        title: str,
+        location: Optional[str] = None,
+        month_year: Optional[str] = None,
+        language: str = "en",
+    ) -> Dict:
         """Wrapper around add_pdf_content that prints success/failure"""
-        result = self.pdf_addition.add_pdf_content(pdf_path=pdf_path, source_id=source_id, 
-                                                    title=title, language=language)
+        result = self.pdf_addition.add_pdf_content(
+            pdf_path=pdf_path,
+            source_id=source_id,
+            title=title,
+            location=location,
+            month_year=month_year,
+            language=language,
+        )
         status = result.get("status", "unknown")
         if status == "success":
             print(f"[RAG Tools] ✓ add_pdf_content: SUCCESS")
@@ -376,8 +397,8 @@ class MainAgent:
             - You MUST call _tracked_extract_keywords ONCE to prepare for web search.
             - Join extracted keywords into a single query string.
             - You MUST call _tracked_web_search with the extracted keywords.
-            - From the returned object, use the `url` field inside each item of `results`.
-            - You MUST call _tracked_add_web_content for URLs from those web_search results ONLY.
+            - From the returned object, use both `url` and `month_year` fields inside each item of `results`.
+            - You MUST call _tracked_add_web_content for URLs from those web_search results ONLY, and you MUST pass `month_year` with each call.
             - You MUST ingest at least 5 successful URLs (status="success"), up to 10 total attempts.
             - If _tracked_add_web_content fails for a URL, try the next URL from `results` until you reach 5 successes or you run out of results.
             - You MUST call _tracked_retrieve_content again from the vector database.

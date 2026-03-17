@@ -5,6 +5,7 @@ import json
 import trafilatura
 from bs4 import BeautifulSoup
 import re
+from datetime import datetime
 
 class WebSearch:
     def __init__(
@@ -13,6 +14,18 @@ class WebSearch:
         self.base_url = base_url
         self.api_key = os.getenv("YOU_API_KEY")
 
+    @staticmethod
+    def _month_year_from_page_age(page_age: str) -> str:
+        raw = (page_age or "").strip()
+        if not raw:
+            return ""
+        if len(raw) >= 7 and re.match(r"^\d{4}-\d{2}", raw):
+            return raw[:7]
+        try:
+            normalized = raw.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized).strftime("%Y-%m")
+        except ValueError:
+            return ""
 
     def extract_data(self, URL: str) -> str:
         downloaded = trafilatura.fetch_url(URL)
@@ -48,6 +61,7 @@ class WebSearch:
                     {
                         "title": "...",
                         "url": "...",
+                        "month_year": "YYYY-MM"
                     }
                 ]
             }
@@ -120,10 +134,16 @@ class WebSearch:
             url = item.get("url")
             if not url:
                 continue
-            
+            month_year = self._month_year_from_page_age(item.get("page_age") or "")
+            if not month_year:
+                # Fallback if provider already sends month_year.
+                month_year_raw = (item.get("month_year") or "").strip()
+                month_year = month_year_raw[:7] if re.match(r"^\d{4}-\d{2}", month_year_raw) else ""
+
             results.append({
                     "title": item.get("title"),
                     "url": item.get("url"),
+                    "month_year": month_year,
                 })
 
             # extracted_text = self.extract_data(url)

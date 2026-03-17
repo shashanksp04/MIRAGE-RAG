@@ -39,6 +39,19 @@ class PreloadConfig:
         for s in sources:
             if "name" not in s or "type" not in s:
                 raise ValueError(f"Each source must have name and type. Bad source: {s}")
+            st = str(s["type"]).strip().lower()
+            if st == "csv":
+                if not s.get("location") and not s.get("location_field"):
+                    raise ValueError(
+                        f"{s['name']}: csv sources require 'location' or 'location_field' "
+                        f"to derive hardiness_zone metadata."
+                    )
+            elif st in {"web_page_list", "pdf_dir"}:
+                if not s.get("location"):
+                    raise ValueError(
+                        f"{s['name']}: {st} sources require 'location' "
+                        f"to derive hardiness_zone metadata."
+                    )
 
         return PreloadConfig(
             manifest_path=manifest_path,

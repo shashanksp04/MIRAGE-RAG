@@ -131,7 +131,14 @@ class WebAddition:
         # )
 
         return downloaded
-        
+
+    @staticmethod
+    def _normalize_month_year(month_year: Optional[str]) -> str:
+        raw = (month_year or "").strip()
+        if not raw:
+            return ""
+        return raw[:7] if re.match(r"^\d{4}-\d{2}", raw) else ""
+
     def add_web_content(
         self,
         *,
@@ -199,7 +206,8 @@ class WebAddition:
             }
 
         location = location.upper() if location else self.null_str
-        month_year = month_year.strip() if month_year else self.null_str
+        resolved_month_year = self._normalize_month_year(month_year)
+        month_year = resolved_month_year if resolved_month_year else self.null_str
 
         source_id = hashlib.sha256(url.encode()).hexdigest()[:16]
 

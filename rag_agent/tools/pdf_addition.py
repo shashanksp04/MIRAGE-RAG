@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from pypdf import PdfReader
 import re
 from rag_agent.utils.metadata import build_canonical_chunk_metadata
@@ -75,6 +75,8 @@ class PDFAddition:
         pdf_path: str,
         source_id: str,
         title: str,
+        location: Optional[str] = None,
+        month_year: Optional[str] = None,
         language: str = "en"
     ) -> Dict:
         """
@@ -93,6 +95,8 @@ class PDFAddition:
             pdf_path: Local filesystem path to the PDF file
             source_id: Unique identifier for the PDF source
             title: Human-readable document title
+            location: Optional geographic context
+            month_year: Optional publication date
             language: Language code (default: "en")
 
         Returns:
@@ -111,6 +115,9 @@ class PDFAddition:
                 "error_message": str
             }
         """
+        location = location.upper() if location else self.null_str
+        month_year = month_year.strip() if month_year else self.null_str
+
         try:
             pdf_pages = self.extract_pdf_pages(pdf_path)
         except Exception as e:
@@ -171,8 +178,8 @@ class PDFAddition:
                         url=self.null_str,
                         page=page_num,
                         chunk_index=chunk_index,
-                        location=self.null_str,
-                        month_year=self.null_str,
+                        location=location,
+                        month_year=month_year,
                         content_hash=content_hash,
                         language=language,
                     )

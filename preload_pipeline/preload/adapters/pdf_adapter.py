@@ -20,6 +20,8 @@ class PDFDirAdapter(BaseAdapter):
         if not pdf_dir.exists():
             raise FileNotFoundError(f"{self.source_name}: pdf_dir not found: {pdf_dir}")
 
+        location = self.source_cfg.get("location")
+        month_year = self.source_cfg.get("month_year")
         processed = added = skipped = failed = 0
 
         for pdf_path in pdf_dir.rglob("*.pdf"):
@@ -30,6 +32,8 @@ class PDFDirAdapter(BaseAdapter):
                     pdf_path=str(pdf_path),
                     source_id=source_id,
                     title=pdf_path.name,
+                    location=location,
+                    month_year=month_year,
                 )
                 if res.get("status") == "success":
                     added += int(res.get("chunks_added", 0))

@@ -88,6 +88,7 @@ The manifest defines:
 * Source type
 * Paths or URLs
 * Optional metadata fields
+* Optional location fields (`location` or `location_field` for CSV)
 * Unique ID field (for CSV sources)
 
 Example:
@@ -99,6 +100,7 @@ sources:
     path: data/seeds/usda_plants.csv
     entity_type: plant
     source_org: USDA
+    location: "Illinois"
     tags: [plants, usa]
 ```
 
@@ -163,6 +165,7 @@ Adapter: `WebPageListAdapter`
 Behavior:
 
 * Calls `WebAddition.add_web_content(url)`
+* Passes `location` and `month_year` metadata when present in source config
 * Extraction handled via trafilatura (inside rag_agent)
 * Chunking handled via `ContentUtils.chunk_by_tokens`
 * Deduplication handled via content hash logic
@@ -180,6 +183,7 @@ Behavior:
 
 * Iterates over PDFs in directory
 * Calls `PDFAddition.add_pdf_content(...)`
+* Passes `location` and `month_year` metadata when present in source config
 * Extraction via `pypdf`
 * Chunking via rag_agent token chunker
 * Deduplication via content hash
@@ -207,6 +211,7 @@ Key details:
   * source_name
   * record_id
   * entity_type
+  * location (from source-level `location` or per-row `location_field`)
   * tags
   * content_hash
 
@@ -264,7 +269,32 @@ For:
 * PDF sources → metadata comes from rag_agent tool
 * CSV sources → metadata is explicitly attached
 
+All ingestion paths populate canonical metadata fields, including `location` and `hardiness_zone`.
+`hardiness_zone` is derived from `location` via `rag_agent.utils.metadata.extract_hardiness_zone_for_location`.
+Preferred `location` format is `"State, County"` or `"State"` (state full name or 2-letter abbreviation).
+
 If desired, you can modify rag_agent tools to accept `extra_metadata` for richer provenance.
+
+---
+
+# Metadata Policy
+
+Assumptions and enforcement used in this project:
+
+* **Location policy**: `location` is required for preload web/pdf sources, and CSV must provide source-level `location` or `location_field`.
+* **Hardiness policy**: `hardiness_zone` is always present as a metadata key and is derived from `location`.
+* **Hardiness non-null expectation**: expected for resolvable locations; unresolved values may still be empty if a location does not map to the county/state lookup.
+* **Month-year preload policy**: for preload web/pdf sources, `month_year` is expected to be provided in the manifest for every source.
+* **Month-year rag policy**: for web-search-driven rag ingestion, `month_year` is derived from `page_age` (fallback to provider `month_year`) and validated as `YYYY-MM` before ingestion.
+* **CSV month-year policy**: CSV ingestion is allowed to keep `month_year` empty by design.
+
+Null vs non-null cases under the policy:
+
+* **`hardiness_zone` non-null**: when `location` is valid and resolvable.
+* **`hardiness_zone` empty**: when location is missing/unresolvable or lookup data cannot resolve it.
+* **`month_year` non-null (preload web/pdf)**: when provided in manifest (assumed operational requirement).
+* **`month_year` non-null (rag web-search flow)**: when derived or supplied and passes `YYYY-MM` validation.
+* **`month_year` empty (CSV)**: accepted by current policy.
 
 ---
 
@@ -309,6 +339,26 @@ preload_pipeline/manifest.yaml
 ```
 
 Based on the example.
+
+If you need to generate many `web_page_list` sources from a list of names, use:
+
+```
+python scripts/generate_web_sources.py \
+  --base-url "https://extension.illinois.edu/plant-problems/" \
+  --names-file "scripts/input.txt" \
+  --location "Illinois" \
+  --output "generated_sources.yaml"
+```
+
+Notes:
+
+* Input file should be plain text with one name per line.
+* `--base-url` and `--names-file` are required.
+* Optional flags: `--output`, `--name-prefix`, `--entity-type`, `--source-org`, `--location`, and repeatable `--tag`.
+* Preferred `--location` format is `"State, County"` or `"State"` (state can be full name or 2-letter abbreviation).
+* Optional fields are only added to generated source records when provided.
+* For CSV manifest sources, use either source-level `location` (single value for all rows) or `location_field` (column name containing per-row location).
+* CSV rows with missing resolved location are rejected (counted as failed rows) to keep `hardiness_zone` metadata reliable.
 
 ---
 

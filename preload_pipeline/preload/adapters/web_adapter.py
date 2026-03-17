@@ -24,18 +24,16 @@ class WebPageListAdapter(BaseAdapter):
         if not urls:
             raise ValueError(f"{self.source_name}: web_page_list requires 'urls'")
 
-        entity_type = self.source_cfg.get("entity_type")
-        source_org = self.source_cfg.get("source_org")
-        tags = self.source_cfg.get("tags", [])
+        location = self.source_cfg.get("location")
+        month_year = self.source_cfg.get("month_year")
 
         processed = added = skipped = failed = 0
 
         for url in urls:
             processed += 1
             try:
-                # rag_agent tool doesn't accept arbitrary metadata, so those go into manifest-level logging only.
-                # You can encode entity_type/source_org/tags into URL grouping if you want.
-                res = self.web_adder.add_web_content(url=url)
+                # rag_agent tool accepts location/month_year; other source-level fields remain for provenance only.
+                res = self.web_adder.add_web_content(url=url, location=location, month_year=month_year)
                 if res.get("status") == "success":
                     # rag_agent reports chunks_added + skipped
                     added += int(res.get("chunks_added", 0))

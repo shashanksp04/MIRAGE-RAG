@@ -22,6 +22,8 @@ class CSVAdapter(BaseAdapter):
         id_field = self.source_cfg.get("id_field")
         entity_type = self.source_cfg.get("entity_type")
         source_org = self.source_cfg.get("source_org")
+        source_location = self.source_cfg.get("location")
+        location_field = self.source_cfg.get("location_field")
         tags = self.source_cfg.get("tags", [])
 
         processed = added = skipped = failed = 0
@@ -32,6 +34,12 @@ class CSVAdapter(BaseAdapter):
                 processed += 1
                 try:
                     record_id = (row.get(id_field) if id_field else None) or str(idx)
+                    row_location = (row.get(location_field) if location_field else None) or source_location
+                    if not row_location or not str(row_location).strip():
+                        raise ValueError(
+                            f"{self.source_name}: missing location for row {idx}. "
+                            f"Provide source-level 'location' or populate '{location_field}'."
+                        )
                     stats = ingest_csv_row_record(
                         collection=self.collection,
                         content_utils=self.content_utils,
@@ -41,6 +49,7 @@ class CSVAdapter(BaseAdapter):
                         record_id=str(record_id),
                         entity_type=entity_type,
                         source_org=source_org,
+                        location=row_location,
                         tags=tags,
                         dry_run=self.dry_run,
                     )

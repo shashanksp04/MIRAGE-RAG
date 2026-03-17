@@ -17,6 +17,7 @@ def ingest_csv_row_record(
     record_id: str,
     entity_type: Optional[str],
     source_org: Optional[str],
+    location: Optional[str],
     tags: List[str],
     dry_run: bool,
 ) -> Dict[str, int]:
@@ -76,7 +77,7 @@ def ingest_csv_row_record(
                 url="",
                 page=-1,
                 chunk_index=chunk_index,
-                location="",
+                location=(location or ""),
                 month_year="",
                 content_hash=content_hash,
                 language="en",
@@ -86,6 +87,7 @@ def ingest_csv_row_record(
                     "record_id": record_id,
                     "entity_type": entity_type or "",
                     "source_org": source_org or "",
+                    "location": location or "",
                     "tags": tags,
                 },
             )
