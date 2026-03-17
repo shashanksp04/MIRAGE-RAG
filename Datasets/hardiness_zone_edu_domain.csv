@@ -1,0 +1,50 @@
+state,state_abbrev,county_name,university,city,main_domain,extension_domains,phz
+Alabama,AL,Lee,Auburn University,Auburn,auburn.edu,aces.edu,8b
+Arizona,AZ,Pima,University of Arizona,Tucson,arizona.edu,extension.arizona.edu,9a
+Arkansas,AR,Washington,University of Arkansas,Fayetteville,uark.edu,uaex.uada.edu,7a
+California,CA,Yolo,University of California (UC Davis for ag),Davis,ucdavis.edu,ucanr.edu,9b
+Colorado,CO,Larimer,Colorado State University,Fort Collins,colostate.edu,extension.colostate.edu,5b
+Connecticut,CT,Tolland,University of Connecticut,Storrs,uconn.edu,cahnr.uconn.edu;extension.uconn.edu,6b
+Delaware,DE,New Castle,University of Delaware,Newark,udel.edu,www.udel.edu/academics/colleges/canr/,7b
+Florida,FL,Alachua,University of Florida,Gainesville,ufl.edu,ifas.ufl.edu,9a
+Georgia,GA,Clarke,University of Georgia,Athens,uga.edu,extension.uga.edu,8b
+Hawaii,HI,Honolulu,University of Hawaii at Manoa,Honolulu,hawaii.edu,ctahr.hawaii.edu,
+Idaho,ID,Latah,University of Idaho,Moscow,uidaho.edu,www.uidaho.edu/extension,6b
+Illinois,IL,Champaign,University of Illinois at Urbana-Champaign,Urbana,illinois.edu,extension.illinois.edu;aces.illinois.edu,6a
+Indiana,IN,Tippecanoe,Purdue University,West Lafayette,purdue.edu,extension.purdue.edu;ag.purdue.edu,6a
+Iowa,IA,Story,Iowa State University,Ames,iastate.edu,extension.iastate.edu,5b
+Kansas,KS,Riley,Kansas State University,Manhattan,ksu.edu,extension.ksu.edu,6b
+Kentucky,KY,Fayette,University of Kentucky,Lexington,uky.edu,ca.uky.edu;extension.ca.uky.edu,6b
+Louisiana,LA,East Baton Rouge,Louisiana State University,Baton Rouge,lsu.edu,www.lsuagcenter.com,9a
+Maine,ME,Penobscot,University of Maine,Orono,umaine.edu,extension.umaine.edu,5a
+Maryland,MD,Prince George's,"University of Maryland, College Park",College Park,umd.edu,extension.umd.edu,7b
+Massachusetts,MA,Hampshire,University of Massachusetts Amherst,Amherst,umass.edu,ag.umass.edu,6a
+Michigan,MI,Ingham,Michigan State University,East Lansing,msu.edu,www.canr.msu.edu;www.canr.msu.edu/ipm,6a
+Minnesota,MN,Ramsey,University of Minnesota,Saint Paul,umn.edu,extension.umn.edu,5a
+Mississippi,MS,Oktibbeha,Mississippi State University,Starkville,msstate.edu,extension.msstate.edu,8a
+Missouri,MO,Boone,University of Missouri,Columbia,missouri.edu,extension.missouri.edu,6b
+Montana,MT,Gallatin,Montana State University,Bozeman,montana.edu,www.montana.edu/extension,5a
+Nebraska,NE,Lancaster,University of Nebraska–Lincoln,Lincoln,unl.edu,extension.unl.edu,6a
+Nevada,NV,Washoe,"University of Nevada, Reno",Reno,unr.edu,www.unr.edu/extension,7a
+New Hampshire,NH,Strafford,University of New Hampshire,Durham,unh.edu,extension.unh.edu,6a
+New Jersey,NJ,Middlesex,Rutgers University–New Brunswick,New Brunswick,rutgers.edu,njaes.rutgers.edu,7a
+New Mexico,NM,Doña Ana,New Mexico State University,Las Cruces,nmsu.edu,aces.nmsu.edu,8b
+New York,NY,Tompkins,Cornell University,Ithaca,cornell.edu,cals.cornell.edu;blogs.cornell.edu/ipm,6a
+North Carolina,NC,Wake,North Carolina State University,Raleigh,ncsu.edu,content.ces.ncsu.edu;ipm.ces.ncsu.edu,8a
+North Dakota,ND,Cass,North Dakota State University,Fargo,ndsu.edu,www.ndsu.edu/agriculture/extension,4a
+Ohio,OH,Franklin,Ohio State University,Columbus,osu.edu,extension.osu.edu;ipm.osu.edu;agcrops.osu.edu,6b
+Oklahoma,OK,Payne,Oklahoma State University,Stillwater,okstate.edu,extension.okstate.edu,7a
+Oregon,OR,Benton,Oregon State University,Corvallis,oregonstate.edu,extension.oregonstate.edu,8b
+Pennsylvania,PA,Centre,Pennsylvania State University,University Park,psu.edu,extension.psu.edu,6b
+Rhode Island,RI,Washington,University of Rhode Island,Kingston,uri.edu,web.uri.edu/coopext,6b
+South Carolina,SC,Pickens,Clemson University,Clemson,clemson.edu,www.clemson.edu/extension,8a
+South Dakota,SD,Brookings,South Dakota State University,Brookings,sdstate.edu,extension.sdstate.edu,4b
+Tennessee,TN,Knox,"University of Tennessee, Knoxville",Knoxville,utk.edu,extension.tennessee.edu,7b
+Texas,TX,Brazos,Texas A&M University,College Station,tamu.edu,agrilifeextension.tamu.edu,9a
+Utah,UT,Cache,Utah State University,Logan,usu.edu,extension.usu.edu,6a
+Vermont,VT,Chittenden,University of Vermont,Burlington,uvm.edu,www.uvm.edu/extension,5a
+Virginia,VA,Montgomery,Virginia Tech,Blacksburg,vt.edu,ext.vt.edu,7a
+Washington,WA,Whitman,Washington State University,Pullman,wsu.edu,extension.wsu.edu,6b
+West Virginia,WV,Monongalia,West Virginia University,Morgantown,wvu.edu,extension.wvu.edu,7a
+Wisconsin,WI,Dane,University of Wisconsin–Madison,Madison,wisc.edu,extension.wisc.edu,5b
+Wyoming,WY,Albany,University of Wyoming,Laramie,uwyo.edu,uwextension.org,4a
