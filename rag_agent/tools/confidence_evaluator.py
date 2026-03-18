@@ -100,10 +100,12 @@ class ConfidenceEvaluator:
             consistency_score = 0.7
 
         scope_weights = {
-            "location+month_year+title": 1.0,
-            "location+month_year": 0.85,
-            "location": 0.7,
-            "title": 0.6,
+            "hardiness_zone+month_year+title": 1.0,
+            "hardiness_zone+month_year": 0.9,
+            "hardiness_zone+title": 0.85,
+            "hardiness_zone": 0.8,
+            "month_year": 0.75,
+            "title": 0.7,
             "semantic_only": 0.4,
             "no_results": 0.0,
         }

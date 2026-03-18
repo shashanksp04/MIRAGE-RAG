@@ -2,6 +2,7 @@ from typing import Any, List, Dict, Optional, Tuple
 import re
 import hashlib
 from transformers import AutoTokenizer
+from rag_agent.utils.metadata import extract_hardiness_zone_for_location
 
 
 class ContentUtils:
@@ -144,31 +145,48 @@ class ContentUtils:
             return {"$and": clauses}
 
         # Clean inputs (and treat "NULL" as None)
+        # Note: `location` is only used to derive `hardiness_zone` for metadata filtering.
         location = _clean(location, upper=True)
         month_year = _clean(month_year, upper=False)
         title = _clean(title, upper=False)
+        hardiness_zone = _clean(
+            extract_hardiness_zone_for_location(location or ""),
+            upper=False,
+        )
 
         filter_attempts: List[Tuple[str, Optional[Dict]]] = []
 
         # Most specific -> least specific -> semantic only
-        # also have metadata filter priority for agro-climatic region, cropping season
-        if location and month_year and title:
+        if hardiness_zone and month_year and title:
             filter_attempts.append((
-                "location+month_year+title",
-                _make_where(location=location, month_year=month_year, title=title),
+                "hardiness_zone+month_year+title",
+                _make_where(
+                    hardiness_zone=hardiness_zone,
+                    month_year=month_year,
+                    title=title,
+                ),
             ))
 
-        if location and month_year:
+        if hardiness_zone and title:
             filter_attempts.append((
-                "location+month_year",
-                _make_where(location=location, month_year=month_year),
+                "hardiness_zone+title",
+                _make_where(hardiness_zone=hardiness_zone, title=title),
             ))
-
-        if location:
-            filter_attempts.append(("location", _make_where(location=location)))
 
         if title:
             filter_attempts.append(("title", _make_where(title=title)))
+
+        if month_year:
+            filter_attempts.append(("month_year", _make_where(month_year=month_year)))
+
+        if hardiness_zone and month_year:
+            filter_attempts.append((
+                "hardiness_zone+month_year",
+                _make_where(hardiness_zone=hardiness_zone, month_year=month_year),
+            ))
+
+        if hardiness_zone:
+            filter_attempts.append(("hardiness_zone", _make_where(hardiness_zone=hardiness_zone)))
 
         filter_attempts.append(("semantic_only", None))
 
