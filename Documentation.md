@@ -384,6 +384,16 @@ Impact: Increased reliability in multi-process environment.
 Trade-offs: Slight overhead on first failure detection.
 ```
 
+KeywordExtractor Fresh Client per Call:
+
+```
+Date: 2025-03-18
+Change: KeywordExtractor now creates a fresh Client per extract_keywords call.
+Reason: Reused Client accumulated messages across calls, causing context overflow, timeouts, and "Unknown error" failures in RAG logs.
+Impact: Eliminates message accumulation; each keyword extraction is stateless. Prevents context window overflow and improves reliability.
+Trade-offs: Slight overhead from creating a new Client per call (negligible compared to LLM latency).
+```
+
 ---
 
 # Final Notes

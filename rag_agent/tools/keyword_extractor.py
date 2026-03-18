@@ -16,7 +16,9 @@ class KeywordExtractor:
             model_name: LLM used for keyword extraction
             openai_api_base: Base URL of the OpenAI-compatible API
         """
-        self.client = Client(model_name=model_name, openai_api_base=openai_api_base)
+        self.model_name = model_name
+        self.openai_api_base = openai_api_base
+        # Don't create client here - create fresh one for each call to avoid message accumulation
 
     def _extract_first_json_blob(self, text: str) -> str | None:
         """
@@ -149,7 +151,8 @@ class KeywordExtractor:
             """
 
         try:
-            raw_text = self.client.chat(prompt=prompt)
+            client = Client(model_name=self.model_name, openai_api_base=self.openai_api_base, messages=[])
+            raw_text = client.chat(prompt=prompt)
             print("RAW:", repr(raw_text))
 
             try:
@@ -157,7 +160,7 @@ class KeywordExtractor:
             except Exception:
                 return {"status": "error", 
                         "error_message": "Model did not return a valid JSON list",
-                        "raw_text_preview": raw_text[:500],}
+                        "raw_text_preview": (raw_text or "")[:500],}
 
             if not keywords:
                 return {
