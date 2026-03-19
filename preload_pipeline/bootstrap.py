@@ -1,7 +1,30 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
+
+
+def _setup_rag_agent_path() -> None:
+    """Add rag_agent parent to sys.path before any imports that need it (e.g. csv_ingestion)."""
+    for i, arg in enumerate(sys.argv):
+        if arg == "--rag-agent-dir" and i + 1 < len(sys.argv):
+            rag_agent_dir = Path(sys.argv[i + 1]).resolve()
+            project_root = rag_agent_dir.parent
+            if str(project_root) not in sys.path:
+                sys.path.insert(0, str(project_root))
+            return
+        if arg.startswith("--rag-agent-dir="):
+            val = arg.split("=", 1)[1]
+            if val:
+                rag_agent_dir = Path(val).resolve()
+                project_root = rag_agent_dir.parent
+                if str(project_root) not in sys.path:
+                    sys.path.insert(0, str(project_root))
+            return
+
+
+_setup_rag_agent_path()
 
 from preload.config import PreloadConfig
 from preload.pipeline.backup import backup_persist_dir
@@ -9,7 +32,6 @@ from preload.pipeline.lock import FileLock
 from preload.pipeline.report import RunReport
 from preload.utils.logging import setup_logger
 from preload.utils.paths import add_project_root_to_syspath
-from preload.rag_agent_integration import create_rag_agent_collection_and_utils
 
 from preload.adapters.csv_adapter import CSVAdapter
 from preload.adapters.web_adapter import WebPageListAdapter
@@ -41,6 +63,9 @@ def main() -> int:
 
     # Ensure `import rag_agent...` works by adding the *parent* of rag_agent to sys.path
     add_project_root_to_syspath(rag_agent_dir)
+
+    # Import after path is set up (rag_agent_integration imports rag_agent)
+    from preload.rag_agent_integration import create_rag_agent_collection_and_utils
 
     cfg = PreloadConfig.from_manifest(
         manifest_path=manifest_path,

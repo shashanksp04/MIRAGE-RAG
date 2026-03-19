@@ -252,6 +252,13 @@ class ContentUtils:
             if s["doc_count"] >= min_results
         ]
 
+        for s in valid_strategies:
+            print(
+                f"Strategy passed filter: name={s.get('strategy_name')} "
+                f"score={float(s.get('normalized_score', 0.0)):.4f} "
+                f"doc_count={int(s.get('doc_count', 0))} (min_results={min_results})"
+            )
+
         if valid_strategies:
             best_strategy = max(valid_strategies, key=lambda s: s["normalized_score"])
             return (

@@ -1,0 +1,632 @@
+sources:
+  - name: angular-leaf-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/angular-leaf-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: bacterial-blightcanker
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/bacterial-blightcanker"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: bacterial-diseases-beans
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/bacterial-diseases-beans"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: bacterial-diseases-solanaceous-crops
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/bacterial-diseases-solanaceous-crops"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: bacterial-wilt-cucurbits
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/bacterial-wilt-cucurbits"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: black-rot-cole-crops
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/black-rot-cole-crops"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: crown-gall
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/crown-gall"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: fire-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/fire-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: wetwood
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/wetwood"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: anthracnose-diseases
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/anthracnose-diseases"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: anthracnose-flowers
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/anthracnose-flowers"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: anthracnose-turfgrass
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/anthracnose-turfgrass"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: apple-scab
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/apple-scab"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: black-knot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/black-knot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: black-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/black-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: botryosphaeria-cankerdieback
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/botryosphaeria-cankerdieback"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: brown-patch-turfgrass
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/brown-patch-turfgrass"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: brown-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/brown-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cankers-roses
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cankers-roses"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cedar-apple-rust
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cedar-apple-rust"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cedar-hawthorn-rust
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cedar-hawthorn-rust"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cedar-quince-rust
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cedar-quince-rust"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cercospora-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cercospora-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: cytospora-canker-spruce
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/cytospora-canker-spruce"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: daylily-leaf-streak
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/daylily-leaf-streak"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: diplodia-sphaeropsis-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/diplodia-sphaeropsis-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: dogwood-anthracnose
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/dogwood-anthracnose"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: dollar-spot-turfgrass
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/dollar-spot-turfgrass"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: downy-mildew
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/downy-mildew"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: dutch-elm-disease
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/dutch-elm-disease"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: early-blight-or-alternaria-leaf-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/early-blight-or-alternaria-leaf-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: fairy-rings
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/fairy-rings"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: fusarium-wilt
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/fusarium-wilt"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: gray-leaf-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/gray-leaf-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: gray-mold-botrytis
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/gray-mold-botrytis"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: gray-mold-annuals-herbaceous-perennials
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/gray-mold-annuals-herbaceous-perennials"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: gray-snow-mold
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/gray-snow-mold"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: gummy-stem-blight-or-black-rot-cucurbits
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/gummy-stem-blight-or-black-rot-cucurbits"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: helminthosporium-leaf-blights-sweet-corn
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/helminthosporium-leaf-blights-sweet-corn"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: helminthosporium-leaf-crown-and-root-diseases
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/helminthosporium-leaf-crown-and-root-diseases"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: kabatina-tip-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/kabatina-tip-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: leaf-smuts
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/leaf-smuts"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: lophodermium-needle-cast
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/lophodermium-needle-cast"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: marssonia-leaf-spots-and-blights
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/marssonia-leaf-spots-and-blights"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: mushrooms-and-puffballs
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/mushrooms-and-puffballs"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: needle-cast-of-spruce
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/needle-cast-of-spruce"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: oak-leaf-blister
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/oak-leaf-blister"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: oak-wilt
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/oak-wilt"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: peach-leaf-curl-and-plum-pocket
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/peach-leaf-curl-and-plum-pocket"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: pestalotiopsis-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/pestalotiopsis-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: phomopsis-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/phomopsis-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: phomopsis-gall
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/phomopsis-gall"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: phytophthora-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/phytophthora-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: phytophthora-canker-basal-rot-root-rot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/phytophthora-canker-basal-rot-root-rot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: pine-cankers-and-dieback
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/pine-cankers-and-dieback"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: pink-snow-mold
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/pink-snow-mold"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: powdery-mildew
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/powdery-mildew"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: powdery-mildew-flowers
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/powdery-mildew-flowers"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: pythium-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/pythium-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: red-thread
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/red-thread"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: rhizosphaera-needle-cast
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/rhizosphaera-needle-cast"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: rust-turf
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/rust-turf"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: rust-vegetables
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/rust-vegetables"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: scab-cucurbits
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/scab-cucurbits"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: septoria-leaf-spot-tomato
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/septoria-leaf-spot-tomato"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: slime-molds
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/slime-molds"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: smooth-patch
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/smooth-patch"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: sooty-mold
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/sooty-mold"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: stigmina-needle-blight
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/stigmina-needle-blight"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: summer-patch-and-necrotic-ring-spot
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/summer-patch-and-necrotic-ring-spot"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: verticillium-wilt-small-fruits
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/verticillium-wilt-small-fruits"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: verticillium-wilt
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/verticillium-wilt"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: verticillium-wilt-flowers
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/verticillium-wilt-flowers"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: white-pine-blister-rust
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/white-pine-blister-rust"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: white-rust
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/white-rust"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: wood-rots-and-decays
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/wood-rots-and-decays"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: ash-yellows
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/ash-yellows"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: aster-yellow
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/aster-yellow"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois
+
+  - name: elm-yellows
+    type: web_page_list
+    urls:
+      - "https://extension.illinois.edu/plant-problems/elm-yellows"
+    entity_type: disease
+    source_org: Illinois Extension
+    location: Illinois

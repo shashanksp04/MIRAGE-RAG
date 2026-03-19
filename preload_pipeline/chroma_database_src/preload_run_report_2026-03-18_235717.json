@@ -1,0 +1,16 @@
+{
+  "manifest_path": "/u/ssingh38/MetaMirage/preload_pipeline/uiuc_generated_sources.yaml",
+  "persist_dir": "/u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/chroma_db",
+  "collection": "meta-mirage_collection",
+  "started_at": "2026-03-18T23:56:58.904336",
+  "finished_at": "2026-03-18T23:57:17.176658",
+  "backup_path": null,
+  "sources_started": 79,
+  "sources_succeeded": 79,
+  "sources_failed": 0,
+  "items_processed": 79,
+  "items_added": 84,
+  "items_skipped": 0,
+  "items_failed": 1,
+  "errors": []
+}

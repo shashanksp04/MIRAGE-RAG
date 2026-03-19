@@ -1,0 +1,446 @@
+{
+  "illinois": [
+    {
+      "Alfalfa": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1221
+      }
+    },
+    {
+      "Apples": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 334
+      }
+    },
+    {
+      "Asparagus": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 5
+      }
+    },
+    {
+      "Barley": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 549
+      }
+    },
+    {
+      "Blueberries": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 59
+      }
+    },
+    {
+      "Broccoli": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 12
+      }
+    },
+    {
+      "Buckwheat": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 71
+      }
+    },
+    {
+      "Cabbage": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 85
+      }
+    },
+    {
+      "Caneberries": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 4
+      }
+    },
+    {
+      "Canola": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 50
+      }
+    },
+    {
+      "Cantaloupes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 48
+      }
+    },
+    {
+      "Carrots": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 24
+      }
+    },
+    {
+      "Cherries": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1
+      }
+    },
+    {
+      "Clover/Wildflowers": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1073
+      }
+    },
+    {
+      "Corn": {
+        "disease": [
+          "Soybean cyst nematode"
+        ],
+        "pests": [],
+        "occurrence": 2338
+      }
+    },
+    {
+      "Cotton": {
+        "disease": [
+          "Cotton bollworm (often listed as a pest/disease complex)"
+        ],
+        "pests": [
+          "Cotton bollworm"
+        ],
+        "occurrence": 28
+      }
+    },
+    {
+      "Cucumbers": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 76
+      }
+    },
+    {
+      "Dry_Beans": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 524
+      }
+    },
+    {
+      "Durum_Wheat": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 10
+      }
+    },
+    {
+      "Gourds": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 123
+      }
+    },
+    {
+      "Grapes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 167
+      }
+    },
+    {
+      "Greens": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 21
+      }
+    },
+    {
+      "Herbs": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 192
+      }
+    },
+    {
+      "Hops": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 5
+      }
+    },
+    {
+      "Millet": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 293
+      }
+    },
+    {
+      "Mint": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 11
+      }
+    },
+    {
+      "Mustard": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1
+      }
+    },
+    {
+      "Nectarines": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 5
+      }
+    },
+    {
+      "Oats": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1178
+      }
+    },
+    {
+      "Onions": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 8
+      }
+    },
+    {
+      "Other_Hay/Non_Alfalfa": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1220
+      }
+    },
+    {
+      "Peaches": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 357
+      }
+    },
+    {
+      "Peanuts": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1
+      }
+    },
+    {
+      "Pears": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 17
+      }
+    },
+    {
+      "Peas": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 326
+      }
+    },
+    {
+      "Pecans": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 213
+      }
+    },
+    {
+      "Peppers": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 43
+      }
+    },
+    {
+      "Plums": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 5
+      }
+    },
+    {
+      "Potatoes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 620
+      }
+    },
+    {
+      "Pumpkins": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 925
+      }
+    },
+    {
+      "Radishes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 7
+      }
+    },
+    {
+      "Rape_Seed": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 2
+      }
+    },
+    {
+      "Rice": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 181
+      }
+    },
+    {
+      "Rye": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 917
+      }
+    },
+    {
+      "Sorghum": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1286
+      }
+    },
+    {
+      "Soybeans": {
+        "disease": [
+          "Soybean cyst nematode"
+        ],
+        "pests": [],
+        "occurrence": 2978
+      }
+    },
+    {
+      "Speltz": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 12
+      }
+    },
+    {
+      "Spring_Wheat": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 122
+      }
+    },
+    {
+      "Squash": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 125
+      }
+    },
+    {
+      "Strawberries": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 38
+      }
+    },
+    {
+      "Sugarbeets": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 111
+      }
+    },
+    {
+      "Sunflower": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 477
+      }
+    },
+    {
+      "Sweet_Corn": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 689
+      }
+    },
+    {
+      "Sweet_Potatoes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 4
+      }
+    },
+    {
+      "Switchgrass": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 166
+      }
+    },
+    {
+      "Tobacco": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 53
+      }
+    },
+    {
+      "Tomatoes": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 85
+      }
+    },
+    {
+      "Triticale": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 339
+      }
+    },
+    {
+      "Turnips": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 16
+      }
+    },
+    {
+      "Vetch": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 38
+      }
+    },
+    {
+      "Walnuts": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 469
+      }
+    },
+    {
+      "Winter_Wheat": {
+        "disease": [],
+        "pests": [],
+        "occurrence": 1222
+      }
+    }
+  ]
+}

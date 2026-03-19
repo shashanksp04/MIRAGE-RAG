@@ -1,0 +1,63 @@
+================================================================================
+RAG Agent Standalone Test
+================================================================================
+Query: What is Agent Development Kit from Google?
+Test Model: Qwen2.5-VL-3B-Instruct
+Embed Model: BAAI/bge-base-en-v1.5
+Device: None
+API Base: http://127.0.0.1:11434/v1
+Reset Collection: False
+Verbose: False
+================================================================================
+
+[RAG Agent Init] Creating agent with model: openai/Qwen2.5-VL-3B-Instruct
+[RAG Agent Init] Tools to register: 6 tools
+[RAG Agent Init]   Tool 1: _tracked_retrieve_content
+[RAG Agent Init]   Tool 2: _tracked_evaluate_confidence
+[RAG Agent Init]   Tool 3: _tracked_web_search
+[RAG Agent Init]   Tool 4: _tracked_add_web_content
+[RAG Agent Init]   Tool 5: _tracked_add_pdf_content
+[RAG Agent Init]   Tool 6: _tracked_extract_keywords
+[RAG Agent Init] Agent has 6 tool(s) in tools attribute
+[RAG Agent Init] Agent attributes: ['after_agent_callback', 'after_model_callback', 'after_tool_callback', 'before_agent_callback', 'before_model_callback', 'before_tool_callback', 'canonical_after_agent_callbacks', 'canonical_after_model_callbacks', 'canonical_after_tool_callbacks', 'canonical_before_agent_callbacks', 'canonical_before_model_callbacks', 'canonical_before_tool_callbacks', 'canonical_global_instruction', 'canonical_instruction', 'canonical_model', 'canonical_on_model_error_callbacks', 'canonical_on_tool_error_callbacks', 'canonical_tools', 'clone', 'code_executor']
+
+[Query] Processing query...
+[Query] Session ID: test_session_2e23004d
+
+
+ ### Created new session: test_session_2e23004d
+
+User > What is Agent Development Kit from Google?
+[RAG Tools] retrieve_content: CALLED
+[RAG Tools] ✗ retrieve_content: FAILED - No results found
+[RAG Tools] evaluate_retrieval_confidence: CALLED
+[RAG Tools] ✓ evaluate_retrieval_confidence: SUCCESS (confidence: low)
+[RAG Tools] ✗ extract_keywords: FAILED - Model did not return a valid JSON list
+[RAG Tools] web_search: CALLED (query: Agent Development Kit Google...)
+[RAG Tools] ✓ web_search: SUCCESS (10 results)
+[RAG Tools] ✗ add_web_content: FAILED - No new content to add after deduplication
+[RAG Tools] retrieve_content: CALLED
+[RAG Tools] ✗ retrieve_content: FAILED - No results found
+[RAG Tools] evaluate_retrieval_confidence: CALLED
+[RAG Tools] ✓ evaluate_retrieval_confidence: SUCCESS (confidence: low)
+Rag_Agent > "No sufficient reliable information available to return."
+
+[Extraction] Extracting response...
+
+================================================================================
+RESULTS
+================================================================================
+
+Tools Called: _tracked_retrieve_content, _tracked_evaluate_confidence, _tracked_extract_keywords, _tracked_web_search, _tracked_add_web_content, _tracked_retrieve_content, _tracked_evaluate_confidence
+
+✓ Web search was performed during retrieval
+
+--------------------------------------------------------------------------------
+RAG Agent Response:
+--------------------------------------------------------------------------------
+"No sufficient reliable information available to return."
+
+Response length: 57 characters
+
+✓ Response appears valid
+================================================================================

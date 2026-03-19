@@ -1,0 +1,15 @@
+batches:
+  - state: Illinois
+    category: disease
+    items:
+      - url: "https://en.wikipedia.org/wiki/Soybean_cyst_nematode"
+        name: "Soybean cyst nematode"
+      - url: "https://en.wikipedia.org/wiki/Cotton_bollworm"
+        name: "Cotton bollworm (often listed as a pest/disease complex)"
+
+  - state: Illinois
+    category: pests
+    items:
+      - url: "https://en.wikipedia.org/wiki/Cotton_bollworm"
+        name: "Cotton bollworm"
+

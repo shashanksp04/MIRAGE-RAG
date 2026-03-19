@@ -1,0 +1,48 @@
+# Example manifest for the preload pipeline.
+# Copy to manifest.yaml and adjust paths/settings.
+# Metadata policy assumptions:
+# - For web_page_list and pdf_dir sources, always provide month_year (YYYY-MM).
+# - For csv sources, month_year may remain empty by design.
+# - location should use "State, County" or "State" for hardiness-zone derivation.
+
+# source:
+#   type: csv  # or web_page_list, pdf_dir
+#   path: path/to/source
+# output:
+#   path: path/to/output
+
+---
+
+## `manifest.example.yaml`
+
+```yaml
+sources:
+  - name: usda_plants_csv
+    type: csv
+    path: data/seeds/usda_plants.csv
+    entity_type: plant
+    source_org: USDA
+    location: "Illinois"         # preferred: "State, County" or "State"
+    # location_field: "Location" # optional: per-row location column; overrides source-level location
+    tags: [plants, usa]
+    id_field: "Symbol"          # optional: unique column in CSV
+
+  - name: ncsu_toolbox_pages
+    type: web_page_list
+    urls:
+      - "https://plants.ces.ncsu.edu/plants/"
+    entity_type: plant
+    source_org: NC State Extension
+    location: "North Carolina"
+    month_year: "2026-03"        # required for web/pdf by project policy
+    tags: [plants, extension]
+    max_pages: 50               # optional safety cap for upstream URL generators
+
+  - name: apis_id_aids_pdfs
+    type: pdf_dir
+    path: data/seeds/aphis_pdfs/
+    entity_type: pest
+    source_org: USDA APHIS
+    location: "United States"
+    month_year: "2026-03"        # required for web/pdf by project policy
+    tags: [pdf, identification]
