@@ -102,8 +102,10 @@ class WebSearch:
             domains_to_use = filtered_domains[:6]
             site_clause = " OR ".join(f"site:{d}" for d in domains_to_use)
             search_query = f"{query} ({site_clause}) -site:.com -site:.org"
+            print(f"[WebSearch] Query: {query} | Filtered domains: {domains_to_use}")
         else:
             search_query = f"{query}"
+            print(f"[WebSearch] Query: {query} | No domain filter")
         params = {
             "query": search_query,
             "count": results_to_extract_count,
@@ -162,6 +164,7 @@ class WebSearch:
                     "url": item.get("url"),
                     "month_year": month_year,
                 })
+            print(f"[WebSearch] Result: {item.get('title', 'N/A')} | {url}")
 
             # extracted_text = self.extract_data(url)
 
@@ -180,6 +183,7 @@ class WebSearch:
 
 
 
+        print(f"[WebSearch] Query '{query}' returned {len(results)} URL(s)")
         return {
             "status": "success",
             "query": query,

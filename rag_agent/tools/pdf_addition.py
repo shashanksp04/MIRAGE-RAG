@@ -1,5 +1,5 @@
 from typing import Dict, List, Any, Optional
-from pypdf import PdfReader
+import pdfplumber
 import re
 from rag_agent.utils.metadata import build_canonical_chunk_metadata
 
@@ -41,8 +41,42 @@ class PDFAddition:
 
         return text.strip()
 
+    def _table_to_row_narratives(self, table: List[List[Any]]) -> str:
+        """Convert a table (list of rows) to row-as-narrative format.
+
+        Each data row becomes "header1 is value1 header2 is value2 ...".
+        First row is treated as headers; subsequent rows as data.
+
+        Args:
+            table: List of rows, each row is a list of cell values
+
+        Returns:
+            Newline-separated narrative paragraphs, one per data row
+        """
+        if not table or len(table) < 2:
+            return ""
+
+        headers = []
+        for cell in table[0]:
+            val = (cell or "").strip() if cell is not None else ""
+            headers.append(val if val else f"Column{len(headers)}")
+
+        rows_text = []
+        for row in table[1:]:
+            parts = []
+            for i, cell in enumerate(row):
+                header = headers[i] if i < len(headers) else f"Column{i}"
+                val = (cell or "").strip() if cell is not None else ""
+                parts.append(f"{header} is {val}")
+            rows_text.append(" ".join(parts).strip())
+
+        return "\n".join(r for r in rows_text if r)
+
     def extract_pdf_pages(self, pdf_path: str) -> List[Dict[str, str]]:
         """Extracts and cleans text from each page of a PDF.
+
+        Uses pdfplumber for extraction. Body text and tables are combined;
+        each table row is converted to narrative format ("header is value ...").
 
         Args:
             pdf_path: Local filesystem path to the PDF file
@@ -51,20 +85,34 @@ class PDFAddition:
             List of dicts with page number and cleaned text:
             [{"page": int, "text": str}]
         """
-        reader = PdfReader(pdf_path)
         pages = []
 
-        for page_num, page in enumerate(reader.pages, start=1):
-            raw_text = page.extract_text()
-            if not raw_text:
-                continue
+        with pdfplumber.open(pdf_path) as pdf:
+            for page_num, page in enumerate(pdf.pages, start=1):
+                raw_text = page.extract_text() or ""
 
-            clean_text = self.clean_pdf_text(raw_text)
-            if clean_text:
-                pages.append({
-                    "page": page_num,
-                    "text": clean_text
-                })
+                tables = page.extract_tables() or []
+                table_texts = []
+                for table in tables:
+                    narrative = self._table_to_row_narratives(table)
+                    if narrative:
+                        table_texts.append(narrative)
+
+                combined = raw_text
+                if table_texts:
+                    if combined:
+                        combined += "\n\n"
+                    combined += "\n\n".join(table_texts)
+
+                if not combined.strip():
+                    continue
+
+                clean_text = self.clean_pdf_text(combined)
+                if clean_text:
+                    pages.append({
+                        "page": page_num,
+                        "text": clean_text
+                    })
 
         return pages
 

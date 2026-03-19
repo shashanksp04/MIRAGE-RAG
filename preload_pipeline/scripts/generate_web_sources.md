@@ -63,7 +63,7 @@ sources:
 ## Usage example
 
 ```bash
-python preload_pipeline/Dict-Value-Database/generate_web_sources.py \
+python preload_pipeline/scripts/generate_web_sources.py \
   --base-url "https://extension.illinois.edu/plant-problems/" \
   --names-file "preload_pipeline/uiuc_names.txt" \
   --location "Illinois" \

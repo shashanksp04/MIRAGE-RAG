@@ -17,7 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 # Ensure `preload` and `rag_agent` imports work when running from repo root.
 _THIS_FILE = Path(__file__).resolve()
-_PRELOAD_DIR = _THIS_FILE.parents[1]  # preload_pipeline/
+_PRELOAD_DIR = _THIS_FILE.parents[2]  # preload_pipeline/
 sys.path.insert(0, str(_PRELOAD_DIR))
 
 from preload.utils.paths import add_project_root_to_syspath  # noqa: E402

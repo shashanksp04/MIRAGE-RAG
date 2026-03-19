@@ -185,7 +185,7 @@ Behavior:
 * Iterates over PDFs in directory
 * Calls `PDFAddition.add_pdf_content(...)`
 * Passes `location` and `month_year` metadata when present in source config
-* Extraction via `pypdf`
+* Extraction via `pdfplumber`
 * Chunking via rag_agent token chunker
 * Deduplication via content hash
 * Writes via `collection.add(...)`
@@ -345,9 +345,9 @@ Based on the example.
 If you need to generate many `web_page_list` sources from a list of names, use:
 
 ```
-python Dict-Value-Database/generate_web_sources.py \
+python scripts/generate_web_sources.py \
   --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "Dict-Value-Database/input.txt" \
+  --names-file "names/uiuc.txt" \
   --location "Illinois" \
   --output "generated_sources.yaml"
 ```
@@ -433,10 +433,25 @@ It avoids architectural drift and ensures the vector database built offline beha
 
 ## Example scripts:
 
-python Dict-Value-Database/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "./names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "./uiuc_generated_sources.yaml"
+### For ingesting urls into Database
+python scripts/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "./names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "./uiuc_generated_sources.yaml"
 
 python bootstrap.py \
   --manifest uiuc_generated_sources.yaml \
   --persist-dir ./chroma_database_src/chroma_db \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
+
+### For creating the Dict-Value-Database
+
+python Dict-Value-Database/scripts/generate_web_sources.py \
+  --base-url "https://extension.illinois.edu/plant-problems/" \
+  --names-file "names/uiuc.txt" \
+  --state "Illinois" \
+  --category "disease" \
+  --output "Dict-Value-Database/YAMLfilesForDict/uiuc.yaml"
+
+python Dict-Value-Database/scripts/build_crop_disease_dictionary.py \
+  --config Dict-Value-Database/YAMLfilesForDict/uiuc.yaml \
+  --csv ../Datasets/county_crops_frequency_multi_year_cleaned.csv \
+  --output Dict-Value-Database/output/crop_disease_output.json
