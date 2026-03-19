@@ -345,9 +345,9 @@ Based on the example.
 If you need to generate many `web_page_list` sources from a list of names, use:
 
 ```
-python scripts/generate_web_sources.py \
+python Dict-Value-Database/generate_web_sources.py \
   --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "scripts/input.txt" \
+  --names-file "Dict-Value-Database/input.txt" \
   --location "Illinois" \
   --output "generated_sources.yaml"
 ```
@@ -433,7 +433,7 @@ It avoids architectural drift and ensures the vector database built offline beha
 
 ## Example scripts:
 
-python scripts/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "./names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "./uiuc_generated_sources.yaml"
+python Dict-Value-Database/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "./names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "./uiuc_generated_sources.yaml"
 
 python bootstrap.py \
   --manifest uiuc_generated_sources.yaml \
