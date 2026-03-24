@@ -1,0 +1,7 @@
+[2026-03-23 21:36:35,838] INFO - Lock acquired: /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/.preload.lock
+[2026-03-23 21:36:35,840] INFO - Backup: /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/chroma_db -> /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/backups/2026-03-23_213635_before_preload
+[2026-03-23 21:36:39,830] INFO - Source: uiuc_batch1_pdfs_plant_diseases (pdf_dir)
+[2026-03-23 21:36:42,748] INFO - Lock released: /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/.preload.lock
+[2026-03-23 21:36:42,752] INFO - Report written: /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/preload_run_report_2026-03-23_213642.json
+[2026-03-23 21:36:42,752] INFO - Wrote report: /u/ssingh38/MetaMirage/preload_pipeline/chroma_database_src/preload_run_report_2026-03-23_213642.json
+[2026-03-23 21:36:42,753] INFO - Sources: 1/1 ok, 0 failed | Items: processed=3 added=25 skipped=0 failed=0

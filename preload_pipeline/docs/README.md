@@ -434,10 +434,10 @@ It avoids architectural drift and ensures the vector database built offline beha
 ## Example scripts:
 
 ### For ingesting urls into Database
-python scripts/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "./names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "./uiuc_generated_sources.yaml"
+python Ingestion/URLs/scripts/generate_web_sources.py --base-url "https://extension.illinois.edu/plant-problems/"   --names-file "Ingestion/URLs/names/uiuc.txt"    --location "Illinois" --entity-type "disease"  --source-org "Illinois Extension" --output "Ingestion/URLs/Outputs/uiuc_generated_sources.yaml"
 
 python bootstrap.py \
-  --manifest uiuc_generated_sources.yaml \
+  --manifest Ingestion/URLs/YAMLfiles/uiuc_generated_sources.yaml \
   --persist-dir ./chroma_database_src/chroma_db \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
@@ -446,7 +446,7 @@ python bootstrap.py \
 
 python Dict-Value-Database/scripts/generate_web_sources.py \
   --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "names/uiuc.txt" \
+  --names-file "Ingestion/URLs/names/uiuc.txt" \
   --state "Illinois" \
   --category "disease" \
   --output "Dict-Value-Database/YAMLfilesForDict/uiuc.yaml"

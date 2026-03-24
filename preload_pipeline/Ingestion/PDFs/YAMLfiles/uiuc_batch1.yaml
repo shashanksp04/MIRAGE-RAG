@@ -1,0 +1,9 @@
+sources:
+  - name: uiuc_batch1_pdfs_plant_diseases
+    type: pdf_dir
+    path: Ingestion/PDFs/Data/batch1
+    entity_type: disease
+    source_org: Illinois Extension
+    location: "United States"
+    month_year: "1990-04"
+    tags: [pdf, identification]
