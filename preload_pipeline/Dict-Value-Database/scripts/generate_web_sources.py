@@ -50,8 +50,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--url-style",
         choices=["wikipedia", "slug"],
-        default="wikipedia",
-        help="URL slug style: wikipedia (spaces->underscores) or slug (lowercase hyphenated). Default: wikipedia.",
+        default="slug",
+        help="URL slug style: wikipedia (spaces->underscores) or slug (lowercase hyphenated). Default: slug.",
     )
     return parser.parse_args()
 

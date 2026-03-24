@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import json
 import re
@@ -8,7 +9,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 try:
     import yaml as _yaml  # type: ignore
@@ -22,6 +23,18 @@ sys.path.insert(0, str(_PRELOAD_DIR))
 
 from preload.utils.paths import add_project_root_to_syspath  # noqa: E402
 
+# Text truncation for LLM context (chars).
+_LLM_TEXT_MAX_CHARS = 8000
+
+DEFAULT_MODEL = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+DEFAULT_OPENAI_API_BASE = "http://127.0.0.1:11434/v1"
+
+_LOG_PREFIX = "[build_crop_disease]"
+
+
+def _log(msg: str) -> None:
+    print(f"{_LOG_PREFIX} {msg}", flush=True)
+
 
 def _default_rag_agent_dir() -> Path:
     # preload_pipeline/ is sibling to rag_agent/
@@ -32,123 +45,147 @@ def _normalize_state_key(state: str) -> str:
     return (state or "").strip().lower()
 
 
-def _normalize_text_to_tokens(text: str) -> List[str]:
+def _extract_first_json_blob(text: str) -> Optional[str]:
     """
-    Normalize free text for token-based crop phrase matching.
+    Extract the first JSON array or object from possibly messy LLM output.
 
-    - lowercases
-    - turns any non [a-z0-9] sequence into a space
-    - collapses whitespace
+    Handles SGLang/Llama output with code fences and surrounding prose.
     """
-    t = (text or "").lower()
-    t = re.sub(r"[^a-z0-9]+", " ", t)
-    t = re.sub(r"\s+", " ", t).strip()
-    return t.split() if t else []
+    t = (text or "").strip()
+    if not t:
+        return None
+    t = re.sub(r"```(?:json)?", "", t, flags=re.IGNORECASE).replace("```", "").strip()
+    m = re.search(r"\[[\s\S]*?\]", t)
+    if m:
+        return m.group(0)
+    m = re.search(r"\{[\s\S]*?\}", t)
+    if m:
+        return m.group(0)
+    return None
 
 
-def _make_crop_token_variants(crop_name: str) -> List[List[str]]:
+def _parse_crops_any(raw_text: str) -> List[str]:
     """
-    Build token-sequence variants for a canonical crop name.
+    Parse crop names from LLM response.
 
-    This handles common singular/plural mismatches (e.g., "Soybeans" vs "soybean").
+    Accepts: ["a","b"], {"crops":["a","b"]}, single quotes, trailing commas.
+    Returns list of non-empty strings.
     """
-    base = _normalize_text_to_tokens(crop_name.replace("_", " "))
-    if not base:
+    blob = _extract_first_json_blob(raw_text) or (raw_text or "").strip()
+    if not blob:
         return []
 
-    variants: List[List[str]] = []
+    try:
+        obj = json.loads(blob)
+    except json.JSONDecodeError:
+        try:
+            obj = ast.literal_eval(blob)
+        except Exception:
+            return []
 
-    def _add(seq: List[str]) -> None:
-        if seq and seq not in variants:
-            variants.append(seq)
+    if isinstance(obj, dict):
+        obj = obj.get("crops") or obj.get("keywords") or obj.get("keyphrases") or obj.get("terms")
 
-    _add(base)
+    if isinstance(obj, str):
+        obj = obj.strip()
+        try:
+            obj = json.loads(obj)
+        except Exception:
+            try:
+                obj = ast.literal_eval(obj)
+            except Exception:
+                return []
 
-    # Simple singular/plural for the last token.
-    last = base[-1]
-    if last.endswith("s") and len(last) > 3:
-        _add(base[:-1] + [last[:-1]])
-    else:
-        _add(base[:-1] + [last + "s"])
-
-    return variants
-
-
-def _find_sequence_occurrences(tokens: Sequence[str], seq: Sequence[str]) -> List[Tuple[int, int]]:
-    """
-    Return list of (start, end) token indices where seq matches exactly (end exclusive).
-    """
-    if not seq or not tokens or len(seq) > len(tokens):
+    if not isinstance(obj, list):
         return []
-    occurrences: List[Tuple[int, int]] = []
-    n = len(tokens)
-    m = len(seq)
-    seq_list = list(seq)
-    for i in range(n - m + 1):
-        if tokens[i : i + m] == seq_list:
-            occurrences.append((i, i + m))
-    return occurrences
+
+    out: List[str] = []
+    for item in obj:
+        if isinstance(item, str):
+            s = item.strip()
+            if s:
+                out.append(s)
+    return out
 
 
-def _ranges_overlap(a: Tuple[int, int], b: Tuple[int, int]) -> bool:
-    # [a0,a1) and [b0,b1) overlap?
-    return not (a[1] <= b[0] or a[0] >= b[1])
-
-
-def _match_crops_with_suppression(*, text_tokens: List[str], crop_names: List[str]) -> Set[str]:
+def _extract_crops_via_llm(
+    *,
+    text: str,
+    title: Optional[str],
+    crop_names: List[str],
+    llm_client: Any,
+    item_url: str = "",
+    verbose: bool = True,
+) -> Set[str]:
     """
-    Match crop names in the text using a token-sequence phrase matcher.
+    Call LLM to extract crop names from document text.
 
-    Most-specific-first suppression:
-    - process longer crops first (more tokens)
-    - suppress a shorter crop if its occurrence overlaps with any already-kept longer crop occurrence
-      (prevents generic sub-matches like "corn" inside "sweet corn").
+    Returns canonical crop names from crop_names that the LLM identifies as present.
     """
-    if not crop_names or not text_tokens:
+    if not crop_names or not (text or "").strip():
         return set()
 
-    crop_variants: Dict[str, List[List[str]]] = {}
-    crop_max_len: Dict[str, int] = {}
-    crop_occurrences: Dict[str, List[Tuple[int, int]]] = defaultdict(list)
+    truncated = (text or "")[: _LLM_TEXT_MAX_CHARS]
+    crop_list_str = ", ".join(sorted(crop_names))
 
-    for crop in crop_names:
-        variants = _make_crop_token_variants(crop)
-        if not variants:
-            continue
-        crop_variants[crop] = variants
-        max_len = max(len(v) for v in variants if v)
-        crop_max_len[crop] = max_len
+    parts = ["Document title: " + (title or "(unknown)"), "", "Document text:", truncated]
+    doc_block = "\n".join(parts)
 
-        occ: List[Tuple[int, int]] = []
-        for v in variants:
-            occ.extend(_find_sequence_occurrences(text_tokens, v))
-        crop_occurrences[crop] = sorted(set(occ))
+    prompt = f"""This document describes agricultural diseases, pests, or similar topics.
 
-    sorted_crops = sorted(
-        crop_variants.keys(),
-        key=lambda c: (crop_max_len.get(c, 0), len(c)),
-        reverse=True,
-    )
+CANDIDATE CROPS (only use names from this exact list):
+{crop_list_str}
 
-    kept_ranges: List[Tuple[int, int]] = []
-    matched: Set[str] = set()
+TASK: Identify which crops from the list above are explicitly mentioned or clearly discussed in the document. Return ONLY those crop names.
 
-    for crop in sorted_crops:
-        occs = crop_occurrences.get(crop, [])
-        if not occs:
-            continue
+Return a JSON array of crop names. No prose. No markdown code fences unless required for valid JSON.
+Example: ["Corn", "Soybeans"]
 
-        allowed: List[Tuple[int, int]] = []
-        for r in occs:
-            if any(_ranges_overlap(r, kr) for kr in kept_ranges):
-                continue
-            allowed.append(r)
+{doc_block}"""
 
-        if allowed:
-            matched.add(crop)
-            kept_ranges.extend(allowed)
+    if verbose:
+        _log(f"Sending to LLM | url={item_url!r} | title={title!r} | text_len={len(text)} chars (truncated to {len(truncated)})")
+        _log(f"Prompt preview (first 400 chars): {prompt[:400]}...")
+        _log(f"Candidate crops ({len(crop_names)}): {crop_list_str[:200]}{'...' if len(crop_list_str) > 200 else ''}")
 
-    return matched
+    try:
+        raw = llm_client.chat(prompt=prompt)
+    except Exception as e:
+        _log(f"LLM crop extraction failed: {e}")
+        return set()
+
+    if not raw or not isinstance(raw, str):
+        _log(f"LLM returned empty or non-string: {type(raw)}")
+        return set()
+
+    if verbose:
+        _log(f"LLM raw response ({len(raw)} chars): {raw[:800]}{'...' if len(raw) > 800 else ''}")
+
+    parsed = _parse_crops_any(raw)
+    if not parsed:
+        _log(f"Could not parse crop list from LLM response")
+        return set()
+
+    if verbose:
+        _log(f"Parsed crops from response: {parsed}")
+
+    # Build normalization map: normalized_key -> canonical crop_name
+    norm_to_canon: Dict[str, str] = {}
+    for c in crop_names:
+        key = c.replace("_", " ").strip().lower()
+        if key:
+            norm_to_canon[key] = c
+
+    result: Set[str] = set()
+    for p in parsed:
+        key = (p or "").replace("_", " ").strip().lower()
+        if key and key in norm_to_canon:
+            result.add(norm_to_canon[key])
+
+    if verbose:
+        _log(f"Matched canonical crops: {sorted(result)}")
+
+    return result
 
 
 def _parse_crops_cell(cell: str) -> Iterable[Tuple[str, int]]:
@@ -399,12 +436,33 @@ def main() -> int:
     p.add_argument("--csv", required=True, help="Path to county_crops_frequency_multi_year_cleaned.csv")
     p.add_argument("--output", default="build_crop_disease_dictionary_output.json", help="Output JSON path")
     p.add_argument("--rag-agent-dir", default=str(_default_rag_agent_dir()), help="Path to rag_agent sibling dir")
+    p.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"LLM model name (default: {DEFAULT_MODEL})",
+    )
+    p.add_argument(
+        "--openai-api-base",
+        default=DEFAULT_OPENAI_API_BASE,
+        help="OpenAI-compatible API base URL (e.g. SGLang). Empty for cloud OpenAI.",
+    )
+    p.add_argument("--verbose", action="store_true", default=True, help="Log processing details (default: True)")
+    p.add_argument("--quiet", action="store_true", help="Disable verbose logging")
     args = p.parse_args()
+
+    verbose = args.verbose and not args.quiet
 
     config_path = Path(args.config).resolve()
     csv_path = Path(args.csv).resolve()
     out_path = Path(args.output).resolve()
     rag_agent_dir = Path(args.rag_agent_dir).resolve()
+
+    _log(f"Config: {config_path}")
+    _log(f"CSV: {csv_path}")
+    _log(f"Output: {out_path}")
+    _log(f"Model: {args.model}")
+    _log(f"API base: {args.openai_api_base or '(cloud OpenAI)'}")
+    _log(f"Verbose: {verbose}")
 
     if not config_path.exists():
         raise FileNotFoundError(f"Config not found: {config_path}")
@@ -420,7 +478,26 @@ def main() -> int:
     if not isinstance(batches_cfg, list) or not batches_cfg:
         raise ValueError("YAML must contain non-empty top-level 'batches' list")
 
+    _log(f"Loaded {len(batches_cfg)} batches from config")
+
     canonical_state_name_fn, web_addition_cls = _load_rag_modules(rag_agent_dir)
+
+    # LLM client for crop extraction (fresh instance per call; created in loop).
+    api_base = (args.openai_api_base or "").strip()
+    model_name = (args.model or DEFAULT_MODEL).strip()
+    use_local = bool(api_base)
+
+    def _make_llm_client() -> Any:
+        if use_local:
+            from chat_models.Client import Client as _Client
+            return _Client(
+                model_name=model_name,
+                openai_api_key="EMPTY",
+                openai_api_base=api_base,
+                messages=[],
+            )
+        from chat_models.OpenAI_Chat import OpenAI_Chat as _OpenAIChat
+        return _OpenAIChat(model_name=model_name, messages=[])
 
     # Optional extractor (only used if WebAddition import + deps are available).
     web_adder: Optional[Any] = None
@@ -430,8 +507,12 @@ def main() -> int:
 
         try:
             web_adder = web_addition_cls(collection=None, content_utils=_ContentUtilsStub())  # type: ignore[arg-type]
+            _log("WebAddition available for HTML extraction")
         except Exception:
             web_adder = None
+            _log("WebAddition not available, will use requests fallback for HTML")
+    else:
+        _log("WebAddition not loaded, will use requests fallback for HTML")
 
     # Validate batches + gather states/categories.
     wanted_states_canon: Set[str] = set()
@@ -461,6 +542,8 @@ def main() -> int:
         items_by_state_and_category[(canon_state, category)].extend(items)
         batches.append({"canon_state": canon_state, "category": category, "items": items})
 
+    _log(f"Batches: states={sorted(wanted_states_canon)}, categories_by_state={dict(categories_by_state)}")
+
     # Parse CSV once and accumulate occurrence for wanted states.
     state_crop_occurrence: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
@@ -482,6 +565,10 @@ def main() -> int:
             for crop_name, count in _parse_crops_cell(crops_cell):
                 state_crop_occurrence[row_canon][crop_name] += count
 
+    for st in sorted(wanted_states_canon):
+        n_crops = len(state_crop_occurrence.get(st) or {})
+        _log(f"CSV crops for state {st}: {n_crops} crops")
+
     # Initialize output sets for each wanted state and crop.
     output_sets: Dict[str, Dict[str, Dict[str, Set[str]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
     output_occurrence: Dict[str, Dict[str, int]] = defaultdict(dict)
@@ -502,9 +589,13 @@ def main() -> int:
         category = b["category"]
         items: List[UrlItem] = b["items"]
 
+        _log(f"Processing batch: state={canon_state}, category={category}, {len(items)} URLs")
+
         crop_names = sorted(output_occurrence[canon_state].keys(), key=len, reverse=True)
 
-        for item in items:
+        for idx, item in enumerate(items, 1):
+            _log(f"  [{idx}/{len(items)}] URL: {item.url}")
+
             title: Optional[str] = None
             text: Optional[str] = None
 
@@ -517,28 +608,46 @@ def main() -> int:
                 if html:
                     try:
                         extraction = web_adder.extract_web_page(html=html)
-                    except Exception:
+                    except Exception as ex:
                         extraction = {"status": "failed"}
+                        if verbose:
+                            _log(f"    WebAddition extract_web_page failed: {ex}")
 
                     if extraction.get("status") == "success":
                         title = (extraction.get("title") or "").strip() or None
                         text = (extraction.get("text") or "").strip() or None
+                        if verbose:
+                            _log(f"    Extracted via WebAddition: title={title!r}, text_len={len(text) if text else 0}")
+                    elif verbose:
+                        _log(f"    WebAddition extraction status: {extraction.get('status', 'unknown')}")
 
             if not text:
                 # Fallback extraction path when trafilatura/bs4 aren't available.
                 title_fb, text_fb = _extract_title_and_text_via_requests(item.url)
                 title = title or title_fb
                 text = text_fb
+                if verbose and text:
+                    _log(f"    Extracted via requests fallback: title={title!r}, text_len={len(text)}")
 
             if not text:
+                _log(f"    SKIP: No text extracted from URL")
                 continue
 
             item_name = item.name or title or _slug_fallback_for_name(item.url)
             if not item_name:
                 item_name = _slug_fallback_for_name(item.url)
 
-            text_tokens = _normalize_text_to_tokens(text)
-            matched_crops = _match_crops_with_suppression(text_tokens=text_tokens, crop_names=crop_names)
+            llm_client = _make_llm_client()
+            matched_crops = _extract_crops_via_llm(
+                text=text,
+                title=title,
+                crop_names=crop_names,
+                llm_client=llm_client,
+                item_url=item.url,
+                verbose=verbose,
+            )
+
+            _log(f"    Result: {len(matched_crops)} matched crops -> {sorted(matched_crops) if matched_crops else '[]'}")
 
             for crop_name in matched_crops:
                 output_sets[canon_state][crop_name][category].add(item_name)
@@ -559,9 +668,12 @@ def main() -> int:
 
         result[state_key] = crop_entries
 
+    total_entries = sum(len(v) for v in result.values())
+    _log(f"Output: {len(result)} states, {total_entries} crop entries total")
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Wrote output JSON: {out_path}")
+    _log(f"Wrote output JSON: {out_path}")
     return 0
 
 
