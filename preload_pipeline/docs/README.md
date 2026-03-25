@@ -451,7 +451,7 @@ python Dict-Value-Database/scripts/generate_web_sources.py \
   --category "disease" \
   --output "Dict-Value-Database/YAMLfilesForDict/uiuc.yaml"
 
-python Dict-Value-Database/scripts/build_crop_disease_dictionary.py \
+python Dict-Value-Database/scripts/build_crop_dictionary.py \
   --config Dict-Value-Database/YAMLfilesForDict/uiuc.yaml \
   --csv ../Datasets/county_crops_frequency_multi_year_cleaned.csv \
-  --output Dict-Value-Database/output/crop_disease_output.json
+  --output Dict-Value-Database/output/crop_dictionary_output.json

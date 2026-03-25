@@ -1,3 +1,5 @@
+"""Build a per-state, per-crop JSON dictionary keyed by YAML batch categories (e.g. disease, pest)."""
+
 from __future__ import annotations
 
 import argparse
@@ -29,7 +31,7 @@ _LLM_TEXT_MAX_CHARS = 8000
 DEFAULT_MODEL = "meta-llama/Llama-3.2-11B-Vision-Instruct"
 DEFAULT_OPENAI_API_BASE = "http://127.0.0.1:11434/v1"
 
-_LOG_PREFIX = "[build_crop_disease]"
+_LOG_PREFIX = "[build_crop_dictionary]"
 
 
 def _log(msg: str) -> None:
@@ -43,6 +45,259 @@ def _default_rag_agent_dir() -> Path:
 
 def _normalize_state_key(state: str) -> str:
     return (state or "").strip().lower()
+
+
+def _resolve_canonical_state(raw: str, canonical_state_name_fn: Any) -> str:
+    c = canonical_state_name_fn(raw)
+    if not c:
+        return raw.strip().upper()
+    return c
+
+
+def _category_casefold_key(name: str) -> str:
+    return (name or "").strip().casefold()
+
+
+def _ordered_unique_strings(base: List[str], other: List[str]) -> List[str]:
+    """Concatenate base then other; drop duplicates using casefold; keep first spelling."""
+    seen: Set[str] = set()
+    out: List[str] = []
+    for s in base + other:
+        if not isinstance(s, str):
+            continue
+        t = s.strip()
+        if not t:
+            continue
+        k = t.casefold()
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(t)
+    return out
+
+
+def _parse_merge_json(
+    path: Path,
+    canonical_state_name_fn: Any,
+) -> Tuple[Dict[str, Dict[str, Dict[str, Any]]], int, int, int]:
+    """
+    Load prior output JSON into dict keyed by canonical state name.
+
+    Each value is crop_name -> {category: [str, ...], "occurrence": int}.
+    Malformed entries are skipped with a log line.
+
+    Returns (data_by_canon_state, n_states, n_crop_entries, n_skipped_entries).
+    """
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"Merge JSON must be a top-level object: {path}")
+
+    by_canon: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
+    n_skipped = 0
+
+    for state_raw_key, crop_list in raw.items():
+        if not isinstance(state_raw_key, str) or not str(state_raw_key).strip():
+            _log(f"Merge JSON: skip invalid state key: {state_raw_key!r}")
+            n_skipped += 1
+            continue
+        canon_state = _resolve_canonical_state(str(state_raw_key).strip(), canonical_state_name_fn)
+        if not isinstance(crop_list, list):
+            _log(f"Merge JSON: skip state {state_raw_key!r}: expected list of crop entries")
+            n_skipped += 1
+            continue
+
+        for entry in crop_list:
+            if not isinstance(entry, dict) or len(entry) != 1:
+                _log(f"Merge JSON: skip crop entry (need single-key dict): {entry!r}")
+                n_skipped += 1
+                continue
+            crop_name, attrs = next(iter(entry.items()))
+            if not isinstance(crop_name, str) or not crop_name.strip():
+                _log(f"Merge JSON: skip empty crop name in {state_raw_key!r}")
+                n_skipped += 1
+                continue
+            if not isinstance(attrs, dict):
+                _log(f"Merge JSON: skip non-dict attrs for crop {crop_name!r}")
+                n_skipped += 1
+                continue
+
+            crop_key = crop_name.strip()
+            parsed: Dict[str, Any] = {}
+            occ: Optional[int] = None
+            for k, v in attrs.items():
+                if not isinstance(k, str):
+                    continue
+                if k == "occurrence":
+                    if isinstance(v, bool) or not isinstance(v, (int, float)):
+                        _log(f"Merge JSON: bad occurrence for {crop_key!r} in {state_raw_key!r}, skip field")
+                        continue
+                    occ = int(v)
+                    continue
+                if isinstance(v, list):
+                    cleaned = [str(x) for x in v if isinstance(x, str) and str(x).strip()]
+                    parsed[k] = cleaned
+                else:
+                    _log(f"Merge JSON: skip non-list category {k!r} for crop {crop_key!r}")
+
+            if occ is not None:
+                parsed["occurrence"] = occ
+
+            if crop_key in by_canon[canon_state]:
+                by_canon[canon_state][crop_key] = _merge_single_crop_dicts(
+                    by_canon[canon_state][crop_key], parsed
+                )
+            else:
+                by_canon[canon_state][crop_key] = parsed
+
+    flat_crops = sum(len(v) for v in by_canon.values())
+    return dict(by_canon), len(by_canon), flat_crops, n_skipped
+
+
+def _merge_single_crop_dicts(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge two crop attribute dicts (categories + occurrence) for duplicate crop rows."""
+    occ_a = a.get("occurrence")
+    occ_b = b.get("occurrence")
+    cats_a = {k: v for k, v in a.items() if k != "occurrence"}
+    cats_b = {k: v for k, v in b.items() if k != "occurrence"}
+    merged_cats = _merge_category_string_lists(cats_a, cats_b)
+    out = dict(merged_cats)
+    if occ_b is not None:
+        out["occurrence"] = int(occ_b)
+    elif occ_a is not None:
+        out["occurrence"] = int(occ_a)
+    return out
+
+
+def _merge_category_string_lists(
+    base_cats: Dict[str, Any],
+    fresh_cats: Dict[str, Any],
+) -> Dict[str, List[str]]:
+    """Union category lists; keys equal under casefold map to first-seen label (base first)."""
+    cf_to_label: Dict[str, str] = {}
+    for label in sorted(base_cats.keys()):
+        cf = _category_casefold_key(label)
+        if cf and cf not in cf_to_label:
+            cf_to_label[cf] = label
+    for label in sorted(fresh_cats.keys()):
+        cf = _category_casefold_key(label)
+        if cf and cf not in cf_to_label:
+            cf_to_label[cf] = label
+
+    out: Dict[str, List[str]] = {}
+    for cf, canonical_label in cf_to_label.items():
+        base_lists: List[str] = []
+        fresh_lists: List[str] = []
+        for k, v in base_cats.items():
+            if _category_casefold_key(k) != cf:
+                continue
+            if isinstance(v, list):
+                base_lists.extend(str(x) for x in v if isinstance(x, str))
+        for k, v in fresh_cats.items():
+            if _category_casefold_key(k) != cf:
+                continue
+            if isinstance(v, list):
+                fresh_lists.extend(str(x) for x in v if isinstance(x, str))
+        out[canonical_label] = _ordered_unique_strings(base_lists, fresh_lists)
+    return out
+
+
+def _merge_crop_dicts(
+    base: Dict[str, Any],
+    fresh: Dict[str, Any],
+    *,
+    canon_state: str,
+    crop_name: str,
+    run_csv_occurrence: Dict[str, Dict[str, int]],
+    wanted_states_this_run: Set[str],
+) -> Dict[str, Any]:
+    """Deep-merge two crop entries (categories + occurrence)."""
+    base_cats = {k: v for k, v in base.items() if k != "occurrence"}
+    fresh_cats = {k: v for k, v in fresh.items() if k != "occurrence"}
+    merged_cats = _merge_category_string_lists(base_cats, fresh_cats)
+    out: Dict[str, Any] = dict(merged_cats)
+    if canon_state in wanted_states_this_run and crop_name in run_csv_occurrence.get(canon_state, {}):
+        out["occurrence"] = int(run_csv_occurrence[canon_state][crop_name])
+    elif "occurrence" in base:
+        out["occurrence"] = int(base["occurrence"])
+    elif "occurrence" in fresh:
+        out["occurrence"] = int(fresh["occurrence"])
+    else:
+        out["occurrence"] = 0
+    return out
+
+
+def _merge_crop_dictionary_data(
+    base: Dict[str, Dict[str, Dict[str, Any]]],
+    fresh: Dict[str, Dict[str, Dict[str, Any]]],
+    run_csv_occurrence: Dict[str, Dict[str, int]],
+    wanted_states_this_run: Set[str],
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Union states and crops; merge category lists; occurrence from CSV when crop in this run's CSV scope."""
+    all_states = set(base.keys()) | set(fresh.keys())
+    merged: Dict[str, Dict[str, Dict[str, Any]]] = {}
+
+    for canon_state in sorted(all_states):
+        crops_b = base.get(canon_state, {})
+        crops_f = fresh.get(canon_state, {})
+        all_crops = set(crops_b.keys()) | set(crops_f.keys())
+        merged[canon_state] = {}
+        for crop_name in sorted(all_crops):
+            db = crops_b.get(crop_name, {})
+            df = crops_f.get(crop_name, {})
+            merged[canon_state][crop_name] = _merge_crop_dicts(
+                db,
+                df,
+                canon_state=canon_state,
+                crop_name=crop_name,
+                run_csv_occurrence=run_csv_occurrence,
+                wanted_states_this_run=wanted_states_this_run,
+            )
+    return merged
+
+
+def _internal_to_output_json(data: Dict[str, Dict[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    """Serialize internal canon_state-keyed structure to the script's output JSON shape."""
+    result: Dict[str, Any] = {}
+    for canon_state in sorted(data.keys()):
+        state_key = _normalize_state_key(canon_state)
+        crop_entries: List[Dict[str, Any]] = []
+        for crop_name in sorted(data[canon_state].keys()):
+            attrs = data[canon_state][crop_name]
+            occurrence = int(attrs.get("occurrence", 0))
+            cats_dict: Dict[str, Any] = {}
+            cat_keys = [k for k in attrs.keys() if k != "occurrence"]
+            for cat in sorted(cat_keys):
+                vals = attrs[cat]
+                if isinstance(vals, list):
+                    lst = [str(x) for x in vals if isinstance(x, str)]
+                    cats_dict[cat] = _ordered_unique_strings(lst, [])
+                else:
+                    cats_dict[cat] = []
+            cats_dict["occurrence"] = occurrence
+            crop_entries.append({crop_name: cats_dict})
+        result[state_key] = crop_entries
+    return result
+
+
+def _build_internal_from_pipeline(
+    *,
+    wanted_states_canon: Set[str],
+    categories_by_state: Dict[str, Set[str]],
+    output_sets: Dict[str, Dict[str, Dict[str, Set[str]]]],
+    output_occurrence: Dict[str, Dict[str, int]],
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Convert pipeline structures to internal merge format (canonical state keys)."""
+    out: Dict[str, Dict[str, Dict[str, Any]]] = {}
+    for canon_state in sorted(wanted_states_canon):
+        out[canon_state] = {}
+        for crop_name in sorted(output_occurrence[canon_state].keys()):
+            cats: Dict[str, Any] = {}
+            for cat in sorted(categories_by_state.get(canon_state, set())):
+                vals = sorted(output_sets[canon_state][crop_name].get(cat, set()))
+                cats[cat] = _ordered_unique_strings(vals, [])
+            cats["occurrence"] = int(output_occurrence[canon_state][crop_name])
+            out[canon_state][crop_name] = cats
+    return out
 
 
 def _extract_first_json_blob(text: str) -> Optional[str]:
@@ -131,7 +386,7 @@ def _extract_crops_via_llm(
     parts = ["Document title: " + (title or "(unknown)"), "", "Document text:", truncated]
     doc_block = "\n".join(parts)
 
-    prompt = f"""This document describes agricultural diseases, pests, or similar topics.
+    prompt = f"""This document is about agriculture (e.g. crops, pests, diseases, soil, or other extension topics).
 
 CANDIDATE CROPS (only use names from this exact list):
 {crop_list_str}
@@ -431,10 +686,12 @@ def _extract_title_and_text_via_requests(url: str, *, timeout_s: int = 20) -> Tu
 
 
 def main() -> int:
-    p = argparse.ArgumentParser("Build crop->disease/pest dictionary from URL batches + crop frequency CSV.")
+    p = argparse.ArgumentParser(
+        "Build per-state crop dictionary (category keys from YAML batches) from URLs + crop frequency CSV."
+    )
     p.add_argument("--config", required=True, help="YAML config containing batches")
     p.add_argument("--csv", required=True, help="Path to county_crops_frequency_multi_year_cleaned.csv")
-    p.add_argument("--output", default="build_crop_disease_dictionary_output.json", help="Output JSON path")
+    p.add_argument("--output", default="build_crop_dictionary_output.json", help="Output JSON path")
     p.add_argument("--rag-agent-dir", default=str(_default_rag_agent_dir()), help="Path to rag_agent sibling dir")
     p.add_argument(
         "--model",

@@ -1,5 +1,5 @@
 """
-Generate url_batches YAML for build_crop_disease_dictionary.py.
+Generate url_batches YAML for build_crop_dictionary.py.
 
 Output format matches YAMLfilesForDict/url_batches_example.yaml:
   batches:
@@ -20,7 +20,7 @@ from typing import List
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate url_batches YAML for build_crop_disease_dictionary.py from a list of names."
+        description="Generate url_batches YAML for build_crop_dictionary.py from a list of names."
     )
     parser.add_argument(
         "--base-url",

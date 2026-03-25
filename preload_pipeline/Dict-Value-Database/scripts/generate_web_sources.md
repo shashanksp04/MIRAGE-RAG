@@ -1,6 +1,6 @@
 # Dict-Value-Database `generate_web_sources.py`
 
-Generates **url_batches** YAML for `build_crop_disease_dictionary.py`, in the format expected by `YAMLfilesForDict/url_batches_example.yaml`.
+Generates **url_batches** YAML for `build_crop_dictionary.py`, in the format expected by `YAMLfilesForDict/url_batches_example.yaml`.
 
 ## Output format
 
@@ -41,4 +41,4 @@ python preload_pipeline/Dict-Value-Database/generate_web_sources.py \
 
 1. Put disease/pest names into a text file (one per line).
 2. Run the script with your base URL, state, and category.
-3. Use the generated YAML as `--config` for `build_crop_disease_dictionary.py`.
+3. Use the generated YAML as `--config` for `build_crop_dictionary.py`.
