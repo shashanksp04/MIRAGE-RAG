@@ -442,6 +442,12 @@ python bootstrap.py \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
 
+python bootstrap.py \
+  --manifest Ingestion/PDFs/YAMLfiles/uiuc_.yaml \
+  --persist-dir ./chroma_database_src/chroma_db \
+  --collection meta-mirage_collection \
+  --rag-agent-dir ../rag_agent
+
 ### For creating the Dict-Value-Database
 
 python Dict-Value-Database/scripts/generate_web_sources.py \
