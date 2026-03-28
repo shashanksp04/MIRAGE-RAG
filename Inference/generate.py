@@ -12,6 +12,8 @@ import multiprocessing
 import os
 import time
 import argparse
+from pathlib import Path
+from typing import Optional, Tuple
 from tqdm import tqdm
 from urllib.parse import urlparse
 
@@ -137,9 +139,12 @@ def rag_worker_process(
     api_base,
     do_reset_collection: bool,
     rag_status_q,
+    crop_dictionary_path: Optional[str],
+    enable_query_enrichment: bool,
 ):
     import asyncio
     from rag_agent.main import MainAgent
+    from rag_agent.crop_query_enrichment import CropQueryEnricher
 
     print(f"[RAG Worker] Starting worker for endpoint: {api_base}")
 
@@ -180,6 +185,22 @@ def rag_worker_process(
                 return
 
         rag_runner = rag_agent.main()
+
+        dict_data = None
+        if enable_query_enrichment and crop_dictionary_path:
+            try:
+                with open(crop_dictionary_path, encoding="utf-8") as df:
+                    dict_data = json.load(df)
+                print(f"[RAG Worker] Loaded crop dictionary from {crop_dictionary_path}")
+            except Exception as e:
+                print(f"[RAG Worker] Failed to load crop dictionary ({crop_dictionary_path}): {e}")
+        crop_enricher = CropQueryEnricher(
+            api_base=api_base,
+            model=test_model,
+            dictionary=dict_data,
+            enabled=bool(enable_query_enrichment and dict_data is not None),
+        )
+
         rag_status_q.put(("READY", api_base))
 
     except Exception as e:
@@ -230,12 +251,13 @@ def rag_worker_process(
                 rag_runner = rag_agent.main()
             except Exception as e:
                 print(f"[RAG Worker] Endpoint {api_base}: ✗ Restart failed: {e}")
-                rag_response_q.put((item_id, None, str(e), False, api_base, attempt))
+                rag_response_q.put((item_id, None, str(e), False, api_base, attempt, query))
                 continue
 
+        effective_query = crop_enricher.enrich(query)
         try:
             session_id = f"rag_session_{item_id}"
-            events = loop.run_until_complete(rag_runner.run_debug(query, session_id=session_id))
+            events = loop.run_until_complete(rag_runner.run_debug(effective_query, session_id=session_id))
 
             rag_answer = None
             tool_calls = []
@@ -272,19 +294,40 @@ def rag_worker_process(
 
             if rag_answer:
                 print(f"[RAG Worker] Item {item_id}: ✓ Extracted answer ({len(rag_answer)} chars)")
-                rag_response_q.put((item_id, rag_answer, None, web_search_performed, api_base, attempt))
+                rag_response_q.put(
+                    (item_id, rag_answer, None, web_search_performed, api_base, attempt, effective_query)
+                )
             else:
                 print(f"[RAG Worker] Item {item_id}: ✗ No valid answer extracted")
-                rag_response_q.put((item_id, None, "No RAG answer found in response", False, api_base, attempt))
+                rag_response_q.put(
+                    (item_id, None, "No RAG answer found in response", False, api_base, attempt, effective_query)
+                )
 
         except Exception as e:
             print(f"[RAG Worker] Item {item_id}: ✗ Exception during RAG: {e}")
-            rag_response_q.put((item_id, None, str(e), False, api_base, attempt))
+            rag_response_q.put((item_id, None, str(e), False, api_base, attempt, effective_query))
 
 
 # ============================================================
 # MAIN GENERATE CLASS
 # ============================================================
+
+def _resolve_crop_dictionary_path(
+    crop_dictionary_path: Optional[str],
+    inference_dir: Path,
+) -> Tuple[Optional[str], bool]:
+    """Return (absolute path or None, whether file exists for enrichment). Empty path disables."""
+    if crop_dictionary_path is None or not str(crop_dictionary_path).strip():
+        return None, False
+    p = Path(crop_dictionary_path)
+    if not p.is_absolute():
+        p = inference_dir / p
+    resolved = p.resolve()
+    if resolved.is_file():
+        return str(resolved), True
+    print(f"[Generate] Crop dictionary not found at {resolved}; query enrichment disabled.")
+    return None, False
+
 
 class Generate:
 
@@ -294,7 +337,9 @@ class Generate:
                  num_processes=None,
                  embed_model_name="BAAI/bge-base-en-v1.5",
                  test_model="Qwen2.5-VL-3B-Instruct",
-                 device="None"):
+                 device="None",
+                 crop_dictionary_path: Optional[str] = "CropDatabase.json",
+                 enable_query_enrichment: bool = True):
 
         self.raw_data_file = raw_data_file
         self.output_file = output_file
@@ -306,6 +351,11 @@ class Generate:
         self.embed_model_name = embed_model_name
         self.test_model = test_model
         self.device = device
+
+        inference_dir = Path(__file__).resolve().parent
+        path_resolved, found = _resolve_crop_dictionary_path(crop_dictionary_path, inference_dir)
+        self.crop_dictionary_path = path_resolved
+        self.enable_query_enrichment = bool(enable_query_enrichment) and found
 
         self.max_retries = 5
         self.retry_delay = 5
@@ -373,8 +423,18 @@ class Generate:
         rank0_ep = endpoints[0]
         p0 = ctx.Process(
             target=rag_worker_process,
-            args=(rag_request_q, rag_response_q, self.test_model, self.embed_model_name,
-                  self.device, rank0_ep, True, rag_status_q),
+            args=(
+                rag_request_q,
+                rag_response_q,
+                self.test_model,
+                self.embed_model_name,
+                self.device,
+                rank0_ep,
+                True,
+                rag_status_q,
+                self.crop_dictionary_path,
+                self.enable_query_enrichment,
+            ),
         )
         p0.start()
         rag_workers.append(p0)
@@ -390,8 +450,18 @@ class Generate:
         for ep in endpoints[1:]:
             p = ctx.Process(
                 target=rag_worker_process,
-                args=(rag_request_q, rag_response_q, self.test_model, self.embed_model_name,
-                      self.device, ep, False, rag_status_q),
+                args=(
+                    rag_request_q,
+                    rag_response_q,
+                    self.test_model,
+                    self.embed_model_name,
+                    self.device,
+                    ep,
+                    False,
+                    rag_status_q,
+                    self.crop_dictionary_path,
+                    self.enable_query_enrichment,
+                ),
             )
             p.start()
             rag_workers.append(p)
@@ -440,7 +510,9 @@ class Generate:
         completed = 0
 
         while completed < total:
-            item_id, rag_answer, rag_error, web_flag, endpoint, attempt = rag_response_q.get()
+            item_id, rag_answer, rag_error, web_flag, endpoint, attempt, effective_query = (
+                rag_response_q.get()
+            )
 
             if item_id not in pending:
                 continue
@@ -451,7 +523,7 @@ class Generate:
             item["RAG_web_search_performed"] = web_flag
 
             if rag_error is None and rag_answer and not _is_soft_rag_failure(rag_answer, rag_error):
-                enhanced = prompt["user"] + "\n\nadditional context: " + rag_answer
+                enhanced = effective_query + "\n\nadditional context: " + rag_answer
                 item["RAG_status"] = "successful"
                 item["RAG_used"] = True
 
@@ -464,7 +536,7 @@ class Generate:
 
                 if _is_soft_rag_failure(rag_answer, rag_error):
                     print(f"[MAIN] Item {item_id}: Soft fail → fallback to original query")
-                    enhanced = prompt["user"]
+                    enhanced = effective_query
                     item["RAG_status"] = "soft_fail"
                     item["RAG_used"] = False
                 else:
@@ -522,7 +594,20 @@ if __name__ == "__main__":
     parser.add_argument("--embed_model_name", default="BAAI/bge-base-en-v1.5")
     parser.add_argument("--test_model", default="Qwen2.5-VL-3B-Instruct")
     parser.add_argument("--device", default="None")
+    # Crop DB: default CropDatabase.json beside this file; use "" to disable enrichment.
+    parser.add_argument(
+        "--crop_dictionary_path",
+        default="CropDatabase.json",
+        help="Crop dictionary JSON path (relative paths resolve from Inference/). Empty string disables.",
+    )
+    parser.add_argument(
+        "--disable_query_enrichment",
+        action="store_true",
+        help="Skip crop query enrichment even if the dictionary file exists.",
+    )
     args = parser.parse_args()
+
+    crop_path = (args.crop_dictionary_path or "").strip() or None
 
     generator = Generate(
         raw_data_file=args.input_file,
@@ -533,6 +618,8 @@ if __name__ == "__main__":
         embed_model_name=args.embed_model_name,
         test_model=args.test_model,
         device=args.device,
+        crop_dictionary_path=crop_path,
+        enable_query_enrichment=not args.disable_query_enrichment,
     )
 
     generator.generate()
