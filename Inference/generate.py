@@ -339,7 +339,8 @@ class Generate:
                  test_model="Qwen2.5-VL-3B-Instruct",
                  device="None",
                  crop_dictionary_path: Optional[str] = "CropDatabase.json",
-                 enable_query_enrichment: bool = True):
+                 enable_query_enrichment: bool = True,
+                 no_rag: bool = False):
 
         self.raw_data_file = raw_data_file
         self.output_file = output_file
@@ -356,6 +357,7 @@ class Generate:
         path_resolved, found = _resolve_crop_dictionary_path(crop_dictionary_path, inference_dir)
         self.crop_dictionary_path = path_resolved
         self.enable_query_enrichment = bool(enable_query_enrichment) and found
+        self.no_rag = bool(no_rag)
 
         self.max_retries = 5
         self.retry_delay = 5
@@ -382,6 +384,42 @@ class Generate:
 
         return {"user": user_message, "images": new_images, "location": location}
 
+    def _generate_no_rag(self, items):
+        """Baseline path: no RAG workers, no crop enrichment; prompt is `get_prompt` user string only."""
+        ctx = multiprocessing.get_context("spawn")
+        pool = ctx.Pool(processes=self.num_processes)
+        total = len(items)
+        pbar = tqdm(total=total)
+
+        def write(item):
+            with open(self.output_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+        def generation_done(item):
+            write(item)
+            pbar.update(1)
+
+        for item in items:
+            prompt = self.get_prompt(item)
+            item["RAG_status"] = "disabled"
+            item["RAG_used"] = False
+            item["RAG_endpoint"] = None
+            pool.apply_async(
+                generation_worker,
+                args=((item, prompt["user"], prompt["images"],
+                       self.model_name,
+                       self.offline_model,
+                       self.openai_api_base,
+                       self.max_retries,
+                       self.retry_delay),),
+                callback=generation_done,
+            )
+
+        pool.close()
+        pool.join()
+        pbar.close()
+        print("Processing completed.")
+
     def generate(self):
 
         with open(self.raw_data_file, "r", encoding="utf-8") as f:
@@ -406,6 +444,10 @@ class Generate:
                 items.append(item)
 
         print(f"Items to process: {len(items)}")
+
+        if self.no_rag:
+            self._generate_no_rag(items)
+            return
 
         ctx = multiprocessing.get_context("spawn")
 
@@ -605,6 +647,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip crop query enrichment even if the dictionary file exists.",
     )
+    parser.add_argument(
+        "--no-rag",
+        dest="no_rag",
+        action="store_true",
+        help="Skip RAG retrieval and crop query enrichment; generate from the raw user prompt only (baseline).",
+    )
     args = parser.parse_args()
 
     crop_path = (args.crop_dictionary_path or "").strip() or None
@@ -620,6 +668,7 @@ if __name__ == "__main__":
         device=args.device,
         crop_dictionary_path=crop_path,
         enable_query_enrichment=not args.disable_query_enrichment,
+        no_rag=args.no_rag,
     )
 
     generator.generate()

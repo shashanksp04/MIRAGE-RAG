@@ -49,7 +49,8 @@ python generate.py \
     --num_processes $NUM_PROCESSES \
     --embed_model_name $EMBED_MODEL_NAME \
     --test_model $TEST_MODEL \
-    --device $DEVICE
+    --device $DEVICE \
+    --no-rag
 
 ################# Split Inference Results #################
 
