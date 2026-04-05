@@ -13,7 +13,7 @@ import os
 import time
 import argparse
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 from tqdm import tqdm
 from urllib.parse import urlparse
 
@@ -329,6 +329,12 @@ def _resolve_crop_dictionary_path(
     return None, False
 
 
+def _normalize_allowed_states(allowed_states: Optional[List[str]]) -> Optional[List[str]]:
+    if not allowed_states:
+        return None
+    return list(allowed_states)
+
+
 class Generate:
 
     def __init__(self, raw_data_file, output_file,
@@ -340,7 +346,8 @@ class Generate:
                  device="None",
                  crop_dictionary_path: Optional[str] = "CropDatabase.json",
                  enable_query_enrichment: bool = True,
-                 no_rag: bool = False):
+                 no_rag: bool = False,
+                 allowed_states: Optional[List[str]] = None):
 
         self.raw_data_file = raw_data_file
         self.output_file = output_file
@@ -358,6 +365,7 @@ class Generate:
         self.crop_dictionary_path = path_resolved
         self.enable_query_enrichment = bool(enable_query_enrichment) and found
         self.no_rag = bool(no_rag)
+        self.allowed_states = _normalize_allowed_states(allowed_states)
 
         self.max_retries = 5
         self.retry_delay = 5
@@ -383,6 +391,31 @@ class Generate:
             new_images.append(new_path)
 
         return {"user": user_message, "images": new_images, "location": location}
+
+    def _filter_items_by_allowed_states(self, items: list) -> list:
+        if not self.allowed_states:
+            return items
+        allowed_set = {s.strip() for s in self.allowed_states if s is not None and str(s).strip()}
+        if not allowed_set:
+            print("[Generate] allowed_states is empty after stripping; no state filter applied.")
+            return items
+        filtered = []
+        skipped = 0
+        included = 0
+        for item in items:
+            item_id = item["id"]
+            state = (item.get("meta_data_state") or "").strip()
+            if state in allowed_set:
+                print(f"[Generate] Including item {item_id}: meta_data_state={state!r}")
+                filtered.append(item)
+                included += 1
+            else:
+                print(
+                    f"[Generate] Skipping item {item_id}: meta_data_state={state!r} (not in allowed_states)"
+                )
+                skipped += 1
+        print(f"[Generate] State filter: {included} included, {skipped} skipped")
+        return filtered
 
     def _generate_no_rag(self, items):
         """Baseline path: no RAG workers, no crop enrichment; prompt is `get_prompt` user string only."""
@@ -442,6 +475,8 @@ class Generate:
                 item["id"] = f"row_{idx}_{time.time_ns()}"
             if item["id"] not in processed_ids:
                 items.append(item)
+
+        items = self._filter_items_by_allowed_states(items)
 
         print(f"Items to process: {len(items)}")
 
@@ -653,6 +688,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip RAG retrieval and crop query enrichment; generate from the raw user prompt only (baseline).",
     )
+    parser.add_argument(
+        "--allowed_states",
+        nargs="*",
+        default=None,
+        help="If set and non-empty, only process records whose meta_data_state is in this list. "
+        "Use multiple tokens (e.g. Minnesota Texas). Omit flag or pass no values for all states.",
+    )
     args = parser.parse_args()
 
     crop_path = (args.crop_dictionary_path or "").strip() or None
@@ -669,6 +711,7 @@ if __name__ == "__main__":
         crop_dictionary_path=crop_path,
         enable_query_enrichment=not args.disable_query_enrichment,
         no_rag=args.no_rag,
+        allowed_states=args.allowed_states,
     )
 
     generator.generate()

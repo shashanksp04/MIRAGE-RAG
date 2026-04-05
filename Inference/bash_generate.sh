@@ -51,6 +51,7 @@ python generate.py \
     --test_model $TEST_MODEL \
     --device $DEVICE \
     --no-rag
+# -- allowed_states California "New York" Texas
 
 ################# Split Inference Results #################
 
