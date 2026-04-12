@@ -114,7 +114,8 @@ class MainAgent:
                 flush=True,
             )
         return result
-    
+
+        
     def reset_collection(self) -> None:
         """Drop and recreate the collection (clean slate)."""
         name = "meta-mirage_collection"
@@ -152,6 +153,28 @@ class MainAgent:
         self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
         self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
 
+    def reload_existing_collection(self):
+        """Reload existing Chroma collection and rebind ALL dependent components."""
+
+        name = "meta-mirage_collection"
+
+        print(f"[RAG reload] Reloading existing collection: {name}", flush=True)
+
+        # 🔥 IMPORTANT: use get_collection (NOT get_or_create)
+        self.collection = self.client.get_collection(
+            name=name,
+            embedding_function=self.embedding_function,
+        )
+
+        print(f"[RAG reload] Collection count: {self.collection.count()}", flush=True)
+
+        # 🔥 CRITICAL: rebind ALL components that depend on collection
+        self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
+        self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
+        self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
+
+        print(f"[RAG reload] Rebinding complete", flush=True)
+        
     def _tracked_evaluate_confidence(self, *, query: str, location: Optional[str] = None,
                                       month_year: Optional[str] = None, title: Optional[str] = None, k: int = 5) -> Dict:
         """Evaluates confidence of retrieved evidence for a query.

@@ -26,7 +26,7 @@ MODEL_NAME_CLEANED=$(echo "$MODEL_NAME" | sed 's|.*/||')
 # Update this to match your vLLM server port (default: 8000, current: 11434)
 OPENAI_API_BASE="http://127.0.0.1:11434/v1"
 
-NUM_PROCESSES=1
+NUM_PROCESSES=8
 
 EMBED_MODEL_NAME="BAAI/bge-base-en-v1.5"
 TEST_MODEL="meta-llama/Llama-3.2-11B-Vision-Instruct"
@@ -35,7 +35,7 @@ DEVICE="None"
 echo "Inference $MODEL_NAME on $BENCH_TYPE Benchmark"
 
 # Inference results will be saved in the following directory
-OUTPUT_DIR="results/${BENCH_TYPE}_benchmark"
+OUTPUT_DIR="results/Without_DB_${BENCH_TYPE}_benchmark"
 
 mkdir -p $OUTPUT_DIR
 

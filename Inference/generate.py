@@ -173,16 +173,13 @@ def rag_worker_process(
 
         # (Optional hardening) Re-bind collection handle explicitly in non-rank0 workers
         # to avoid any chance of stale collection handles if reset happened elsewhere.
-        if not do_reset_collection:
-            try:
-                rag_agent.collection = rag_agent.client.get_or_create_collection(
-                    name="meta-mirage_collection",
-                    embedding_function=rag_agent.embedding_function,
-                )
-            except Exception as e:
-                print(f"[RAG Worker] Endpoint {api_base}: ✗ Failed to refresh collection handle: {e}")
-                rag_status_q.put(("FAILED", api_base, str(e)))
-                return
+        # if not do_reset_collection:
+        #     try:
+        #         rag_agent.reload_existing_collection()
+        #     except Exception as e:
+        #         print(f"[RAG Worker] Endpoint {api_base}: ✗ Failed to refresh collection handle: {e}")
+        #         rag_status_q.put(("FAILED", api_base, str(e)))
+        #         return
 
         rag_runner = rag_agent.main()
 
@@ -234,25 +231,33 @@ def rag_worker_process(
         print(f"[RAG Worker] Item {item_id}: Received (Attempt {attempt})")
         print(f"[RAG Worker] Item {item_id}: Query length = {len(query)} chars")
 
-        if request_count % RESTART_INTERVAL == 0:
-            print(f"[RAG Worker] Endpoint {api_base}: Restarting agent after {request_count} requests")
-            try:
-                rag_agent = MainAgent(
-                    test_model=test_model,
-                    embed_model_name=embed_model_name,
-                    device=device,
-                    api_base=api_base,
-                )
-                # Refresh collection handle after restart as well
-                rag_agent.collection = rag_agent.client.get_or_create_collection(
-                    name="meta-mirage_collection",
-                    embedding_function=rag_agent.embedding_function,
-                )
-                rag_runner = rag_agent.main()
-            except Exception as e:
-                print(f"[RAG Worker] Endpoint {api_base}: ✗ Restart failed: {e}")
-                rag_response_q.put((item_id, None, str(e), False, api_base, attempt, query))
-                continue
+        # if request_count % RESTART_INTERVAL == 0:
+        #     print(f"[RAG Worker] Endpoint {api_base}: Restarting agent after {request_count} requests")
+        #     try:
+        #         rag_agent = MainAgent(
+        #             test_model=test_model,
+        #             embed_model_name=embed_model_name,
+        #             device=device,
+        #             api_base=api_base,
+        #         )
+
+        #         # 🔥 KEY: reload existing DB properly
+        #         rag_agent.reload_existing_collection()
+
+        #         # 🔍 Optional sanity check (HIGHLY recommended)
+        #         try:
+        #             test = rag_agent.collection.peek()
+        #             print(f"[DEBUG] Peek success after reload (ids sample): {[x['id'] for x in test]}")
+        #         except Exception as e:
+        #             print(f"[DEBUG] Peek FAILED after reload: {e}")
+
+        #         # Recreate runner AFTER everything is consistent
+        #         rag_runner = rag_agent.main()
+                
+        #     except Exception as e:
+        #         print(f"[RAG Worker] Endpoint {api_base}: ✗ Restart failed: {e}")
+        #         rag_response_q.put((item_id, None, str(e), False, api_base, attempt, query))
+        #         continue
 
         effective_query = crop_enricher.enrich(query)
         try:

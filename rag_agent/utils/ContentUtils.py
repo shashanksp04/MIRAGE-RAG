@@ -19,14 +19,14 @@ class ContentUtils:
         self.embed_model = embed_model
         self.tokenizer = AutoTokenizer.from_pretrained(embed_model)
 
-        self.chunk_config = chunk_config or {
+        self.chunk_config = {
             "pdf": {
-                "max_tokens": 500,
-                "overlap": 90,
+                "max_tokens": 480,   # 🔥 below 512
+                "overlap": 80,
             },
             "web": {
-                "chunk_if_over": 800,
-                "max_tokens": 700,
+                "chunk_if_over": 512,  # 🔥 match model limit
+                "max_tokens": 480,     # 🔥 SAFE RANGE
                 "overlap": 80,
             },
         }
@@ -62,20 +62,33 @@ class ContentUtils:
         max_tokens: int,
         overlap: int,
     ) -> List[str]:
-        """Splits text into overlapping chunks based on token count."""
-        tokens = self.tokenizer.encode(text, add_special_tokens=False)
-        chunks: List[str] = []
 
+        # 🔥 enforce global safety
+        max_tokens = min(max_tokens, 512)
+
+        tokens = self.tokenizer.encode(
+            text,
+            add_special_tokens=False,
+            truncation=False  # we want full text BEFORE chunking
+        )
+
+        chunks: List[str] = []
         start = 0
         total_tokens = len(tokens)
 
         while start < total_tokens:
             end = min(start + max_tokens, total_tokens)
+
             chunk_tokens = tokens[start:end]
+
+            # 🔥 final safety (guarantee <=512)
+            chunk_tokens = chunk_tokens[:512]
+
             chunk_text = self.tokenizer.decode(
                 chunk_tokens,
                 skip_special_tokens=True
             )
+
             chunks.append(chunk_text)
 
             if end == total_tokens:
@@ -206,6 +219,16 @@ class ContentUtils:
 
         strategy_evaluations: List[Dict[str, Any]] = []
 
+        query = self.tokenizer.decode(
+            self.tokenizer.encode(
+                    query,
+                    truncation=True,
+                    max_length=512,
+                    add_special_tokens=False
+                ),
+                skip_special_tokens=True
+            )
+
         for strategy_name, where_filter in filter_attempts:
             query_args = {
                 "query_texts": [query],
@@ -272,4 +295,3 @@ class ContentUtils:
             )
 
         return None, "no_results", []
-
