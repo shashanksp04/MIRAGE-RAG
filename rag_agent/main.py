@@ -19,7 +19,7 @@ class MainAgent:
         self.test_model = test_model
         self.api_base = api_base
         self.embedding_function = SentenceTransformerEmbeddingFunction(embed_model_name, device)
-        self.client = chromadb.PersistentClient(path="./chroma_database/chroma_db") # path has to be a valid path to a directory
+        self.client = chromadb.PersistentClient(path="/work/nvme/bfox/ssingh38/chroma_database/chroma_db") # path has to be a valid path to a directory, shifted to nvme for storage reasons
         self.collection = self.client.get_or_create_collection(name="meta-mirage_collection", embedding_function=self.embedding_function)
         self.null_str = "__null__"
         self.null_int = -1
