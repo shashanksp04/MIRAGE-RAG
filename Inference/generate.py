@@ -14,6 +14,7 @@ import time
 import argparse
 from pathlib import Path
 from typing import List, Optional, Tuple
+from queue import Empty
 from tqdm import tqdm
 from urllib.parse import urlparse
 
@@ -352,7 +353,8 @@ class Generate:
                  crop_dictionary_path: Optional[str] = "CropDatabase.json",
                  enable_query_enrichment: bool = True,
                  no_rag: bool = False,
-                 allowed_states: Optional[List[str]] = None):
+                 allowed_states: Optional[List[str]] = None,
+                 debug_single_item: bool = False):
 
         self.raw_data_file = raw_data_file
         self.output_file = output_file
@@ -371,6 +373,7 @@ class Generate:
         self.enable_query_enrichment = bool(enable_query_enrichment) and found
         self.no_rag = bool(no_rag)
         self.allowed_states = _normalize_allowed_states(allowed_states)
+        self.debug_single_item = bool(debug_single_item)
 
         self.max_retries = 5
         self.retry_delay = 5
@@ -482,6 +485,12 @@ class Generate:
                 items.append(item)
 
         items = self._filter_items_by_allowed_states(items)
+        if self.debug_single_item and items:
+            first = items[0]
+            print(f"[Generate] debug_single_item enabled; running only item id={first['id']}")
+            items = [first]
+        elif self.debug_single_item and not items:
+            print("[Generate] debug_single_item enabled but no items to process.")
 
         print(f"Items to process: {len(items)}")
 
@@ -512,7 +521,7 @@ class Generate:
                 self.embed_model_name,
                 self.device,
                 rank0_ep,
-                True,
+                False,
                 rag_status_q,
                 self.crop_dictionary_path,
                 self.enable_query_enrichment,
@@ -592,9 +601,26 @@ class Generate:
         completed = 0
 
         while completed < total:
-            item_id, rag_answer, rag_error, web_flag, endpoint, attempt, effective_query = (
-                rag_response_q.get()
-            )
+            try:
+                item_id, rag_answer, rag_error, web_flag, endpoint, attempt, effective_query = (
+                    rag_response_q.get(timeout=60)
+                )
+            except Empty:
+                dead_workers = [
+                    (ep, p.pid, p.exitcode)
+                    for p, ep in zip(rag_workers, endpoints)
+                    if not p.is_alive()
+                ]
+                if dead_workers:
+                    raise RuntimeError(
+                        "RAG worker process died while waiting for responses: "
+                        + ", ".join(
+                            f"endpoint={ep}, pid={pid}, exitcode={exitcode}"
+                            for ep, pid, exitcode in dead_workers
+                        )
+                    )
+                print("[MAIN] Waiting for RAG responses... workers still alive.", flush=True)
+                continue
 
             if item_id not in pending:
                 continue
@@ -700,6 +726,11 @@ if __name__ == "__main__":
         help="If set and non-empty, only process records whose meta_data_state is in this list. "
         "Use multiple tokens (e.g. Minnesota Texas). Omit flag or pass no values for all states.",
     )
+    parser.add_argument(
+        "--debug_single_item",
+        action="store_true",
+        help="Process only the first pending item, useful for crash/segfault isolation.",
+    )
     args = parser.parse_args()
 
     crop_path = (args.crop_dictionary_path or "").strip() or None
@@ -717,6 +748,7 @@ if __name__ == "__main__":
         enable_query_enrichment=not args.disable_query_enrichment,
         no_rag=args.no_rag,
         allowed_states=args.allowed_states,
+        debug_single_item=args.debug_single_item,
     )
 
     generator.generate()

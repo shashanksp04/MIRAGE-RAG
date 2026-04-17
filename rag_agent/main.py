@@ -19,8 +19,17 @@ class MainAgent:
         self.test_model = test_model
         self.api_base = api_base
         self.embedding_function = SentenceTransformerEmbeddingFunction(embed_model_name, device)
-        self.client = chromadb.PersistentClient(path="/work/nvme/bfox/ssingh38/chroma_database/chroma_db") # path has to be a valid path to a directory, shifted to nvme for storage reasons
+        persist_path = "/work/nvme/bfox/ssingh38/chroma_database/chroma_db"
+        self.client = chromadb.PersistentClient(path=persist_path) # path has to be a valid path to a directory, shifted to nvme for storage reasons
         self.collection = self.client.get_or_create_collection(name="meta-mirage_collection", embedding_function=self.embedding_function)
+        print(f"[RAG Init] Chroma persist path: {persist_path}", flush=True)
+        try:
+            collections = self.client.list_collections()
+            collection_names = [c.name if hasattr(c, "name") else str(c) for c in collections]
+            print(f"[RAG Init] Chroma collections: {collection_names}", flush=True)
+        except Exception as e:
+            print(f"[RAG Init] Failed to list collections: {e}", flush=True)
+        print("[RAG Init] Skipping startup collection.count() debug check.", flush=True)
         self.null_str = "__null__"
         self.null_int = -1
         self.content_utils = ContentUtils(embed_model=embed_model_name)
