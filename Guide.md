@@ -638,6 +638,20 @@ Align **`Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md` | Manifest `web_page_list` YAML generation |
 | `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.md` | Dict-builder batch YAML generation |
 
+### 8.3 Progressive filtering ablation toggle
+
+Progressive retrieval can now be controlled as a run-level ablation toggle, similar to `use_domain_filter` for web search:
+
+- `MainAgent.use_progressive_filtering` (default `True`) controls whether retrieval uses progressive metadata strategies or semantic-only mode across the agent.
+- `MainAgent.retrieve_content(...)` accepts `use_progressive_filtering: Optional[bool] = None`; when omitted, it uses `self.use_progressive_filtering`.
+- `MainAgent._tracked_evaluate_confidence(...)` accepts the same optional override and forwards the effective value into confidence evaluation.
+- `ConfidenceEvaluator.evaluate_retrieval_confidence(...)` forwards `use_progressive_filtering` into `ContentUtils.retrieve_with_priority_filters(...)`.
+- `ContentUtils.retrieve_with_priority_filters(...)` behavior:
+  - `use_progressive_filtering=True`: evaluates the full progressive strategy list plus `semantic_only`.
+  - `use_progressive_filtering=False`: runs `semantic_only` only.
+
+This supports full-run ablations by setting a single class-level flag while preserving optional per-call overrides for targeted experiments.
+
 ---
 
 *End of Guide*

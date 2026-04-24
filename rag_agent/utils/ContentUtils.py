@@ -108,9 +108,21 @@ class ContentUtils:
         title: Optional[str] = None,
         k: int = 5,
         min_results: int = 1,
+        use_progressive_filtering: bool = True,
     ) -> Tuple[Optional[Dict], str, List[Dict]]:
         """
-        Performs semantic retrieval with progressive metadata filtering.
+        Performs semantic retrieval with optional progressive metadata filtering.
+
+        Args:
+            query: Query text to retrieve against.
+            collection: Vector store collection handle.
+            location: Optional location used to derive hardiness zone.
+            month_year: Optional month/year metadata filter.
+            title: Optional title metadata filter.
+            k: Number of retrieval results.
+            min_results: Minimum number of chunks required for a strategy to qualify.
+            use_progressive_filtering: When True, evaluate all progressive metadata
+                strategies plus semantic fallback. When False, use semantic-only retrieval.
 
         Returns:
             used_filter: The metadata filter that succeeded (or None)
@@ -169,39 +181,42 @@ class ContentUtils:
 
         filter_attempts: List[Tuple[str, Optional[Dict]]] = []
 
-        # Most specific -> least specific -> semantic only
-        if hardiness_zone and month_year and title:
-            filter_attempts.append((
-                "hardiness_zone+month_year+title",
-                _make_where(
-                    hardiness_zone=hardiness_zone,
-                    month_year=month_year,
-                    title=title,
-                ),
-            ))
+        if use_progressive_filtering:
+            # Most specific -> least specific -> semantic only
+            if hardiness_zone and month_year and title:
+                filter_attempts.append((
+                    "hardiness_zone+month_year+title",
+                    _make_where(
+                        hardiness_zone=hardiness_zone,
+                        month_year=month_year,
+                        title=title,
+                    ),
+                ))
 
-        if hardiness_zone and title:
-            filter_attempts.append((
-                "hardiness_zone+title",
-                _make_where(hardiness_zone=hardiness_zone, title=title),
-            ))
+            if hardiness_zone and title:
+                filter_attempts.append((
+                    "hardiness_zone+title",
+                    _make_where(hardiness_zone=hardiness_zone, title=title),
+                ))
 
-        if title:
-            filter_attempts.append(("title", _make_where(title=title)))
+            if title:
+                filter_attempts.append(("title", _make_where(title=title)))
 
-        if month_year:
-            filter_attempts.append(("month_year", _make_where(month_year=month_year)))
+            if month_year:
+                filter_attempts.append(("month_year", _make_where(month_year=month_year)))
 
-        if hardiness_zone and month_year:
-            filter_attempts.append((
-                "hardiness_zone+month_year",
-                _make_where(hardiness_zone=hardiness_zone, month_year=month_year),
-            ))
+            if hardiness_zone and month_year:
+                filter_attempts.append((
+                    "hardiness_zone+month_year",
+                    _make_where(hardiness_zone=hardiness_zone, month_year=month_year),
+                ))
 
-        if hardiness_zone:
-            filter_attempts.append(("hardiness_zone", _make_where(hardiness_zone=hardiness_zone)))
+            if hardiness_zone:
+                filter_attempts.append(("hardiness_zone", _make_where(hardiness_zone=hardiness_zone)))
 
-        filter_attempts.append(("semantic_only", None))
+            filter_attempts.append(("semantic_only", None))
+        else:
+            filter_attempts.append(("semantic_only", None))
 
         k = int(k)
         min_results = int(min_results)

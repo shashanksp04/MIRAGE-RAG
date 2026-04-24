@@ -24,6 +24,7 @@ class ConfidenceEvaluator:
         month_year: Optional[str] = None,
         title: Optional[str] = None,
         k: int = 5,
+        use_progressive_filtering: bool = True,
     ) -> dict:
         """Evaluates confidence of retrieved evidence for a query.
 
@@ -37,6 +38,8 @@ class ConfidenceEvaluator:
             month_year: Optional temporal filter
             title: Optional document title filter
             k: Number of chunks to retrieve
+            use_progressive_filtering: When True, evaluate confidence using progressive
+                metadata retrieval strategies. When False, force semantic-only retrieval.
 
         Returns:
             Success:
@@ -74,6 +77,7 @@ class ConfidenceEvaluator:
             month_year=month_year,
             title=title,
             k=k,
+            use_progressive_filtering=use_progressive_filtering,
         )
 
         if not results:

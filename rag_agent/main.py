@@ -41,6 +41,8 @@ class MainAgent:
         self.current_location: Optional[str] = None
         # Ablation toggle: set False to disable location-aware domain filtering for all web searches.
         self.use_domain_filter: bool = True
+        # Ablation toggle: set False to disable progressive metadata filtering (semantic-only retrieval).
+        self.use_progressive_filtering: bool = True
 
         # Store tools for debugging
         self.tools_list = [
@@ -187,7 +189,8 @@ class MainAgent:
         print(f"[RAG reload] Rebinding complete", flush=True)
         
     def _tracked_evaluate_confidence(self, *, query: str, location: Optional[str] = None,
-                                      month_year: Optional[str] = None, title: Optional[str] = None, k: int = 5) -> Dict:
+                                      month_year: Optional[str] = None, title: Optional[str] = None, k: int = 5,
+                                      use_progressive_filtering: Optional[bool] = None) -> Dict:
         """Evaluates confidence of retrieved evidence for a query.
         
         Use this tool AFTER calling retrieve_content to determine if the retrieved information is reliable.
@@ -199,6 +202,8 @@ class MainAgent:
             month_year: Optional temporal filter
             title: Optional document title filter
             k: Number of chunks to retrieve (default: 5)
+            use_progressive_filtering: Optional per-call override. If omitted,
+                this uses the class-level ablation setting `self.use_progressive_filtering`.
             
         Returns:
             Dict with status, confidence_level ("high"/"medium"/"low"), confidence_score, and diagnostics
@@ -206,8 +211,18 @@ class MainAgent:
         import sys
         print(f"[RAG Tools] evaluate_retrieval_confidence: CALLED", flush=True)
         effective_location = location or getattr(self, "current_location", None)
+        effective_use_progressive_filtering = (
+            use_progressive_filtering
+            if use_progressive_filtering is not None
+            else self.use_progressive_filtering
+        )
         result = self.confidence_evaluator.evaluate_retrieval_confidence(
-            query=query, location=effective_location, month_year=month_year, title=title, k=k
+            query=query,
+            location=effective_location,
+            month_year=month_year,
+            title=title,
+            k=k,
+            use_progressive_filtering=effective_use_progressive_filtering,
         )
         status = result.get("status", "unknown")
         if status == "success":
@@ -334,8 +349,18 @@ class MainAgent:
             location: str | None = None,
             month_year: str | None = None,
             title: str | None = None,
+            use_progressive_filtering: Optional[bool] = None,
         ) -> dict:
-        """Retrieves relevant content using progressive metadata filtering."""
+        """Retrieves relevant content with optional progressive metadata filtering.
+
+        Args:
+            query: Query text to retrieve against.
+            location: Optional geographic location used to derive hardiness zone.
+            month_year: Optional month/year metadata filter.
+            title: Optional title metadata filter.
+            use_progressive_filtering: Optional per-call override. If omitted,
+                this uses `self.use_progressive_filtering`.
+        """
 
         if not query or not query.strip():
             return {
@@ -345,12 +370,18 @@ class MainAgent:
             }
 
         print(f"[RAG Tools] collection.count()={self.collection.count()}", flush=True)
+        effective_use_progressive_filtering = (
+            use_progressive_filtering
+            if use_progressive_filtering is not None
+            else self.use_progressive_filtering
+        )
         used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
             query=query,
             collection=self.collection,
             location=location,
             month_year=month_year,
             title=title,
+            use_progressive_filtering=effective_use_progressive_filtering,
         )
 
         if not results:
