@@ -49,6 +49,7 @@ class WebSearch:
         query: str,
         results_to_extract_count: int = 20,
         location: Optional[str] = None,
+        use_domain_filter: bool = True,
     ) -> Dict:
         """Searches the web for relevant information and extracts clean text.
 
@@ -60,6 +61,8 @@ class WebSearch:
             results_to_extract_count: Number of web results to retrieve and process.
             location: Optional geographic context (e.g. "Minnesota, Stearns County").
                 When provided, restricts results to .edu domains in that location and hardiness zone.
+            use_domain_filter: Whether to apply location-aware domain filtering to the query.
+                Set to False for open web search during ablation runs.
 
         Returns:
             Success:
@@ -97,7 +100,7 @@ class WebSearch:
 
         # 🔎 Query parameters: .edu only, exclude .com and .org
         # Optionally restrict to location/hardiness-filtered .edu domains (max 6)
-        filtered_domains = get_filtered_edu_domains_for_search(location)
+        filtered_domains = get_filtered_edu_domains_for_search(location) if use_domain_filter else []
         if filtered_domains:
             domains_to_use = filtered_domains[:6]
             site_clause = " OR ".join(f"site:{d}" for d in domains_to_use)
@@ -105,7 +108,7 @@ class WebSearch:
             print(f"[WebSearch] Query: {query} | Filtered domains: {domains_to_use}")
         else:
             search_query = f"{query}"
-            print(f"[WebSearch] Query: {query} | No domain filter")
+            print(f"[WebSearch] Query: {query} | Domain filter disabled or unavailable")
         params = {
             "query": search_query,
             "count": results_to_extract_count,

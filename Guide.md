@@ -152,7 +152,7 @@ s_i = \frac{1}{1 + \max(d_i,\,0)}
 
 #### 2.3.6 Web search and metadata (`WebSearch`)
 
-When **`location`** is provided to web search, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. Results carry **`month_year`** derived from `page_age` (or validated provider fields) for downstream **`_tracked_add_web_content`** so ingestion stays consistent with retrieval policies.
+`WebSearch.web_search` accepts **`use_domain_filter`** (default `True`). When this flag is `True`, and **`location`** is provided, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. When `use_domain_filter` is `False`, web search runs as an open query (no `.edu` site-clause restriction). In `MainAgent`, `_tracked_web_search` supports an optional per-call override and otherwise uses the code-controlled class setting `self.use_domain_filter` for run-level ablations. Results carry **`month_year`** derived from `page_age` (or validated provider fields) for downstream **`_tracked_add_web_content`** so ingestion stays consistent with retrieval policies.
 
 #### 2.3.7 Runtime vs preload responsibilities
 

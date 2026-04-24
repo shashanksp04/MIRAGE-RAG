@@ -39,6 +39,8 @@ class MainAgent:
         self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
         self.keyword_extractor = KeywordExtractor(model_name=test_model, openai_api_base=api_base)
         self.current_location: Optional[str] = None
+        # Ablation toggle: set False to disable location-aware domain filtering for all web searches.
+        self.use_domain_filter: bool = True
 
         # Store tools for debugging
         self.tools_list = [
@@ -221,6 +223,7 @@ class MainAgent:
         query: str,
         results_to_extract_count: int = 10,
         location: Optional[str] = None,
+        use_domain_filter: Optional[bool] = None,
     ) -> Dict:
         """Searches the web for relevant information and extracts clean text.
         
@@ -232,6 +235,8 @@ class MainAgent:
             results_to_extract_count: Number of web results to retrieve and process (default: 10)
             location: Optional geographic context (e.g. "Minnesota, Stearns County").
                 When provided, restricts results to .edu domains in that location and hardiness zone.
+            use_domain_filter: Optional per-call override for domain filtering. If omitted,
+                this uses the class-level ablation setting `self.use_domain_filter`.
             
         Returns:
             Dict with status, query, results (list of dicts with title, url), and error_message if failed
@@ -239,8 +244,14 @@ class MainAgent:
         import sys
         print(f"[RAG Tools] web_search: CALLED (query: {query[:50]}...)", flush=True)
         effective_location = location or getattr(self, "current_location", None)
+        effective_use_domain_filter = (
+            use_domain_filter if use_domain_filter is not None else self.use_domain_filter
+        )
         result = self.web_search.web_search(
-            query, results_to_extract_count, location=effective_location
+            query,
+            results_to_extract_count,
+            location=effective_location,
+            use_domain_filter=effective_use_domain_filter,
         )
         status = result.get("status", "unknown")
         if status == "success":
