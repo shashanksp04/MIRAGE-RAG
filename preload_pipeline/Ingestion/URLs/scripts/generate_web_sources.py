@@ -5,11 +5,12 @@ import re
 import unicodedata
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlsplit
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate preload manifest web_page_list sources from a list of names."
+        description="Generate preload manifest web_page_list sources from names or URLs."
     )
     parser.add_argument(
         "--base-url",
@@ -18,8 +19,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--names-file",
-        required=True,
+        default=None,
         help="Text file with one name per line.",
+    )
+    parser.add_argument(
+        "--urls-file",
+        default=None,
+        help="Text file with one full URL per line.",
     )
     parser.add_argument(
         "--output",
@@ -52,7 +58,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Tag value. Repeat for multiple tags (e.g. --tag plants --tag disease).",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if bool(args.names_file) == bool(args.urls_file):
+        parser.error("Provide exactly one of --names-file or --urls-file.")
+    return args
 
 
 def slugify(name: str) -> str:
@@ -75,7 +84,38 @@ def read_names(path: Path) -> List[str]:
     return names
 
 
-def build_source_record(
+def read_urls(path: Path) -> List[str]:
+    urls: List[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        cleaned = raw.strip()
+        if cleaned:
+            urls.append(cleaned)
+    if not urls:
+        raise ValueError(f"No URLs found in {path}")
+    return urls
+
+
+def derive_name_from_url(url: str, base_url: str) -> str:
+    base_prefix = f"{base_url.rstrip('/')}/"
+    cleaned_url = url.strip()
+
+    if cleaned_url.startswith(base_prefix):
+        suffix = cleaned_url[len(base_prefix) :].strip("/")
+        derived = slugify(suffix)
+        if derived:
+            return derived
+
+    parsed = urlsplit(cleaned_url)
+    tail = parsed.path.rstrip("/").split("/")[-1] if parsed.path else ""
+    derived_tail = slugify(tail)
+    if derived_tail:
+        return derived_tail
+
+    fallback = slugify(cleaned_url)
+    return fallback or "source"
+
+
+def build_source_record_from_name(
     *,
     prefix: Optional[str],
     disease_name: str,
@@ -87,9 +127,31 @@ def build_source_record(
 ) -> dict:
     disease_slug = slugify(disease_name)
     url = f"{base_url.rstrip('/')}/{disease_slug}"
+    return build_source_record(
+        name_slug=disease_slug,
+        url=url,
+        entity_type=entity_type,
+        source_org=source_org,
+        location=location,
+        prefix=prefix,
+        tags=tags,
+    )
+
+
+def build_source_record(
+    *,
+    name_slug: str,
+    url: str,
+    entity_type: Optional[str],
+    source_org: Optional[str],
+    location: Optional[str],
+    prefix: Optional[str],
+    tags: Optional[List[str]],
+) -> dict:
+    final_name = f"{prefix}_{name_slug}" if prefix else name_slug
 
     record = {
-        "name": f"{prefix}_{disease_slug}" if prefix else disease_slug,
+        "name": final_name,
         "type": "web_page_list",
         "urls": [url],
     }
@@ -127,21 +189,36 @@ def dump_sources_yaml(sources: List[dict]) -> str:
 
 def main() -> int:
     args = parse_args()
-    names = read_names(Path(args.names_file).resolve())
     tags = args.tag
 
-    sources = [
-        build_source_record(
-            prefix=args.name_prefix,
-            disease_name=name,
-            base_url=args.base_url,
-            entity_type=args.entity_type,
-            source_org=args.source_org,
-            location=args.location,
-            tags=tags,
-        )
-        for name in names
-    ]
+    if args.names_file:
+        names = read_names(Path(args.names_file).resolve())
+        sources = [
+            build_source_record_from_name(
+                prefix=args.name_prefix,
+                disease_name=name,
+                base_url=args.base_url,
+                entity_type=args.entity_type,
+                source_org=args.source_org,
+                location=args.location,
+                tags=tags,
+            )
+            for name in names
+        ]
+    else:
+        urls = read_urls(Path(args.urls_file).resolve())
+        sources = [
+            build_source_record(
+                name_slug=derive_name_from_url(url, args.base_url),
+                url=url,
+                entity_type=args.entity_type,
+                source_org=args.source_org,
+                location=args.location,
+                prefix=args.name_prefix,
+                tags=tags,
+            )
+            for url in urls
+        ]
 
     output_text = dump_sources_yaml(sources)
 

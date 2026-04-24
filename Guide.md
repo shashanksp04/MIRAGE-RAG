@@ -234,8 +234,8 @@ The report includes manifest path, persist dir, collection name, timestamps, opt
 
 For many URLs sharing one base path and metadata, use the flow documented in `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md`:
 
-- Inputs: **`--base-url`**, **`--names-file`** (one name per line), optional **`--output`**, **`--location`**, **`--entity-type`**, **`--source-org`**, repeatable **`--tag`**, etc.
-- Names are normalized to URL slugs and emitted as separate `web_page_list` source records for inclusion in your manifest.
+- Inputs: **`--base-url`** and exactly one of **`--names-file`** (one name per line) or **`--urls-file`** (one full URL per line), plus optional **`--output`**, **`--location`**, **`--entity-type`**, **`--source-org`**, repeatable **`--tag`**, etc.
+- In names mode, names are normalized to URL slugs; in URL mode, full URLs are preserved and source names are derived using the `--base-url` context.
 
 ### 3.7 How to run preload
 
@@ -272,12 +272,24 @@ Important flags:
 
 #### If ingesting URL lists (generate manifest sources, then preload)
 
-1. Generate manifest-ready `web_page_list` YAML from a names file (example paths below are relative to **`preload_pipeline/`**):
+1. Generate manifest-ready `web_page_list` YAML from either a names file or a full URLs file (example paths below are relative to **`preload_pipeline/`**):
 
 ```bash
 python Ingestion/URLs/scripts/generate_web_sources.py \
   --base-url "https://extension.illinois.edu/plant-problems/" \
   --names-file "Ingestion/URLs/names/uiuc.txt" \
+  --location "Illinois" \
+  --entity-type "disease" \
+  --source-org "Illinois Extension" \
+  --output "Ingestion/URLs/Outputs/uiuc_generated_sources.yaml"
+```
+
+Alternative URL-file mode:
+
+```bash
+python Ingestion/URLs/scripts/generate_web_sources.py \
+  --base-url "https://extension.illinois.edu/plant-problems/" \
+  --urls-file "Ingestion/URLs/names/uiuc_urls.txt" \
   --location "Illinois" \
   --entity-type "disease" \
   --source-org "Illinois Extension" \
