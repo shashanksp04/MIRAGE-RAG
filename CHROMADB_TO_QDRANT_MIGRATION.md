@@ -11,15 +11,15 @@ This document is a comprehensive, file-by-file migration guide for replacing Chr
 2. [Conceptual Differences](#2-conceptual-differences)
 3. [Installation](#3-installation)
 4. [File-by-File Changes](#4-file-by-file-changes)
-   - [4.1 `rag_agent/utils/Embedding.py`](#41-rag_agentutilsembeddingpy)
-   - [4.2 `rag_agent/utils/ContentUtils.py`](#42-rag_agentutilscontentutilspy)
-   - [4.3 `rag_agent/tools/web_addition.py`](#43-rag_agenttoolsweb_additionpy)
-   - [4.4 `rag_agent/tools/pdf_addition.py`](#44-rag_agenttoolspdf_additionpy)
-   - [4.5 `rag_agent/tools/confidence_evaluator.py`](#45-rag_agenttoolsconfidence_evaluatorpy)
-   - [4.6 `rag_agent/main.py`](#46-rag_agentmainpy)
-   - [4.7 `preload_pipeline/preload/pipeline/chunk_upsert.py`](#47-preload_pipelinepreloadpipelinechunk_upsertpy)
-   - [4.8 `preload_pipeline/preload/rag_agent_integration.py`](#48-preload_pipelinepreloadrag_agent_integrationpy)
-   - [4.9 `preload_pipeline/bootstrap.py`](#49-preload_pipelinebootstrappy)
+  - [4.1 `rag_agent/utils/Embedding.py](#41-rag_agentutilsembeddingpy)`
+  - [4.2 `rag_agent/utils/ContentUtils.py](#42-rag_agentutilscontentutilspy)`
+  - [4.3 `rag_agent/tools/web_addition.py](#43-rag_agenttoolsweb_additionpy)`
+  - [4.4 `rag_agent/tools/pdf_addition.py](#44-rag_agenttoolspdf_additionpy)`
+  - [4.5 `rag_agent/tools/confidence_evaluator.py](#45-rag_agenttoolsconfidence_evaluatorpy)`
+  - [4.6 `rag_agent/main.py](#46-rag_agentmainpy)`
+  - [4.7 `preload_pipeline/preload/pipeline/chunk_upsert.py](#47-preload_pipelinepreloadpipelinechunk_upsertpy)`
+  - [4.8 `preload_pipeline/preload/rag_agent_integration.py](#48-preload_pipelinepreloadrag_agent_integrationpy)`
+  - [4.9 `preload_pipeline/bootstrap.py](#49-preload_pipelinebootstrappy)`
 5. [Cross-Cutting API Mapping](#5-cross-cutting-api-mapping)
 6. [Metadata Filtering Syntax Translation](#6-metadata-filtering-syntax-translation)
 7. [Distance Score Semantics](#7-distance-score-semantics)
@@ -33,17 +33,19 @@ This document is a comprehensive, file-by-file migration guide for replacing Chr
 
 ChromaDB is used in **nine places** across the codebase:
 
-| File | Role |
-|---|---|
-| `rag_agent/utils/Embedding.py` | Defines a Chroma-aware embedding function |
-| `rag_agent/utils/ContentUtils.py` | Deduplication check + query execution against Chroma collection |
-| `rag_agent/tools/web_addition.py` | Writes chunks to Chroma collection |
-| `rag_agent/tools/pdf_addition.py` | Writes chunks to Chroma collection |
-| `rag_agent/tools/confidence_evaluator.py` | Reads from Chroma via `ContentUtils` |
-| `rag_agent/main.py` | Creates/loads Chroma client + collection; exposes `count()` |
-| `preload_pipeline/preload/pipeline/chunk_upsert.py` | Stand-alone Chroma upserter used by preload |
-| `preload_pipeline/preload/rag_agent_integration.py` | Mirrors rag_agent Chroma setup for preload pipeline |
-| `preload_pipeline/bootstrap.py` | CLI args reference "Chroma" in help text; drives the preload pipeline |
+
+| File                                                | Role                                                                  |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| `rag_agent/utils/Embedding.py`                      | Defines a Chroma-aware embedding function                             |
+| `rag_agent/utils/ContentUtils.py`                   | Deduplication check + query execution against Chroma collection       |
+| `rag_agent/tools/web_addition.py`                   | Writes chunks to Chroma collection                                    |
+| `rag_agent/tools/pdf_addition.py`                   | Writes chunks to Chroma collection                                    |
+| `rag_agent/tools/confidence_evaluator.py`           | Reads from Chroma via `ContentUtils`                                  |
+| `rag_agent/main.py`                                 | Creates/loads Chroma client + collection; exposes `count()`           |
+| `preload_pipeline/preload/pipeline/chunk_upsert.py` | Stand-alone Chroma upserter used by preload                           |
+| `preload_pipeline/preload/rag_agent_integration.py` | Mirrors rag_agent Chroma setup for preload pipeline                   |
+| `preload_pipeline/bootstrap.py`                     | CLI args reference "Chroma" in help text; drives the preload pipeline |
+
 
 ---
 
@@ -53,50 +55,61 @@ Understanding these differences is essential before writing any code.
 
 ### 2.1 Embedding ownership
 
-| Aspect | ChromaDB | Qdrant |
-|---|---|---|
-| Embedding computed by | Chroma (you pass an `EmbeddingFunction`) | You (compute vectors yourself, pass as `float[]`) |
-| At query time | `query_texts=[...]` — Chroma embeds them | `query_vector=[...]` — you embed first |
-| At ingest time | `collection.add(documents=[...])` — Chroma embeds them | `client.upsert(points=[PointStruct(vector=...)])` — you embed first |
+
+| Aspect                | ChromaDB                                               | Qdrant                                                              |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| Embedding computed by | Chroma (you pass an `EmbeddingFunction`)               | You (compute vectors yourself, pass as `float[]`)                   |
+| At query time         | `query_texts=[...]` — Chroma embeds them               | `query_vector=[...]` — you embed first                              |
+| At ingest time        | `collection.add(documents=[...])` — Chroma embeds them | `client.upsert(points=[PointStruct(vector=...)])` — you embed first |
+
 
 This is the biggest architectural shift. In every place you call `collection.add(documents=...)` or `collection.query(query_texts=...)`, you must first embed the text yourself using your `SentenceTransformerEmbeddingFunction` (or equivalent), then pass the resulting float list.
 
 ### 2.2 Payload vs metadata
 
-| ChromaDB | Qdrant |
-|---|---|
-| `metadatas=[{...}]` in `add()` | `payload={...}` in `PointStruct` |
+
+| ChromaDB                             | Qdrant                             |
+| ------------------------------------ | ---------------------------------- |
+| `metadatas=[{...}]` in `add()`       | `payload={...}` in `PointStruct`   |
 | Retrieved via `results["metadatas"]` | Retrieved via `results[i].payload` |
+
 
 ### 2.3 Documents (text) storage
 
-| ChromaDB | Qdrant |
-|---|---|
-| First-class `documents` field | Stored inside `payload`, e.g. `payload={"text": "...", ...}` |
-| Retrieved via `results["documents"]` | Retrieved via `results[i].payload["text"]` |
+
+| ChromaDB                             | Qdrant                                                       |
+| ------------------------------------ | ------------------------------------------------------------ |
+| First-class `documents` field        | Stored inside `payload`, e.g. `payload={"text": "...", ...}` |
+| Retrieved via `results["documents"]` | Retrieved via `results[i].payload["text"]`                   |
+
 
 ### 2.4 Point IDs
 
-| ChromaDB | Qdrant |
-|---|---|
+
+| ChromaDB                        | Qdrant                                                  |
+| ------------------------------- | ------------------------------------------------------- |
 | String IDs (e.g. `"src_p1_c0"`) | Must be **unsigned integer** or a valid **UUID string** |
-| IDs can be arbitrary strings | Arbitrary strings are not supported as IDs |
+| IDs can be arbitrary strings    | Arbitrary strings are not supported as IDs              |
+
 
 You will need to convert your string IDs (e.g. SHA-256 hex, `source_p1_c0`) to either UUIDs or deterministic integers. The easiest approach is `uuid.uuid5(uuid.NAMESPACE_DNS, your_string_id)`.
 
 ### 2.5 Collection schema at creation time
 
 ChromaDB creates collections without specifying a vector dimension. Qdrant requires you to declare:
+
 - `size`: vector dimension (e.g., 768 for `BAAI/bge-base-en-v1.5`)
 - `distance`: `Distance.COSINE` | `Distance.DOT` | `Distance.EUCLID`
 
 ### 2.6 Query return type
 
-| ChromaDB | Qdrant |
-|---|---|
-| Returns a dict with `"documents"`, `"metadatas"`, `"distances"` keys | Returns a list of `ScoredPoint` objects |
-| `results["documents"][0]` — list of strings | `results[i].payload["text"]` |
+
+| ChromaDB                                                                                                                     | Qdrant                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Returns a dict with `"documents"`, `"metadatas"`, `"distances"` keys                                                         | Returns a list of `ScoredPoint` objects                |
+| `results["documents"][0]` — list of strings                                                                                  | `results[i].payload["text"]`                           |
 | `results["distances"][0]` — list of floats (lower = more similar for L2; for cosine, Chroma returns `1 - cosine_similarity`) | `results[i].score` — higher is better (for Cosine/Dot) |
+
 
 ---
 
@@ -309,7 +322,7 @@ With Qdrant cosine similarity, the score is already higher-is-better (range 0–
 
 The safest change is to keep the formula and just make sure `distance = 1.0 - hit.score`.
 
-**`ContentUtils.__init__` changes:**
+`**ContentUtils.__init__` changes:**
 
 You must add `embedding_fn` and remove the Chroma-specific `EmbeddingFunction` dependency. Pass the embedding function in from `main.py` / `rag_agent_integration.py`:
 
@@ -331,12 +344,14 @@ def __init__(
 ### 4.3 `rag_agent/tools/web_addition.py`
 
 This file calls:
+
 - `self.content_utils.content_hash_exists(self.collection, content_hash)` — must update call signature
 - `self.collection.add(documents=docs, metadatas=metas, ids=ids)` — must replace with Qdrant upsert
 
 #### Constructor
 
 **Current:**
+
 ```python
 def __init__(self, collection, content_utils, null_str="", null_int=-1):
     self.collection = collection
@@ -344,6 +359,7 @@ def __init__(self, collection, content_utils, null_str="", null_int=-1):
 ```
 
 **New:**
+
 ```python
 from qdrant_client import QdrantClient
 
@@ -357,6 +373,7 @@ def __init__(self, client: QdrantClient, collection_name: str, content_utils, nu
 #### Deduplication check (line 301–306 of `web_addition.py`)
 
 **Current:**
+
 ```python
 if self.content_utils.content_hash_exists(self.collection, content_hash):
     skipped += 1
@@ -364,6 +381,7 @@ if self.content_utils.content_hash_exists(self.collection, content_hash):
 ```
 
 **New:**
+
 ```python
 if self.content_utils.content_hash_exists(self.client, self.collection_name, content_hash):
     skipped += 1
@@ -373,6 +391,7 @@ if self.content_utils.content_hash_exists(self.client, self.collection_name, con
 #### Document insertion (line 336–340 of `web_addition.py`)
 
 **Current:**
+
 ```python
 self.collection.add(
     documents=documents,
@@ -382,6 +401,7 @@ self.collection.add(
 ```
 
 **New:**
+
 ```python
 import uuid
 from qdrant_client.http.models import PointStruct
@@ -441,6 +461,7 @@ self.client.upsert(collection_name=self.collection_name, points=points)
 This file does not call Chroma directly — it delegates everything to `ContentUtils.retrieve_with_priority_filters`. However, the constructor must change to match the new signature:
 
 **Current:**
+
 ```python
 def __init__(self, collection, content_utils):
     self.collection = collection
@@ -448,6 +469,7 @@ def __init__(self, collection, content_utils):
 ```
 
 **New:**
+
 ```python
 def __init__(self, client: QdrantClient, collection_name: str, content_utils):
     self.client = client
@@ -490,11 +512,13 @@ This is the largest file to change. Every ChromaDB-specific call lives here.
 #### Imports (line 1)
 
 **Current:**
+
 ```python
 import chromadb
 ```
 
 **New:**
+
 ```python
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
@@ -503,6 +527,7 @@ from qdrant_client.http.models import Distance, VectorParams
 #### `__init__` — client and collection creation (lines 22–24)
 
 **Current:**
+
 ```python
 persist_path = "/work/nvme/bfox/ssingh38/chroma_database/chroma_db"
 self.client = chromadb.PersistentClient(path=persist_path)
@@ -513,6 +538,7 @@ self.collection = self.client.get_or_create_collection(
 ```
 
 **New:**
+
 ```python
 persist_path = "/work/nvme/bfox/ssingh38/qdrant_database"
 self.collection_name = "meta-mirage_collection"
@@ -533,6 +559,7 @@ if self.collection_name not in existing:
 > **Note on `embedding_function`:** The embedding function no longer needs to be passed to the Qdrant client — it is used directly in each tool. Keep `self.embedding_function` on the `MainAgent` instance and pass it to `ContentUtils` as well.
 
 Also pass `embedding_fn` to `ContentUtils`:
+
 ```python
 self.content_utils = ContentUtils(embed_model=embed_model_name, embedding_fn=self.embedding_function)
 ```
@@ -540,6 +567,7 @@ self.content_utils = ContentUtils(embed_model=embed_model_name, embedding_fn=sel
 #### Tool instantiation (lines 36–40)
 
 **Current:**
+
 ```python
 self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
 self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
@@ -547,6 +575,7 @@ self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_ut
 ```
 
 **New:**
+
 ```python
 self.pdf_addition = PDFAddition(self.client, self.collection_name, self.content_utils, self.null_str)
 self.web_addition = WebAddition(self.client, self.collection_name, self.content_utils, self.null_str, self.null_int)
@@ -556,11 +585,13 @@ self.confidence_evaluator = ConfidenceEvaluator(self.client, self.collection_nam
 #### `collection.count()` (lines 178, 261–265, 336)
 
 **Current:**
+
 ```python
 self.collection.count()
 ```
 
 **New:**
+
 ```python
 self.client.count(collection_name=self.collection_name).count
 ```
@@ -568,12 +599,14 @@ self.client.count(collection_name=self.collection_name).count
 #### `list_collections()` (lines 27–31)
 
 **Current:**
+
 ```python
 collections = self.client.list_collections()
 collection_names = [c.name if hasattr(c, "name") else str(c) for c in collections]
 ```
 
 **New:**
+
 ```python
 collections_response = self.client.get_collections()
 collection_names = [c.name for c in collections_response.collections]
@@ -582,6 +615,7 @@ collection_names = [c.name for c in collections_response.collections]
 #### `reset_collection()` (lines 128–163)
 
 **Current:**
+
 ```python
 self.client.delete_collection(name=name)
 self.collection = self.client.get_or_create_collection(
@@ -590,6 +624,7 @@ self.collection = self.client.get_or_create_collection(
 ```
 
 **New:**
+
 ```python
 # Delete if exists
 try:
@@ -617,6 +652,7 @@ self.confidence_evaluator = ConfidenceEvaluator(self.client, self.collection_nam
 #### `reload_existing_collection()` (lines 165–185)
 
 **Current:**
+
 ```python
 self.collection = self.client.get_collection(
     name=name, embedding_function=self.embedding_function
@@ -625,6 +661,7 @@ print(f"[RAG reload] Collection count: {self.collection.count()}", flush=True)
 ```
 
 **New:**
+
 ```python
 # Verify collection exists
 existing = [c.name for c in self.client.get_collections().collections]
@@ -643,6 +680,7 @@ self.confidence_evaluator = ConfidenceEvaluator(self.client, self.collection_nam
 #### `_tracked_retrieve_content` stale handle self-heal (lines 76–100)
 
 **Current:**
+
 ```python
 if "does not exist" in msg or "not exist" in msg:
     self.collection = self.client.get_or_create_collection(
@@ -655,6 +693,7 @@ if "does not exist" in msg or "not exist" in msg:
 ```
 
 **New:**
+
 ```python
 if "does not exist" in msg or "not exist" in msg:
     # Recreate if missing
@@ -675,6 +714,7 @@ if "does not exist" in msg or "not exist" in msg:
 #### `_tracked_add_web_content` — count before/after (lines 261–265)
 
 **Current:**
+
 ```python
 before = self.collection.count()
 result = self.web_addition.add_web_content(...)
@@ -682,6 +722,7 @@ after = self.collection.count()
 ```
 
 **New:**
+
 ```python
 before = self.client.count(collection_name=self.collection_name).count
 result = self.web_addition.add_web_content(...)
@@ -804,6 +845,7 @@ class QdrantUpserter:
 ```
 
 **Key differences from the Chroma version:**
+
 - Class renamed from `ChromaUpserter` → `QdrantUpserter`
 - `vector_size` and `embedding_fn` are new required constructor params
 - Text is stored in `payload["text"]` instead of Chroma's documents field
@@ -873,6 +915,7 @@ def create_rag_agent_collection_and_utils(
 **Note on the `_DryRunCollection` shim:**
 
 The current `_DryRunCollection` wraps a Chroma collection to intercept writes. With Qdrant, you have two options:
+
 1. Subclass `WebAddition`/`PDFAddition` and override the `client.upsert(...)` call to be a no-op — this is the cleanest approach.
 2. Replace the shim with a mock `QdrantClient` that suppresses upsert calls.
 
@@ -886,12 +929,9 @@ The `_DryRunCollection.get(...)` for deduplication reads should still pass throu
 
 **Changes required:**
 
-1. **`--persist-dir` help text** (line 44): Change `"Chroma persistence directory"` → `"Qdrant persistence directory"`.
-
-2. **`--collection` help text** (line 45): Change `"Chroma collection name"` → `"Qdrant collection name"`.
-
-3. **`--dry-run` help text** (line 51): Change `"Do everything except writing to Chroma"` → `"Do everything except writing to Qdrant"`.
-
+1. `**--persist-dir` help text** (line 44): Change `"Chroma persistence directory"` → `"Qdrant persistence directory"`.
+2. `**--collection` help text** (line 45): Change `"Chroma collection name"` → `"Qdrant collection name"`.
+3. `**--dry-run` help text** (line 51): Change `"Do everything except writing to Chroma"` → `"Do everything except writing to Qdrant"`.
 4. **Unpacking the return value of `create_rag_agent_collection_and_utils` (line 100):**
 
 ```python
@@ -902,7 +942,7 @@ collection, content_utils, web_adder, pdf_adder = create_rag_agent_collection_an
 client, collection_name, content_utils, web_adder, pdf_adder = create_rag_agent_collection_and_utils(...)
 ```
 
-5. **`CSVAdapter` instantiation (line 114):** The `CSVAdapter` receives `collection=collection`. Change to `client=client, collection_name=collection_name`. The `CSVAdapter` class itself must be updated in `csv_adapter.py` to pass these through to `ingest_csv_row_record` (and that function must also be updated to use `client.upsert(...)`).
+1. `**CSVAdapter` instantiation (line 114):** The `CSVAdapter` receives `collection=collection`. Change to `client=client, collection_name=collection_name`. The `CSVAdapter` class itself must be updated in `csv_adapter.py` to pass these through to `ingest_csv_row_record` (and that function must also be updated to use `client.upsert(...)`).
 
 ---
 
@@ -910,23 +950,25 @@ client, collection_name, content_utils, web_adder, pdf_adder = create_rag_agent_
 
 Quick reference for every ChromaDB call in the codebase and its Qdrant equivalent.
 
-| Operation | ChromaDB | Qdrant |
-|---|---|---|
-| Create local persistent client | `chromadb.PersistentClient(path=p)` | `QdrantClient(path=p)` |
-| Connect to remote server | `chromadb.HttpClient(host=h, port=p)` | `QdrantClient(url="http://h:6333")` |
-| Create or get a collection | `client.get_or_create_collection(name, embedding_function=fn)` | Create only if missing: `client.create_collection(collection_name, vectors_config=VectorParams(size=N, distance=Distance.COSINE))` |
-| Get existing collection | `client.get_collection(name, embedding_function=fn)` | Check via `client.get_collections()` |
-| Delete a collection | `client.delete_collection(name)` | `client.delete_collection(collection_name)` |
-| List collections | `client.list_collections()` → list of Collection objects | `client.get_collections().collections` → list of CollectionDescription |
-| Count documents | `collection.count()` | `client.count(collection_name).count` |
-| Insert documents | `collection.add(documents=[], metadatas=[], ids=[])` | `client.upsert(collection_name, points=[PointStruct(id=uuid, vector=[], payload={})])` |
-| Upsert documents | `collection.upsert(documents=[], metadatas=[], ids=[])` | `client.upsert(collection_name, points=[...])` (always upserts by ID) |
-| Semantic search | `collection.query(query_texts=[q], n_results=k, where=filter, include=[...])` | First embed: `v = fn([q])[0]`; then `client.search(collection_name, query_vector=v, query_filter=f, limit=k, with_payload=True)` |
-| Scroll / filter without vector | `collection.get(where={...})` | `client.scroll(collection_name, scroll_filter=Filter(...), limit=n)` |
-| Delete points by ID | `collection.delete(ids=[...])` | `client.delete(collection_name, points_selector=PointIdsList(points=[...]))` |
-| Access returned text | `results["documents"][0][i]` | `results[i].payload["text"]` |
-| Access returned metadata | `results["metadatas"][0][i]` | `results[i].payload` (minus the "text" key) |
-| Access distance/score | `results["distances"][0][i]` (lower = more similar for cosine) | `results[i].score` (higher = more similar, range 0–1 for cosine on normalized vectors) |
+
+| Operation                      | ChromaDB                                                                      | Qdrant                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Create local persistent client | `chromadb.PersistentClient(path=p)`                                           | `QdrantClient(path=p)`                                                                                                             |
+| Connect to remote server       | `chromadb.HttpClient(host=h, port=p)`                                         | `QdrantClient(url="http://h:6333")`                                                                                                |
+| Create or get a collection     | `client.get_or_create_collection(name, embedding_function=fn)`                | Create only if missing: `client.create_collection(collection_name, vectors_config=VectorParams(size=N, distance=Distance.COSINE))` |
+| Get existing collection        | `client.get_collection(name, embedding_function=fn)`                          | Check via `client.get_collections()`                                                                                               |
+| Delete a collection            | `client.delete_collection(name)`                                              | `client.delete_collection(collection_name)`                                                                                        |
+| List collections               | `client.list_collections()` → list of Collection objects                      | `client.get_collections().collections` → list of CollectionDescription                                                             |
+| Count documents                | `collection.count()`                                                          | `client.count(collection_name).count`                                                                                              |
+| Insert documents               | `collection.add(documents=[], metadatas=[], ids=[])`                          | `client.upsert(collection_name, points=[PointStruct(id=uuid, vector=[], payload={})])`                                             |
+| Upsert documents               | `collection.upsert(documents=[], metadatas=[], ids=[])`                       | `client.upsert(collection_name, points=[...])` (always upserts by ID)                                                              |
+| Semantic search                | `collection.query(query_texts=[q], n_results=k, where=filter, include=[...])` | First embed: `v = fn([q])[0]`; then `client.search(collection_name, query_vector=v, query_filter=f, limit=k, with_payload=True)`   |
+| Scroll / filter without vector | `collection.get(where={...})`                                                 | `client.scroll(collection_name, scroll_filter=Filter(...), limit=n)`                                                               |
+| Delete points by ID            | `collection.delete(ids=[...])`                                                | `client.delete(collection_name, points_selector=PointIdsList(points=[...]))`                                                       |
+| Access returned text           | `results["documents"][0][i]`                                                  | `results[i].payload["text"]`                                                                                                       |
+| Access returned metadata       | `results["metadatas"][0][i]`                                                  | `results[i].payload` (minus the "text" key)                                                                                        |
+| Access distance/score          | `results["distances"][0][i]` (lower = more similar for cosine)                | `results[i].score` (higher = more similar, range 0–1 for cosine on normalized vectors)                                             |
+
 
 ---
 
@@ -963,15 +1005,17 @@ Filter(must=[
 
 ### All seven filter strategies in `retrieve_with_priority_filters`
 
-| Strategy | Chroma `where` | Qdrant `Filter` |
-|---|---|---|
+
+| Strategy                          | Chroma `where`                                         | Qdrant `Filter`                               |
+| --------------------------------- | ------------------------------------------------------ | --------------------------------------------- |
 | `hardiness_zone+month_year+title` | `{"$and": [{hz: {$eq}}, {my: {$eq}}, {title: {$eq}}]}` | `Filter(must=[hz_cond, my_cond, title_cond])` |
-| `hardiness_zone+title` | `{"$and": [{hz: {$eq}}, {title: {$eq}}]}` | `Filter(must=[hz_cond, title_cond])` |
-| `title` | `{"title": {"$eq": val}}` | `Filter(must=[title_cond])` |
-| `month_year` | `{"month_year": {"$eq": val}}` | `Filter(must=[my_cond])` |
-| `hardiness_zone+month_year` | `{"$and": [{hz: {$eq}}, {my: {$eq}}]}` | `Filter(must=[hz_cond, my_cond])` |
-| `hardiness_zone` | `{"hardiness_zone": {"$eq": val}}` | `Filter(must=[hz_cond])` |
-| `semantic_only` | `None` | `None` |
+| `hardiness_zone+title`            | `{"$and": [{hz: {$eq}}, {title: {$eq}}]}`              | `Filter(must=[hz_cond, title_cond])`          |
+| `title`                           | `{"title": {"$eq": val}}`                              | `Filter(must=[title_cond])`                   |
+| `month_year`                      | `{"month_year": {"$eq": val}}`                         | `Filter(must=[my_cond])`                      |
+| `hardiness_zone+month_year`       | `{"$and": [{hz: {$eq}}, {my: {$eq}}]}`                 | `Filter(must=[hz_cond, my_cond])`             |
+| `hardiness_zone`                  | `{"hardiness_zone": {"$eq": val}}`                     | `Filter(must=[hz_cond])`                      |
+| `semantic_only`                   | `None`                                                 | `None`                                        |
+
 
 ### Required Qdrant payload index (IMPORTANT)
 
@@ -1061,103 +1105,40 @@ The preload pipeline's backup stage copies the entire Chroma persistence directo
 
 ---
 
-## 9. Data Migration (Existing Database)
-
-If you have an existing ChromaDB database that you need to migrate to Qdrant:
-
-### Step 1: Export from ChromaDB
-
-```python
-import chromadb
-
-client = chromadb.PersistentClient(path="/path/to/chroma_db")
-collection = client.get_collection("meta-mirage_collection")
-
-# Export all data (Chroma stores up to 41,666 items per batch; page if needed)
-total = collection.count()
-batch_size = 5000
-all_ids, all_docs, all_metas, all_embeddings = [], [], [], []
-
-for offset in range(0, total, batch_size):
-    result = collection.get(
-        limit=batch_size,
-        offset=offset,
-        include=["documents", "metadatas", "embeddings"],
-    )
-    all_ids.extend(result["ids"])
-    all_docs.extend(result["documents"])
-    all_metas.extend(result["metadatas"])
-    all_embeddings.extend(result["embeddings"])
-```
-
-### Step 2: Import into Qdrant
-
-```python
-import uuid
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams, PointStruct
-
-qclient = QdrantClient(path="/path/to/qdrant_database")
-qclient.create_collection(
-    collection_name="meta-mirage_collection",
-    vectors_config=VectorParams(size=768, distance=Distance.COSINE),
-)
-
-points = []
-for chroma_id, doc, meta, embedding in zip(all_ids, all_docs, all_metas, all_embeddings):
-    point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, chroma_id))
-    payload = {"text": doc, **meta}
-    points.append(PointStruct(id=point_id, vector=embedding, payload=payload))
-
-# Upsert in batches
-batch_size = 256
-for i in range(0, len(points), batch_size):
-    qclient.upsert(collection_name="meta-mirage_collection", points=points[i:i+batch_size])
-    print(f"Migrated {min(i+batch_size, len(points))}/{len(points)} points")
-
-# Create payload indexes for fast filtering
-for field in ["hardiness_zone", "month_year", "title", "content_hash"]:
-    qclient.create_payload_index(
-        collection_name="meta-mirage_collection",
-        field_name=field,
-        field_schema="keyword",
-    )
-```
-
-> **Important:** The `embedding` values exported from ChromaDB are the raw vectors stored internally by Chroma. They are the same normalized `BAAI/bge-base-en-v1.5` vectors and can be reused directly in Qdrant — no re-embedding needed.
-
----
-
-## 10. Testing Checklist
+## 9. Testing Checklist
 
 After completing the migration, verify the following:
 
 ### Unit-level
-- [ ] `SentenceTransformerEmbeddingFunction.__call__` still returns a list of float lists
-- [ ] `SentenceTransformerEmbeddingFunction.embed_one` returns a single float list
-- [ ] `SentenceTransformerEmbeddingFunction.vector_size` returns 768 for `bge-base-en-v1.5`
-- [ ] `ContentUtils.content_hash_exists` correctly returns `True` for an existing hash and `False` for a new one
-- [ ] `ContentUtils.retrieve_with_priority_filters` returns results in the same shape `[{"text": ..., "metadata": ..., "distance": ...}]`
-- [ ] All seven filter strategies in `retrieve_with_priority_filters` produce results (or empty lists for no-match)
+
+- `SentenceTransformerEmbeddingFunction.__call__` still returns a list of float lists
+- `SentenceTransformerEmbeddingFunction.embed_one` returns a single float list
+- `SentenceTransformerEmbeddingFunction.vector_size` returns 768 for `bge-base-en-v1.5`
+- `ContentUtils.content_hash_exists` correctly returns `True` for an existing hash and `False` for a new one
+- `ContentUtils.retrieve_with_priority_filters` returns results in the same shape `[{"text": ..., "metadata": ..., "distance": ...}]`
+- All seven filter strategies in `retrieve_with_priority_filters` produce results (or empty lists for no-match)
 
 ### Integration-level
-- [ ] `WebAddition.add_web_content` successfully adds a web page and returns `{"status": "success", "chunks_added": N, ...}`
-- [ ] `PDFAddition.add_pdf_content` successfully adds a PDF and returns `{"status": "success", ...}`
-- [ ] `ConfidenceEvaluator.evaluate_retrieval_confidence` returns `confidence_level` in `{"high", "medium", "low"}`
-- [ ] `MainAgent.retrieve_content` returns results after inserting content
-- [ ] `MainAgent.reset_collection` drops and recreates the collection cleanly
-- [ ] `MainAgent.reload_existing_collection` loads the collection and logs the correct count
-- [ ] Duplicate content is correctly skipped (deduplication via `content_hash_exists`)
+
+- `WebAddition.add_web_content` successfully adds a web page and returns `{"status": "success", "chunks_added": N, ...}`
+- `PDFAddition.add_pdf_content` successfully adds a PDF and returns `{"status": "success", ...}`
+- `ConfidenceEvaluator.evaluate_retrieval_confidence` returns `confidence_level` in `{"high", "medium", "low"}`
+- `MainAgent.retrieve_content` returns results after inserting content
+- `MainAgent.reset_collection` drops and recreates the collection cleanly
+- `MainAgent.reload_existing_collection` loads the collection and logs the correct count
+- Duplicate content is correctly skipped (deduplication via `content_hash_exists`)
 
 ### Preload pipeline
-- [ ] `bootstrap.py` runs end-to-end with `--dry-run` and reports `sources_succeeded > 0`
-- [ ] `bootstrap.py` runs without `--dry-run` and data appears in Qdrant collection
-- [ ] Backup stage correctly copies the Qdrant storage directory
+
+- `bootstrap.py` runs end-to-end with `--dry-run` and reports `sources_succeeded > 0`
+- `bootstrap.py` runs without `--dry-run` and data appears in Qdrant collection
+- Backup stage correctly copies the Qdrant storage directory
 
 ### test_standalone.py
-- [ ] `python test_standalone.py --query "..." --reset-collection` completes without errors
-- [ ] `python test_standalone.py --query "..."` retrieves results from the populated collection
-- [ ] `--db-path` argument works correctly with the new Qdrant client (update the `MainAgent.__init__` signature to accept `db_path` since the current code notes it as a TODO)
+
+- `python test_standalone.py --query "..." --reset-collection` completes without errors
+- `python test_standalone.py --query "..."` retrieves results from the populated collection
+- `--db-path` argument works correctly with the new Qdrant client (update the `MainAgent.__init_`_ signature to accept `db_path` since the current code notes it as a TODO)
 
 ---
 
