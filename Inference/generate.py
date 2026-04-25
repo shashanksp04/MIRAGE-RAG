@@ -142,12 +142,13 @@ def rag_worker_process(
     rag_status_q,
     crop_dictionary_path: Optional[str],
     enable_query_enrichment: bool,
+    ablation_id: str,
 ):
     import asyncio
     from rag_agent.main import MainAgent
     from rag_agent.crop_query_enrichment import CropQueryEnricher
 
-    print(f"[RAG Worker] Starting worker for endpoint: {api_base}")
+    print(f"[RAG Worker] Starting worker for endpoint: {api_base} (ablation_id={ablation_id})")
 
     # ---------------------------
     # Initialization + READY/FAILED
@@ -158,6 +159,7 @@ def rag_worker_process(
             embed_model_name=embed_model_name,
             device=device,
             api_base=api_base,
+            ablation_id=ablation_id,
         )
 
         if do_reset_collection:
@@ -353,6 +355,7 @@ class Generate:
                  crop_dictionary_path: Optional[str] = "CropDatabase.json",
                  enable_query_enrichment: bool = True,
                  no_rag: bool = False,
+                 ablation_id: str = "default",
                  allowed_states: Optional[List[str]] = None,
                  debug_single_item: bool = False):
 
@@ -372,6 +375,7 @@ class Generate:
         self.crop_dictionary_path = path_resolved
         self.enable_query_enrichment = bool(enable_query_enrichment) and found
         self.no_rag = bool(no_rag)
+        self.ablation_id = (ablation_id or "").strip() or "default"
         self.allowed_states = _normalize_allowed_states(allowed_states)
         self.debug_single_item = bool(debug_single_item)
 
@@ -493,6 +497,7 @@ class Generate:
             print("[Generate] debug_single_item enabled but no items to process.")
 
         print(f"Items to process: {len(items)}")
+        print(f"[Generate] Using ablation_id={self.ablation_id}")
 
         if self.no_rag:
             self._generate_no_rag(items)
@@ -525,6 +530,7 @@ class Generate:
                 rag_status_q,
                 self.crop_dictionary_path,
                 self.enable_query_enrichment,
+                self.ablation_id,
             ),
         )
         p0.start()
@@ -552,6 +558,7 @@ class Generate:
                     rag_status_q,
                     self.crop_dictionary_path,
                     self.enable_query_enrichment,
+                    self.ablation_id,
                 ),
             )
             p.start()
@@ -702,6 +709,11 @@ if __name__ == "__main__":
     parser.add_argument("--embed_model_name", default="BAAI/bge-base-en-v1.5")
     parser.add_argument("--test_model", default="Qwen2.5-VL-3B-Instruct")
     parser.add_argument("--device", default="None")
+    parser.add_argument(
+        "--ablation_id",
+        default="default",
+        help="Run label for ablation plumbing (behavioral mapping handled separately).",
+    )
     # Crop DB: default CropDatabase.json beside this file; use "" to disable enrichment.
     parser.add_argument(
         "--crop_dictionary_path",
@@ -747,6 +759,7 @@ if __name__ == "__main__":
         crop_dictionary_path=crop_path,
         enable_query_enrichment=not args.disable_query_enrichment,
         no_rag=args.no_rag,
+        ablation_id=args.ablation_id,
         allowed_states=args.allowed_states,
         debug_single_item=args.debug_single_item,
     )

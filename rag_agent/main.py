@@ -16,9 +16,10 @@ from typing import Optional, Dict, List, Any
 
 
 class MainAgent:
-    def __init__(self, test_model: str = "Qwen2.5-VL-3B-Instruct", embed_model_name: str = "BAAI/bge-base-en-v1.5", device: str = "None", api_base: str = "http://127.0.0.1:11434/v1"):
+    def __init__(self, test_model: str = "Qwen2.5-VL-3B-Instruct", embed_model_name: str = "BAAI/bge-base-en-v1.5", device: str = "None", api_base: str = "http://127.0.0.1:11434/v1", ablation_id: str = "default"):
         self.test_model = test_model
         self.api_base = api_base
+        self.ablation_id = (ablation_id or "").strip() or "default"
         self.embedding_function = SentenceTransformerEmbeddingFunction(embed_model_name, device)
         persist_path = "/work/nvme/bfox/ssingh38/chroma_database/chroma_db"
         self.client = chromadb.PersistentClient(path=persist_path) # path has to be a valid path to a directory, shifted to nvme for storage reasons
@@ -88,6 +89,17 @@ class MainAgent:
         """Returns the instruction variant based on ablation toggles."""
         templates = self._load_instruction_templates()
         return templates["confidence_on"] if self.use_confidence_eval else templates["confidence_off"]
+
+    def _get_ablation_context(self) -> Dict[str, Any]:
+        """Returns current ablation context (plumbing only; no behavior mapping yet)."""
+        return {
+            "ablation_id": self.ablation_id,
+            "use_confidence_eval": self.use_confidence_eval,
+            "use_web_search": self.use_web_search,
+            "use_ingestion_loop": self.use_ingestion_loop,
+            "use_progressive_filtering": self.use_progressive_filtering,
+            "use_domain_filter": self.use_domain_filter,
+        }
     
     def _tracked_retrieve_content(
         self,
@@ -445,6 +457,7 @@ class MainAgent:
         
         # Debug: Print tool information
         print(f"[RAG Agent Init] Creating agent with model: {model_name}")
+        print(f"[RAG Agent Init] ablation_id={self.ablation_id}")
         print(f"[RAG Agent Init] Toggles: use_confidence_eval={self.use_confidence_eval}, use_web_search={self.use_web_search}, use_ingestion_loop={self.use_ingestion_loop}, use_progressive_filtering={self.use_progressive_filtering}, use_domain_filter={self.use_domain_filter}")
         print(f"[RAG Agent Init] Tools to register: {len(self.tools_list)} tools")
         for i, tool in enumerate(self.tools_list):

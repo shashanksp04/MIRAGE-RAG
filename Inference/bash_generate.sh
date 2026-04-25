@@ -31,6 +31,7 @@ NUM_PROCESSES=8
 EMBED_MODEL_NAME="BAAI/bge-base-en-v1.5"
 TEST_MODEL="meta-llama/Llama-3.2-11B-Vision-Instruct"
 DEVICE="None"
+ABLATION_ID="default"
 
 echo "Inference $MODEL_NAME on $BENCH_TYPE Benchmark"
 
@@ -50,6 +51,7 @@ python generate.py \
     --embed_model_name $EMBED_MODEL_NAME \
     --test_model $TEST_MODEL \
     --device $DEVICE \
+    --ablation_id $ABLATION_ID \
     --no-rag
 # -- allowed_states California "New York" Texas
 
