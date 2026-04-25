@@ -388,13 +388,15 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 7. Start **rank-0** RAG worker first; wait until it signals **READY** on **`rag_status_q`** (timeout 300s). If rank0 fails, abort.
 8. Start remaining RAG workers; wait until all **READY**.
 9. For each item, **`get_prompt`** builds `prompt["user"]` (optional `[User location: state, county]\n\n` + question), **`images`**, and **`location`**.
-10. Workers dequeue `(item_id, prompt["user"], location, attempt)`, set **`current_location`**, run **`CropQueryEnricher.enrich`** → **`effective_query`**, then **`run_debug(effective_query, session_id=...)`**.
-11. Main process receives **`(item_id, rag_answer, error, web_search_flag, endpoint, attempt, effective_query)`**.
-12. On **successful** RAG (not soft failure), build  
+10. The run-level **`ablation_id`** is provided by `Inference/bash_generate.sh` (`ABLATION_ID`) to `Inference/generate.py` (`--ablation_id`) and forwarded into each `MainAgent` instance.
+11. Workers dequeue `(item_id, prompt["user"], location, attempt)`, set **`current_location`**, run **`CropQueryEnricher.enrich`** → **`effective_query`**, then **`run_debug(effective_query, session_id=...)`**.
+12. Inside `MainAgent`, the agent resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
+13. Main process receives **`(item_id, rag_answer, error, web_search_flag, endpoint, attempt, effective_query)`**.
+14. On **successful** RAG (not soft failure), build  
     **`enhanced = effective_query + "\n\nadditional context: " + rag_answer`**  
     and dispatch **`generation_worker`** with that string.
-13. On **soft** RAG failure, **`enhanced = effective_query`** (no context block), generation still runs.
-14. On **hard** RAG failure, optional **retry** up to **`max_rag_attempts`** (2); else write item with hard-fail status and **skip generation**.
+15. On **soft** RAG failure, **`enhanced = effective_query`** (no context block), generation still runs.
+16. On **hard** RAG failure, optional **retry** up to **`max_rag_attempts`** (2); else write item with hard-fail status and **skip generation**.
 
 ### 5.2 GPU endpoints and scaling
 
@@ -499,15 +501,16 @@ Model IDs, ports, and templates should match your deployment; align **`--test_mo
 
 ### 6.1 Agent contract (tools-first)
 
-`MainAgent.main()` configures an **`LlmAgent`** (“Rag_Agent”) whose instructions require **function calling** (no fake tool outputs in plain text). The high-level order is:
+`MainAgent.main()` configures an **`LlmAgent`** (“Rag_Agent”) whose instructions require **function calling** (no fake tool outputs in plain text).  
 
-1. **`_tracked_retrieve_content`** first (vector DB), using **`current_location`** from the batch worker when the tool does not pass an explicit location.
-2. **`_tracked_evaluate_confidence`** on the retrieval result.
-3. Branch on confidence:
-   - **High:** return verbatim evidence; **do not** web search.
-   - **Medium:** return verbatim evidence with a medium-confidence note.
-   - **Low:** **`_tracked_extract_keywords`** (at most once) → **`_tracked_web_search`** → **`_tracked_add_web_content`** for URLs from search results (with **`month_year`** per result), aiming for **at least 5 successful ingests**, up to **10** attempts → retrieve again → evaluate confidence again.
-4. If confidence stays **low** after ingestion, return the exact **no evidence** sentence (no hallucinated passages).
+Runtime behavior is now **ablation-driven**:
+
+- `ablation_id` is resolved in `MainAgent` against `rag_agent/ablation_configs.json`.
+- Resolved settings assign toggles (`use_progressive_filtering`, `use_confidence_eval`, `use_web_search`, `use_domain_filter`, `use_ingestion_loop`).
+- Tool exposure is then gated from toggles (retrieve always available; confidence/web/ingestion tools only when corresponding toggles are enabled).
+- Instruction template selection first tries `templates[ablation_id]` in `rag_agent/model_instructions.md`; if missing, fallback is `fallback_ablation`.
+
+Because of this, the exact tool-call sequence is **template-dependent per ablation**, not a single fixed path for all runs.
 
 ### 6.2 Location handling
 
@@ -536,6 +539,9 @@ Model IDs, ports, and templates should match your deployment; align **`--test_mo
 - Start one **LLM server per GPU** on the expected ports (or configure **`--openai_api_base`** host consistently with `_build_endpoints`).
 - Align **Chroma path** with `MainAgent` (run from the directory where `./chroma_database/chroma_db` is correct, or adjust code/deploy layout accordingly).
 - Match **`--embed_model_name`** and **`--device`** to how the DB was built.
+- Set run-level ablation in `Inference/bash_generate.sh` via **`ABLATION_ID`** (forwarded as `--ablation_id`).
+- Confirm the selected `ABLATION_ID` exists in `rag_agent/ablation_configs.json` (currently documented IDs: 2,3,4,5,7,8).
+- Confirm `rag_agent/model_instructions.md` has a matching `<!-- instruction:<ablation_id> -->` section (or intentional fallback to `fallback_ablation`).
 - If using enrichment: place **`CropDatabase.json`** or pass **`--crop_dictionary_path`**; use **`--disable_query_enrichment`** to force-disable.
 
 ### 7.3 Troubleshooting pointers
@@ -619,7 +625,10 @@ Align **`Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Topic | Path |
 |------|------|
 | Batch inference CLI | `Inference/generate.py` |
+| Batch run wrapper + ablation selector | `Inference/bash_generate.sh` (`ABLATION_ID`) |
 | RAG agent + tools | `rag_agent/main.py`, `rag_agent/tools/` |
+| Ablation settings map | `rag_agent/ablation_configs.json` |
+| Instruction templates (`confidence_*`, `ablation_*`) | `rag_agent/model_instructions.md` |
 | Query enrichment | `rag_agent/crop_query_enrichment.py` |
 | Preload CLI | `preload_pipeline/bootstrap.py` |
 | Manifest example | `preload_pipeline/docs/manifest.example.yaml` |
@@ -638,9 +647,40 @@ Align **`Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md` | Manifest `web_page_list` YAML generation |
 | `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.md` | Dict-builder batch YAML generation |
 
-### 8.3 Progressive filtering ablation toggle
+### 8.3 Ablation controls (toggle + templates)
 
-Progressive retrieval can now be controlled as a run-level ablation toggle, similar to `use_domain_filter` for web search:
+Runtime ablation control now uses three linked pieces:
+
+1. **Run selector**: `Inference/bash_generate.sh` sets `ABLATION_ID`, passed to `Inference/generate.py` as `--ablation_id`, then into `MainAgent(ablation_id=...)`.
+2. **Settings map**: `rag_agent/ablation_configs.json` provides run-level ON/OFF values (currently IDs 2,3,4,5,7,8).
+3. **Instruction templates**: `rag_agent/model_instructions.md` sections are keyed with markers `<!-- instruction:<key> -->`; parser supports `[a-z0-9_]+` keys and first attempts the `ablation_id` key.
+
+If an ablation template key is absent, `MainAgent` falls back to:
+- `fallback_ablation`
+
+In fallback mode, `MainAgent` also uses the full/default function list:
+- `_tracked_retrieve_content`
+- `_tracked_evaluate_confidence`
+- `_tracked_web_search`
+- `_tracked_extract_keywords`
+- `_tracked_add_web_content`
+- `_tracked_add_pdf_content`
+
+Toggle assignment and tool gating in `MainAgent`:
+
+- `progressive_filtering_on` -> `use_progressive_filtering`
+- `confidence_on` -> `use_confidence_eval` (for configured ablation IDs)
+- `web_search_on` -> `use_web_search`
+- `domain_filter_on` -> `use_domain_filter`
+- `ingestion_loop_on` -> `use_ingestion_loop`
+
+Tools are listed/unlisted deterministically from these toggles:
+- Always: `_tracked_retrieve_content`
+- Confidence ON: `_tracked_evaluate_confidence`
+- Web search ON: `_tracked_web_search`, `_tracked_extract_keywords`
+- Ingestion loop ON: `_tracked_add_web_content`, `_tracked_add_pdf_content`
+
+Progressive retrieval remains a first-class toggle under ablation control:
 
 - `MainAgent.use_progressive_filtering` (default `True`) controls whether retrieval uses progressive metadata strategies or semantic-only mode across the agent.
 - `MainAgent.retrieve_content(...)` accepts `use_progressive_filtering: Optional[bool] = None`; when omitted, it uses `self.use_progressive_filtering`.

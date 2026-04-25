@@ -73,7 +73,7 @@ class MainAgent:
             flags=re.DOTALL,
         )
         templates = {name.strip(): body.strip() for name, body in sections}
-        required = {"confidence_on", "confidence_off"}
+        required = {"fallback_ablation"}
         missing = required - set(templates.keys())
         if missing:
             raise RuntimeError(
@@ -146,6 +146,17 @@ class MainAgent:
             tools.append(self._tracked_add_pdf_content)
         return tools
 
+    def _build_full_tools_list(self) -> List[Any]:
+        """Builds the full/default tool list used by fallback_ablation."""
+        return [
+            self._tracked_retrieve_content,
+            self._tracked_evaluate_confidence,
+            self._tracked_web_search,
+            self._tracked_extract_keywords,
+            self._tracked_add_web_content,
+            self._tracked_add_pdf_content,
+        ]
+
     def _get_agent_instruction(self) -> str:
         """Returns the instruction variant using ablation_id with fallback."""
         templates = self._load_instruction_templates()
@@ -153,8 +164,9 @@ class MainAgent:
             self.applied_instruction_key = self.ablation_id
             return templates[self.ablation_id]
 
-        fallback_key = "confidence_on" if self.use_confidence_eval else "confidence_off"
+        fallback_key = "fallback_ablation"
         self.applied_instruction_key = fallback_key
+        self.tools_list = self._build_full_tools_list()
         print(
             f"[RAG Ablation] Instruction template not found for ablation_id={self.ablation_id!r}; "
             f"falling back to {fallback_key!r}.",
