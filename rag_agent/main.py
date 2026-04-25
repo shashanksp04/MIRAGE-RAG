@@ -46,6 +46,8 @@ class MainAgent:
         self.use_progressive_filtering: bool = True
         # Ablation toggle: set False to disable web search and ingestion behavior in ablation runs.
         self.use_web_search: bool = True
+        # Ablation toggle: set False to disable ingestion loop (add_web_content/add_pdf_content) in ablation runs.
+        self.use_ingestion_loop: bool = True
         # Ablation toggle: set False to disable confidence evaluation in retrieval flow.
         self.use_confidence_eval: bool = True
 
@@ -443,7 +445,7 @@ class MainAgent:
         
         # Debug: Print tool information
         print(f"[RAG Agent Init] Creating agent with model: {model_name}")
-        print(f"[RAG Agent Init] Toggles: use_confidence_eval={self.use_confidence_eval}, use_web_search={self.use_web_search}, use_progressive_filtering={self.use_progressive_filtering}, use_domain_filter={self.use_domain_filter}")
+        print(f"[RAG Agent Init] Toggles: use_confidence_eval={self.use_confidence_eval}, use_web_search={self.use_web_search}, use_ingestion_loop={self.use_ingestion_loop}, use_progressive_filtering={self.use_progressive_filtering}, use_domain_filter={self.use_domain_filter}")
         print(f"[RAG Agent Init] Tools to register: {len(self.tools_list)} tools")
         for i, tool in enumerate(self.tools_list):
             tool_name = getattr(tool, '__name__', 'unknown')
