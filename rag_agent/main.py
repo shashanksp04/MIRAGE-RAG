@@ -1,6 +1,7 @@
 import chromadb
 import time
 import re
+import json
 from pathlib import Path
 from .tools.pdf_addition import PDFAddition
 from .tools.web_search import WebSearch
@@ -51,17 +52,12 @@ class MainAgent:
         self.use_ingestion_loop: bool = True
         # Ablation toggle: set False to disable confidence evaluation in retrieval flow.
         self.use_confidence_eval: bool = True
+        self.ablation_settings = self._extract_ablation_settings(self.ablation_id)
+        self.applied_instruction_key: str = ""
+        self._apply_ablation_settings()
 
         # Store tools for debugging
-        self.tools_list = [
-            self._tracked_retrieve_content,
-            self._tracked_web_search,
-            self._tracked_add_web_content,
-            self._tracked_add_pdf_content,
-            self._tracked_extract_keywords,
-        ]
-        if self.use_confidence_eval:
-            self.tools_list.insert(1, self._tracked_evaluate_confidence)
+        self.tools_list = self._build_tools_list()
 
     def _load_instruction_templates(self) -> Dict[str, str]:
         """Loads instruction templates from model_instructions.md."""
@@ -72,7 +68,7 @@ class MainAgent:
             raise RuntimeError(f"Failed to read instruction template file: {instruction_path} ({e})") from e
 
         sections = re.findall(
-            r"<!--\s*instruction:([a-z_]+)\s*-->\s*\n(.*?)(?=\n<!--\s*instruction:|\Z)",
+            r"<!--\s*instruction:([a-z0-9_]+)\s*-->\s*\n(.*?)(?=\n<!--\s*instruction:|\Z)",
             content,
             flags=re.DOTALL,
         )
@@ -85,15 +81,92 @@ class MainAgent:
             )
         return templates
 
+    def _load_ablation_configs(self) -> Dict[str, Dict[str, Any]]:
+        """Loads ablation settings map from ablation_configs.json."""
+        config_path = Path(__file__).resolve().parent / "ablation_configs.json"
+        try:
+            raw = config_path.read_text(encoding="utf-8")
+        except Exception as e:
+            print(f"[RAG Ablation] Failed to read ablation config file: {config_path} ({e})", flush=True)
+            return {}
+
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as e:
+            print(f"[RAG Ablation] Failed to parse JSON in {config_path}: {e}", flush=True)
+            return {}
+
+        if not isinstance(parsed, dict):
+            print(f"[RAG Ablation] Invalid ablation config format in {config_path}: expected object", flush=True)
+            return {}
+        return parsed
+
+    def _extract_ablation_settings(self, ablation_id: str) -> Optional[Dict[str, Any]]:
+        """Extracts settings object for a given ablation_id, if configured."""
+        configs = self._load_ablation_configs()
+        settings = configs.get(ablation_id)
+        if settings is None:
+            return None
+        if not isinstance(settings, dict):
+            print(f"[RAG Ablation] Invalid settings entry for ablation_id={ablation_id!r}: expected object", flush=True)
+            return None
+        return settings
+
+    def _apply_ablation_settings(self) -> None:
+        """Applies ablation settings to runtime toggles when available."""
+        if self.ablation_settings is None:
+            return
+
+        self.use_progressive_filtering = bool(
+            self.ablation_settings.get("progressive_filtering_on", self.use_progressive_filtering)
+        )
+        self.use_confidence_eval = bool(
+            self.ablation_settings.get("confidence_on", self.use_confidence_eval)
+        )
+        self.use_web_search = bool(
+            self.ablation_settings.get("web_search_on", self.use_web_search)
+        )
+        self.use_domain_filter = bool(
+            self.ablation_settings.get("domain_filter_on", self.use_domain_filter)
+        )
+        self.use_ingestion_loop = bool(
+            self.ablation_settings.get("ingestion_loop_on", self.use_ingestion_loop)
+        )
+
+    def _build_tools_list(self) -> List[Any]:
+        """Builds tool list deterministically from resolved toggles."""
+        tools: List[Any] = [self._tracked_retrieve_content]
+        if self.use_confidence_eval:
+            tools.append(self._tracked_evaluate_confidence)
+        if self.use_web_search:
+            tools.append(self._tracked_web_search)
+            tools.append(self._tracked_extract_keywords)
+        if self.use_ingestion_loop:
+            tools.append(self._tracked_add_web_content)
+            tools.append(self._tracked_add_pdf_content)
+        return tools
+
     def _get_agent_instruction(self) -> str:
-        """Returns the instruction variant based on ablation toggles."""
+        """Returns the instruction variant using ablation_id with fallback."""
         templates = self._load_instruction_templates()
-        return templates["confidence_on"] if self.use_confidence_eval else templates["confidence_off"]
+        if self.ablation_id in templates:
+            self.applied_instruction_key = self.ablation_id
+            return templates[self.ablation_id]
+
+        fallback_key = "confidence_on" if self.use_confidence_eval else "confidence_off"
+        self.applied_instruction_key = fallback_key
+        print(
+            f"[RAG Ablation] Instruction template not found for ablation_id={self.ablation_id!r}; "
+            f"falling back to {fallback_key!r}.",
+            flush=True,
+        )
+        return templates[fallback_key]
 
     def _get_ablation_context(self) -> Dict[str, Any]:
         """Returns current ablation context (plumbing only; no behavior mapping yet)."""
         return {
             "ablation_id": self.ablation_id,
+            "ablation_settings": self.ablation_settings,
             "use_confidence_eval": self.use_confidence_eval,
             "use_web_search": self.use_web_search,
             "use_ingestion_loop": self.use_ingestion_loop,
@@ -454,10 +527,16 @@ class MainAgent:
         
         # Format model name for google-adk: "openai/model_name" for OpenAI-compatible APIs
         model_name = f"openai/{self.test_model}"
+        instruction_text = self._get_agent_instruction()
         
         # Debug: Print tool information
         print(f"[RAG Agent Init] Creating agent with model: {model_name}")
         print(f"[RAG Agent Init] ablation_id={self.ablation_id}")
+        if self.ablation_settings is None:
+            print(f"[RAG Agent Init] No ablation settings found for ablation_id={self.ablation_id}; using current defaults.", flush=True)
+        else:
+            print(f"[RAG Agent Init] Ablation settings: {self.ablation_settings}", flush=True)
+        print(f"[RAG Agent Init] Instruction template key: {self.applied_instruction_key}", flush=True)
         print(f"[RAG Agent Init] Toggles: use_confidence_eval={self.use_confidence_eval}, use_web_search={self.use_web_search}, use_ingestion_loop={self.use_ingestion_loop}, use_progressive_filtering={self.use_progressive_filtering}, use_domain_filter={self.use_domain_filter}")
         print(f"[RAG Agent Init] Tools to register: {len(self.tools_list)} tools")
         for i, tool in enumerate(self.tools_list):
@@ -481,7 +560,7 @@ class MainAgent:
             name="Rag_Agent",
             model=model_litellm,
             description="An agent that retrieves, evaluates, and ingests knowledge.",
-            instruction=self._get_agent_instruction(),
+            instruction=instruction_text,
             tools=self.tools_list,
         )
         

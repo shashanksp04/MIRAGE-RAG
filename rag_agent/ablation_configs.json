@@ -1,0 +1,62 @@
+{
+  "ablation_2_static_rag": {
+    "name": "Static RAG",
+    "db_on": true,
+    "crop_dict_on": false,
+    "progressive_filtering_on": false,
+    "confidence_on": false,
+    "web_search_on": false,
+    "domain_filter_on": false,
+    "ingestion_loop_on": false
+  },
+  "ablation_3_static_rag_crop_dict": {
+    "name": "Static RAG + Crop Dict",
+    "db_on": true,
+    "crop_dict_on": true,
+    "progressive_filtering_on": false,
+    "confidence_on": false,
+    "web_search_on": false,
+    "domain_filter_on": false,
+    "ingestion_loop_on": false
+  },
+  "ablation_4_progressive_rag": {
+    "name": "Progressive RAG",
+    "db_on": true,
+    "crop_dict_on": false,
+    "progressive_filtering_on": true,
+    "confidence_on": false,
+    "web_search_on": false,
+    "domain_filter_on": false,
+    "ingestion_loop_on": false
+  },
+  "ablation_5_uncertainty_aware_rag": {
+    "name": "Uncertainty-Aware RAG",
+    "db_on": true,
+    "crop_dict_on": true,
+    "progressive_filtering_on": true,
+    "confidence_on": true,
+    "web_search_on": false,
+    "domain_filter_on": false,
+    "ingestion_loop_on": false
+  },
+  "ablation_7_full_no_domain_filter": {
+    "name": "Full System (No Domain Filter)",
+    "db_on": true,
+    "crop_dict_on": true,
+    "progressive_filtering_on": true,
+    "confidence_on": true,
+    "web_search_on": true,
+    "domain_filter_on": false,
+    "ingestion_loop_on": true
+  },
+  "ablation_8_full_domain_filtered": {
+    "name": "Full System (Domain Filtered)",
+    "db_on": true,
+    "crop_dict_on": true,
+    "progressive_filtering_on": true,
+    "confidence_on": true,
+    "web_search_on": true,
+    "domain_filter_on": true,
+    "ingestion_loop_on": true
+  }
+}
