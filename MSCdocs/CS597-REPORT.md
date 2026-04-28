@@ -252,7 +252,7 @@ This transforms the system into a research-ready experimentation platform.
 
 ## 10. Engineering Challenges and Solutions
 
-### Challenge 2: Noisy or Missing Metadata
+### Challenge 1: Noisy or Missing Metadata
 
 * Solution:
 
@@ -261,21 +261,21 @@ This transforms the system into a research-ready experimentation platform.
   * Fallback to semantic retrieval
     When metadata-based filtering does not yield sufficient results, the system falls back to pure semantic similarity search. This ensures that the retrieval process remains robust and continues to return contextually relevant information based on content meaning rather than structured fields alone.
 
-### Challenge 3: Low Retrieval Confidence
+### Challenge 2: Low Retrieval Confidence
 
 * Solution:
 
   * Adaptive web search + ingestion loop
     When the confidence score falls below a defined threshold, the system automatically triggers a web search to gather additional information. The retrieved web content is cleaned, chunked, and ingested into the vector database in real time. This allows the system to expand its knowledge base dynamically and re-run retrieval with improved context, leading to higher confidence and more accurate responses.
 
-### Challenge 4: Query Ambiguity
+### Challenge 3: Query Ambiguity
 
 * Solution:
 
   * Crop dictionary-based query enrichment
     This method enhances ambiguous queries by inserting relevant crop names based on a predefined dictionary. By making implicit context explicit, the system improves retrieval precision and reduces ambiguity. The enrichment process is designed to be safe, with strict validation and fallback mechanisms to ensure that the original query is preserved if no reliable enrichment is found.
 
-### Challenge 5: Combinatorial Ablation Complexity
+### Challenge 4: Combinatorial Ablation Complexity
 
 * Solution:
 
