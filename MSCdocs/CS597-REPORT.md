@@ -11,6 +11,10 @@ The work spans four major components:
 3. **Batch inference pipeline for scalable generation**
 4. **Dynamic ablation framework for controlled experimentation**
 
+![High-level overview of MetaMIRAGE RAG components and stages](./figures/overview.png)
+
+*Figure 1 — System overview: offline ingestion, runtime RAG, inference, and experimentation.*
+
 ---
 
 ## 2. System Architecture
@@ -39,6 +43,10 @@ The system follows a modular pipeline:
 ---
 
 ## 3. Vector Database and Ingestion Pipeline
+
+![Offline ingestion: sources, chunking, embedding, and Chroma storage](./figures/offline-ingestion.png)
+
+*Figure 2 — Offline ingestion pipeline from raw sources to the vector database.*
 
 ### 3.1 Database Design
 
@@ -81,6 +89,10 @@ All sources are processed through a **manifest-driven preload pipeline**, ensuri
 
 ## 4. Metadata-Aware Retrieval
 
+![Progressive metadata filtering: priority order from specific to semantic-only retrieval](./figures/progressive-filtering.png)
+
+*Figure 3 — Progressive filtering strategy across metadata combinations.*
+
 ### 4.1 Progressive Filtering
 
 Designed a **priority-based retrieval strategy** that evaluates multiple metadata filters:
@@ -115,6 +127,10 @@ This ensures robustness when metadata is incomplete or noisy.
 
 ## 5. Confidence Evaluation Framework
 
+![Multi-factor confidence scoring: similarity, coverage, consistency, and scope](./figures/confidence-scoring.png)
+
+*Figure 4 — Confidence evaluation components and flow.*
+
 Developed a **multi-factor confidence scoring system** to assess retrieval quality.
 
 ### Components:
@@ -135,6 +151,10 @@ This mechanism enables **adaptive decision-making** in the RAG pipeline.
 
 ## 6. Adaptive RAG Decision Loop
 
+![Adaptive RAG decision loop: retrieve, score confidence, branch to answer or web augmentation](./figures/adaptive-rag-decision-loop.png)
+
+*Figure 5 — Runtime decision loop with confidence-gated web augmentation.*
+
 Implemented a **dynamic decision loop**:
 
 1. Retrieve from vector database
@@ -146,6 +166,10 @@ Implemented a **dynamic decision loop**:
    * **Low** → trigger web search and ingestion
 
 ### Web Augmentation
+
+![Dynamic ingestion loop: search, extract, ingest, and re-retrieve](./figures/ingestion-loop.png)
+
+*Figure 6 — Web augmentation and ingest–re-retrieve loop.*
 
 * Integrated a web search module
 * Extracted and cleaned webpage content
@@ -204,6 +228,10 @@ Implemented a scalable inference system:
 ---
 
 ## 9. Ablation Framework
+
+![Dynamic ablation framework: config, instructions, runtime binding, and tool gating](./figures/ablation-framework.png)
+
+*Figure 7 — Ablation framework: centralized config and templated behavior.*
 
 The ablation framework evolved into a dynamic experimentation layer that supports fast, reproducible research iterations.
 
@@ -310,9 +338,9 @@ This transforms the system into a research-ready experimentation platform.
 
 ## 13. Future Work
 
+* Transition to the Qdrant vector database to enhance scalability, reliability, and production readiness
 * Conduct comprehensive ablation studies over the summer to generate robust experimental results and insights
 * Optimize system performance to significantly reduce latency per query
-* Transition to the Qdrant vector database to enhance scalability, reliability, and production readiness
 
 ---
 
