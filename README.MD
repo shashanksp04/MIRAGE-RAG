@@ -37,6 +37,46 @@ flowchart LR
   gen --> out
 ```
 
+## Setup
+
+### Prerequisites
+
+- **Python** 3.12+ recommended (match your cluster modules if applicable).
+- **Git** for checkout.
+- **GPU + CUDA-compatible driver** for batch inference and for embedding offload at scale; preload can run CPU-only depending on workload (slower).
+
+### Install
+
+```bash
+git clone <repository-url>
+cd <repo-directory>   # checkout directory name, often MIRAGE-RAG
+
+python -m venv .venv
+# Windows PowerShell:
+# .\.venv\Scripts\Activate.ps1
+# Linux / macOS:
+source .venv/bin/activate
+
+python -m pip install --upgrade pip wheel setuptools
+pip install -r requirments.txt
+```
+
+Install **from the repository root** so `pip` resolves paths correctly.
+
+**Pin file.** **`requirments.txt`** (spelling deliberate) is the single consolidated **`package==version`** snapshot for preload, Chroma/embeddings, **`sglang`/`vllm`**, ADK-era clients, and CUDA-associated wheels (**~346** pins; **`pip`/`setuptools`/`wheel`** are omitted). Refresh from **`pip freeze`** when you recreate a canonical environment (**`Guide.md` §§8.7–8.7.1**).
+
+### Optional sanity check
+
+```bash
+python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'))"
+python -c "import chromadb, sentence_transformers; print('chromadb + sentence-transformers OK')"
+```
+
+### Runtime servers and HPC
+
+- Start **OpenAI-compatible** LLM servers (project examples use **SGLang**) and align ports with **`Inference/generate.py`** — see **`Guide.md` §5.8** and **§8.7**.
+- If **`pip install -r requirments.txt`** fails on CUDA wheels, resolve PyTorch/CUDA via your operator’s wheels or modules, then rerun the install (see **`Guide.md` §8.7**).
+
 ## Pipeline Components
 
 ### 1) Offline Vector DB Preload
@@ -49,10 +89,9 @@ The preload pipeline (`preload_pipeline/bootstrap.py`) ingests configured source
 - Processes source types (`csv`, `web_page_list`, `pdf_dir`) via adapters.
 - Writes a run report with item-level success/failure and dedupe stats.
 
-Run from `preload_pipeline/`:
+After completing **Setup**, run preload from **`preload_pipeline/`**:
 
 ```bash
-pip install -r requirements.txt
 python bootstrap.py \
   --manifest manifest.yaml \
   --persist-dir ../rag_agent/chroma_database/chroma_db \

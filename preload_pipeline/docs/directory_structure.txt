@@ -1,4 +1,5 @@
 parent/
+  requirments.txt
   rag_agent/
     tools/
       pdf_addition.py
@@ -9,7 +10,6 @@ parent/
   preload_pipeline/
     bootstrap.py
     manifest.example.yaml
-    requirements.txt
     preload/
       __init__.py
       config.py

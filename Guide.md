@@ -249,10 +249,17 @@ For many URLs sharing one base path and metadata, use the flow documented in `pr
 
 ### 3.7 How to run preload
 
-From `preload_pipeline/` (or with adjusted paths):
+From the **repository root**, install dependencies once:
+
+```bash
+pip install -r requirments.txt
+```
+
+Filename spelling (**`requirments`**) is deliberate. Details: **[§8.7](#87-example-python-environment-hpc-style-sglang)**.
+
+Then run preload from **`preload_pipeline/`** (or with adjusted paths):
 
 ```text
-pip install -r requirements.txt
 python bootstrap.py \
   --manifest manifest.yaml \
   --persist-dir ../rag_agent/chroma_database/chroma_db \
@@ -612,7 +619,7 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.1 Before preload
 
-- Install `**preload_pipeline/requirements.txt`**.
+- Install **`pip install -r requirments.txt`** from the **repository root** (see §8.7). Filename **`requirments.txt`** (**spelling deliberate**).
 - Prepare `**manifest.yaml**` with valid `sources` and required **location** fields.
 - Ensure enough disk for **backup +** new chunks.
 - **Stop** any service or batch job using the target `**--persist-dir`**.
@@ -647,7 +654,7 @@ Adapt account, partition, GPU flags, and paths to your site’s Slurm configurat
 
 ### 8.5 Pre-run health checks
 
-Before long runs, verify resources and basic connectivity (from `instructions.txt` patterns; adjust paths and ports to your machine).
+Before long runs, verify resources and basic connectivity (adapt paths and ports to your deployment).
 
 
 | Check                            | Command or action                                                                            |
@@ -675,33 +682,46 @@ Before long runs, verify resources and basic connectivity (from `instructions.tx
 | Errors in output                  | `tail -f output.jsonl` (optionally pipe through `grep -i error`) |
 
 
-### 8.7 Example Python environment (HPC-style, vLLM)
+### 8.7 Example Python environment (HPC-style, SGLang)
 
-Illustrative steps for a clean venv with CUDA PyTorch and vLLM (paths and module names vary by site):
+Illustrative steps for a clean venv. Install the **single** consolidated pin list from the checkout root:
 
 ```bash
 module purge
-module load python/3.12.1   # example; use your site’s module
+module load python/3.12.1   # example; use your site's module
 python --version
 python3 -m venv mirage
 source mirage/bin/activate
-pip install pysqlite3-binary
 pip install --upgrade pip wheel setuptools
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1 \
-  --index-url https://download.pytorch.org/whl/cu121
-pip install -r requirements.txt   # from repo root, e.g. ~/MetaMirage/requirements.txt
-python -c "import vllm; print('vLLM OK:', vllm.__version__)"
+cd /path/to/MIRAGE-RAG    # MIRAGE-RAG repository root — adjust checkout path
+pip install -r requirments.txt
+python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
 ```
 
-Then start an OpenAI-compatible server on the port your batch job expects (example from internal notes):
+If **`pip install -r requirments.txt`** fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, **`pip install --no-deps`** selective packages second, then re-run **`pip install -r requirments.txt`** (expect some “already satisfied” lines).
+
+### 8.7.1 `requirments.txt` — consolidated environment
+
+Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, ADK/Google client stacks, and CUDA-associated wheels (**~346** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** intentionally omitted). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+
+Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
 ```bash
-python -m vllm.entrypoints.openai.api_server \
-  --model Qwen/Qwen2.5-14B-Instruct \
-  --port 8000
+CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
+  --model-path meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --host 127.0.0.1 \
+  --port 11434 \
+  --tensor-parallel-size 1 \
+  --tool-call-parser llama3 \
+  --enable-multimodal \
+  --trust-remote-code \
+  --mem-fraction-static 0.9 \
+  --max-total-tokens 32768
 ```
 
-Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, etc.) with this server. On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node.
+Use `CUDA_VISIBLE_DEVICES=1`, port **11435**, and so on, for additional GPUs to match `generate.py`'s endpoint list.
+
+Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, etc.) with this server (model ID and multimodal/tool settings must agree with **`--model-path`** above). On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node. For a vLLM-based alternative server, see **§5.8**.
 
 ---
 
@@ -722,7 +742,7 @@ Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, et
 | Manifest example                                     | `preload_pipeline/docs/manifest.example.yaml`                           |
 | Preload config validation                            | `preload_pipeline/preload/config.py`                                    |
 | Crop dictionary build                                | `preload_pipeline/Dict-Value-Database/scripts/build_crop_dictionary.py` |
-| Ad-hoc ops notes                                     | `instructions.txt` (pre-run checks, monitoring, venv example)           |
+| Python dependency pins (`pip install -r`)                           | `requirments.txt` (repo root; see §8.7.1)                             |
 
 
 ### 9.2 Cross-references (in-scope Markdown sources)

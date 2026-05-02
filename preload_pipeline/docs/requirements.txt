@@ -1,2 +1,0 @@
-# Preload pipeline dependencies
-pdfplumber>=0.10.0

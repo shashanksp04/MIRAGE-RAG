@@ -50,16 +50,17 @@ module load python/3.12.1
 python --version  
 python3 -m venv mirage
 source mirage/bin/activate
-pip install pysqlite3-binary
 pip install --upgrade pip wheel setuptools
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
-~/MetaMirage/requirements.txt
-pip install -r requirements.txt
-python - << 'EOF'
-import vllm
-print("vLLM OK:", vllm.__version__)
-EOF
-vLLM OK: 0.11.0
-python -m vllm.entrypoints.openai.api_server \
-  --model Qwen/Qwen2.5-14B-Instruct \
-  --port 8000
+cd ~/MetaMirage   # MIRAGE-RAG checkout
+pip install -r requirments.txt   # repo-root consolidated pins
+python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
+CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
+  --model-path meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --host 127.0.0.1 \
+  --port 11434 \
+  --tensor-parallel-size 1 \
+  --tool-call-parser llama3 \
+  --enable-multimodal \
+  --trust-remote-code \
+  --mem-fraction-static 0.9 \
+  --max-total-tokens 32768

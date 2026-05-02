@@ -324,11 +324,13 @@ Always copy the entire directory, never just SQLite files.
 
 ## Step 1 — Install Requirements
 
-From `preload_pipeline/`:
+From the **repository root**:
 
 ```
-pip install -r requirements.txt
+pip install -r requirments.txt
 ```
+
+**`requirments.txt`** (spelling deliberate) is the only dependency manifest for preload, inference tooling, CUDA wheels, and ADK-era clients (**`Guide.md` §8.7.1**).
 
 ---
 
