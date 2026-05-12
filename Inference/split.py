@@ -101,8 +101,8 @@ def main():
             management_data.append(sample)
 
     # Save split results
-    id_output = args.output_dir / f"sample_{args.bench_type}_benchmark_ID_{args.model_name}.json"
-    mg_output = args.output_dir / f"sample_{args.bench_type}_benchmark_MG_{args.model_name}.json"
+    id_output = args.output_dir / f"{args.bench_type}_benchmark_ID_{args.model_name}.json"
+    mg_output = args.output_dir / f"{args.bench_type}_benchmark_MG_{args.model_name}.json"
 
     if identification_data:
         json.dump(

@@ -5,9 +5,9 @@ set -e
 # Benchmark type
 # standard
 # contextual
-BENCH_TYPE="standard"
+BENCH_TYPE="standard_without_db"
 # INPUT_FILE="../Datasets/sample_bench/sample_${BENCH_TYPE}_benchmark.json"
-INPUT_FILE="../Datasets/standard/${BENCH_TYPE}_benchmark.json"
+INPUT_FILE="../Datasets/${BENCH_TYPE}/${BENCH_TYPE}_benchmark.json"
 
 ################### Close Source Models ###################
 # gpt-4o
@@ -36,7 +36,7 @@ ABLATION_ID="default"
 echo "Inference $MODEL_NAME on $BENCH_TYPE Benchmark"
 
 # Inference results will be saved in the following directory
-OUTPUT_DIR="results/Without_DB_${BENCH_TYPE}_benchmark"
+OUTPUT_DIR="results/${BENCH_TYPE}_benchmark"
 
 mkdir -p $OUTPUT_DIR
 
@@ -57,7 +57,7 @@ python generate.py \
 
 ################# Split Inference Results #################
 
-SPLIT_OUTPUT_FILE="../Datasets/sample_inference"
+SPLIT_OUTPUT_FILE="../Datasets/${BENCH_TYPE}"
 
 python split.py \
     --bench_type $BENCH_TYPE \
