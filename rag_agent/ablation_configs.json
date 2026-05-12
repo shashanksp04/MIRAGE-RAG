@@ -58,5 +58,15 @@
     "web_search_on": true,
     "domain_filter_on": true,
     "ingestion_loop_on": true
+  },
+  "ablation_9_full_no_db_no_crop_dict": {
+    "name": "Full System (No DB, No Crop Dict)",
+    "db_on": false,
+    "crop_dict_on": false,
+    "progressive_filtering_on": true,
+    "confidence_on": true,
+    "web_search_on": true,
+    "domain_filter_on": true,
+    "ingestion_loop_on": true
   }
 }

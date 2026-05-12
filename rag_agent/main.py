@@ -564,7 +564,7 @@ class MainAgent:
             api_base=SGLANG_BASE_URL,
             api_key=API_KEY,
             additional_kwargs={
-                "tool_choice": "auto",
+                "tool_choice": "required",
             },
         )
         
