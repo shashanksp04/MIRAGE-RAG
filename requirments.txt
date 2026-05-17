@@ -1,6 +1,6 @@
 # MIRAGE-RAG — single consolidated Python pins (`pip install -r requirments.txt` from repo root).
 # Derived from pip-list freeze; pip/setuptools/wheel omitted so the installer is not forced.
-# Covers preload, embeddings, inference (SGLang/vLLM/ADK), and CUDA-associated wheels.
+# Covers preload, embeddings, inference (SGLang/vLLM/LangChain), and CUDA-associated wheels.
 
 accelerate==1.11.0
 aiohappyeyeballs==2.6.1
@@ -80,7 +80,6 @@ frozendict==2.4.6
 frozenlist==1.6.0
 fsspec==2025.3.0
 gguf==0.17.1
-google-adk==1.21.0
 google-api-core==2.28.1
 google-api-python-client==2.187.0
 google-auth==2.45.0
@@ -348,3 +347,5 @@ xxhash==3.5.0
 yarl==1.20.0
 zipp==3.23.0
 zstandard==0.25.0
+langchain==0.3.27
+langchain-openai==0.2.14

@@ -162,12 +162,15 @@ class WebSearch:
                 month_year_raw = (item.get("month_year") or "").strip()
                 month_year = month_year_raw[:7] if re.match(r"^\d{4}-\d{2}", month_year_raw) else ""
 
+            if not month_year:
+                month_year = datetime.now().strftime("%Y-%m")
+
             results.append({
                     "title": item.get("title"),
                     "url": item.get("url"),
                     "month_year": month_year,
                 })
-            print(f"[WebSearch] Result: {item.get('title', 'N/A')} | {url}")
+            print(f"[WebSearch] Result: {item.get('title', 'N/A')} | {url} | month_year={month_year}")
 
             # extracted_text = self.extract_data(url)
 
