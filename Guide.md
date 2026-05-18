@@ -19,7 +19,7 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **pers
 
 | Path                | Role                                                                                                                                                                              |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rag_agent/`        | Chroma client, embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
+| `rag_agent/`        | Chroma client, embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (LangChain `AgentExecutor` + `create_tool_calling_agent` over `ChatOpenAI`, wrapped by an ADK-compatible runner shim). |
 | `preload_pipeline/` | Manifest-driven preload: lock, backup, adapters (CSV, web list, PDF dir), JSON run report.                                                                                        |
 | `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                             |
 | `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                              |
@@ -42,7 +42,7 @@ Run batch jobs from the `Inference/` directory (or ensure the process working di
 ### 2.1 Chroma persistence and collection name
 
 - The RAG stack uses **Chroma** with a named collection. The default collection name in code is `**meta-mirage_collection`** (see `rag_agent/main.py` and preload `--collection`).
-- `MainAgent` constructs `chromadb.PersistentClient(path=...)` pointing at a **directory** on disk (default in code: `./chroma_database/chroma_db` relative to the **current working directory** of the process). Preload should write to the **same** persistence path your inference jobs use, or you must copy the entire persistence directory to that location before running `generate.py`.
+- `MainAgent` constructs `chromadb.PersistentClient(path=...)` pointing at a **directory** on disk. The path is currently set inside `MainAgent.__init__` — treat it as a **site-specific constant** and adjust for your deployment. Preload should write to the **same** persistence directory `MainAgent` will read, or you must copy the entire persistence directory to that location before running `generate.py`.
 - **Embedding model** must match between preload and runtime: default in both `bootstrap.py` and `Generate` is `**BAAI/bge-base-en-v1.5`** (`--embed-model` / `--embed_model_name`).
 - **Device** for the sentence-transformer embedder should match (`--device` / `device`, often `"None"` for auto).
 
@@ -122,16 +122,18 @@ Implementation reference: `rag_agent/utils/ContentUtils.py` — `retrieve_with_p
 
 **Concept.** *Priority retrieval* means: for one user query, run **one Chroma `collection.query` per candidate strategy** (each with the same embedding and `n_results=k`, default 5). Every strategy that returns at least `**min_results`** hits (default 1) is **valid**. Among valid strategies, the implementation picks the one with the **highest normalized similarity score** (not the first in the list). So a broader filter can win if its top-k hits are semantically stronger than a stricter filter’s hits.
 
-**Per-hit similarity (distance to score).** Chroma returns distances where **lower is better**. For each hit i with distance d_i \ge 0, the code converts to a **higher-is-better** similarity in (0, 1]:
+**Per-hit similarity (distance to score).** Chroma returns distances where **lower is better**. For each hit `i` with distance `d_i >= 0`, the code converts to a **higher-is-better** similarity in `(0, 1]`:
+
+```text
+s_i = 1 / (1 + max(d_i, 0))
+```
 
 
-s_i = \frac{1}{1 + \max(d_i,0)}
+**Strategy score (normalized score for one candidate).** Let `n` be the number of documents returned for that query (up to `k`). The strategy’s aggregate score is the **mean** of per-hit similarities:
 
-
-**Strategy score (normalized score for one candidate).** Let n be the number of documents returned for that query (up to k). The strategy’s aggregate score is the **mean** of per-hit similarities:
-
-
-\text{normalizedscore} = \frac{1}{n} \sum_{i=1}^{n} s_i \quad (\text{or } 0 \text{ if } n = 0)
+```text
+normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
+```
 
 
 **Winner selection.**
@@ -362,7 +364,7 @@ If the file is missing, `Generate` logs and runs with enrichment effectively off
 
 ### 4.4 Implementation behavior (`rag_agent/crop_query_enrichment.py`)
 
-- **Not** dependent on Chroma or ADK; uses the OpenAI-compatible client against the **same `api_base` and model** as that RAG worker.
+- **Not** dependent on Chroma, ADK, or LangChain; uses the OpenAI-compatible client directly against the **same `api_base` and model** as that RAG worker.
 - Splits the full user string into `**prefix`** (optional `[User location: …]\n\n`) and `**body**` via regex.
 - If enrichment is enabled and a dictionary is loaded, the worker passes a **state slice** of the JSON (matching the state from the location line) plus an **allowlist** of crop names into one chat completion.
 - **Fallback:** on any failure (missing state in dict, empty list, serialize error, LLM error, bad JSON, or model output that is not a pure **insertion** supersequence of the original body), `**enrich()` returns the original full query unchanged**.
@@ -409,7 +411,7 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 9. For each item, `**get_prompt`** builds `prompt["user"]` (optional `[User location: state, county]\n\n` + question), `**images**`, and `**location**`.
 10. The run-level `**ablation_id**` is provided by `Inference/bash_generate.sh` (`ABLATION_ID`) to `Inference/generate.py` (`--ablation_id`) and forwarded into each `MainAgent` instance.
 11. Workers dequeue `(item_id, prompt["user"], location, attempt)`, set `**current_location**`, run `**CropQueryEnricher.enrich**` → `**effective_query**`, then `**run_debug(effective_query, session_id=...)**`.
-12. Inside `MainAgent`, the agent resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
+12. Inside `MainAgent`, the agent (a LangChain `AgentExecutor` exposed via an ADK-compatible runner shim) resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
 13. Main process receives `**(item_id, rag_answer, error, web_search_flag, endpoint, attempt, effective_query)**`.
 14. On **successful** RAG (not soft failure), build
   `**enhanced = effective_query + "\n\nadditional context: " + rag_answer`**  
@@ -522,13 +524,20 @@ Model IDs, ports, and templates should match your deployment; align `**--test_mo
 
 ### 6.1 Agent contract (tools-first)
 
-`MainAgent.main()` configures an `**LlmAgent**` (“Rag_Agent”) whose instructions require **function calling** (no fake tool outputs in plain text).  
+`MainAgent.main()` builds a **LangChain tool-calling agent** whose instructions require **function calling** (no fake tool outputs in plain text):
 
-Runtime behavior is now **ablation-driven**:
+- A `ChatOpenAI` LLM is pointed at the same OpenAI-compatible `api_base` used by the rest of the worker, with `model_kwargs={"tool_choice": "required"}` so the model is forced into function-calling on every turn.
+- Each `_tracked_*` method is wrapped via `StructuredTool.from_function(func=..., name=..., description=...)`, preserving the original Python name so the tool names referenced in `rag_agent/model_instructions.md` (`_tracked_retrieve_content`, `_tracked_evaluate_confidence`, `_tracked_web_search`, `_tracked_extract_keywords`, `_tracked_add_web_content`, `_tracked_add_pdf_content`) still match.
+- A `ChatPromptTemplate` is assembled with the resolved ablation instruction as the system message, `{input}` as the human turn, and a `MessagesPlaceholder("agent_scratchpad")` for intermediate tool calls.
+- The agent is constructed via `create_tool_calling_agent(llm, lc_tools, prompt)` and wrapped in an `AgentExecutor` with `return_intermediate_steps=True`, `handle_parsing_errors=True`, and `max_iterations=15`.
+
+To keep `Inference/generate.py`, `Inference/test.py`, and `rag_agent/test_standalone.py` unchanged after the migration, the executor is returned wrapped in `_RunnerShim`, which preserves the `await runner.run_debug(query, session_id=...)` contract and adapts each `(AgentAction, observation)` pair from `intermediate_steps` into ADK-shaped events: one event whose `get_function_calls()` returns `[_FunctionCall(tool_name, tool_input)]`, followed by an event whose `content.parts[*].text` is the tool observation, and a final event whose `content.parts[*].text` is the agent's `output`.
+
+Runtime behavior is **ablation-driven**:
 
 - `ablation_id` is resolved in `MainAgent` against `rag_agent/ablation_configs.json`.
 - Resolved settings assign toggles (`use_progressive_filtering`, `use_confidence_eval`, `use_web_search`, `use_domain_filter`, `use_ingestion_loop`).
-- Tool exposure is then gated from toggles (retrieve always available; confidence/web/ingestion tools only when corresponding toggles are enabled).
+- Tool exposure is then gated from toggles in `_build_tools_list()` (retrieve always available; confidence/web/ingestion tools only when corresponding toggles are enabled). When no template matches the `ablation_id`, fallback uses `_build_full_tools_list()` (all six `_tracked_*` tools).
 - Instruction template selection first tries `templates[ablation_id]` in `rag_agent/model_instructions.md`; if missing, fallback is `fallback_ablation`.
 
 Because of this, the exact tool-call sequence is **template-dependent per ablation**, not a single fixed path for all runs.
@@ -543,6 +552,7 @@ Because of this, the exact tool-call sequence is **template-dependent per ablati
 - An **OpenAI-compatible** server is reachable at `**api_base`** for the tool-calling model.
 - **Chroma** is populated and paths/collection match the running process.
 - **Embedding model** and tokenizer settings align with how chunks were ingested.
+- `MainAgent.main()` sets `**OPENAI_API_BASE**` and `**OPENAI_API_KEY**` (to `"EMPTY"`) from `self.api_base` so LangChain `ChatOpenAI` resolves the right endpoint without extra environment configuration; vLLM/SGLang ignore the API key.
 
 ---
 
@@ -702,7 +712,7 @@ If **`pip install -r requirments.txt`** fails on CUDA or vendor wheels for your 
 
 ### 8.7.1 `requirments.txt` — consolidated environment
 
-Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, ADK/Google client stacks, and CUDA-associated wheels (**~346** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** intentionally omitted). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, the **LangChain stack** (`langchain`, `langchain-core`, `langchain-openai`, `langchain-text-splitters`, `langchain-protocol`, `langgraph*`, `langsmith`), `google-adk` (still pinned at the environment level even though `rag_agent/main.py` no longer imports it), the rest of the Google client wheels, and CUDA-associated wheels (**~358** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -734,7 +744,7 @@ Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, et
 | ---------------------------------------------------- | ----------------------------------------------------------------------- |
 | Batch inference CLI                                  | `Inference/generate.py`                                                 |
 | Batch run wrapper + ablation selector                | `Inference/bash_generate.sh` (`ABLATION_ID`)                            |
-| RAG agent + tools                                    | `rag_agent/main.py`, `rag_agent/tools/`                                 |
+| RAG agent + tools (LangChain `AgentExecutor` + ADK-compatible runner shim) | `rag_agent/main.py`, `rag_agent/tools/`                                 |
 | Ablation settings map                                | `rag_agent/ablation_configs.json`                                       |
 | Instruction templates (`confidence_*`, `ablation_*`) | `rag_agent/model_instructions.md`                                       |
 | Query enrichment                                     | `rag_agent/crop_query_enrichment.py`                                    |

@@ -26,7 +26,7 @@ MODEL_NAME_CLEANED=$(echo "$MODEL_NAME" | sed 's|.*/||')
 # Update this to match your vLLM server port (default: 8000, current: 11434)
 OPENAI_API_BASE="http://127.0.0.1:11434/v1"
 
-NUM_PROCESSES=8
+NUM_PROCESSES=1
 
 EMBED_MODEL_NAME="BAAI/bge-base-en-v1.5"
 TEST_MODEL="meta-llama/Llama-3.2-11B-Vision-Instruct"
@@ -51,8 +51,8 @@ python generate.py \
     --embed_model_name $EMBED_MODEL_NAME \
     --test_model $TEST_MODEL \
     --device $DEVICE \
-    --ablation_id $ABLATION_ID \
-    --no-rag
+    --ablation_id $ABLATION_ID
+    # --no-rag
 # -- allowed_states California "New York" Texas
 
 ################# Split Inference Results #################

@@ -17,6 +17,8 @@ from typing import List, Optional, Tuple
 from queue import Empty
 from tqdm import tqdm
 from urllib.parse import urlparse
+from PIL import Image, ImageOps, ImageDraw, ImageFont
+import re
 
 
 # ============================================================
@@ -46,6 +48,72 @@ def _build_endpoints(openai_api_base, num_gpus):
 
     start_port = 11434
     return [f"{scheme}://{host}:{start_port + i}/v1" for i in range(num_gpus)]
+
+
+# ============================================================
+# IMAGE PANEL COMBINING
+# ============================================================
+
+def combine_images(image_paths, output_path, panel_size=(512, 512), padding=24, item_id=None):
+    tag = f"Item {item_id}" if item_id is not None else "combine"
+    if not image_paths:
+        raise ValueError(f"[Combine] {tag}: no image paths provided.")
+
+    original_count = len(image_paths)
+    if original_count > 3:
+        print(
+            f"[Combine] {tag}: WARNING received {original_count} images; "
+            f"keeping first 3, dropping {original_count - 3}."
+        )
+    image_paths = image_paths[:3]
+    n = len(image_paths)
+
+    print(f"[Combine] {tag}: combining {n} image(s) -> {output_path}")
+    for i, p in enumerate(image_paths):
+        print(f"[Combine] {tag}:   panel {i+1}: {p}")
+
+    W, H = panel_size
+    label_h = 46
+    canvas_w = n * W + (n + 1) * padding
+    canvas_h = H + label_h + 2 * padding
+    canvas = Image.new("RGB", (canvas_w, canvas_h), "white")
+    draw = ImageDraw.Draw(canvas)
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
+    except Exception:
+        font = ImageFont.load_default()
+
+    for i, path in enumerate(image_paths):
+        img = Image.open(path).convert("RGB")
+        img = ImageOps.contain(img, panel_size)
+        x0 = padding + i * (W + padding)
+        y0 = padding + label_h
+        draw.text((x0, padding), f"Image {i+1}", fill="black", font=font)
+        x = x0 + (W - img.width) // 2
+        y = y0 + (H - img.height) // 2
+        canvas.paste(img, (x, y))
+        draw.rectangle([x0, y0, x0 + W, y0 + H], outline="black", width=3)
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(output_path, quality=95)
+    print(f"[Combine] {tag}: saved combined image ({canvas_w}x{canvas_h}).")
+    return output_path, n
+
+
+def build_panel_hint(n):
+    if n <= 0:
+        return ""
+    if n == 1:
+        return "The input image contains one image."
+    if n == 2:
+        return (
+            "The input image contains two labeled panels: Image 1, Image 2; "
+            "treat the two visible panels as separate views of the same user question."
+        )
+    return (
+        "The input image contains three labeled panels: Image 1, Image 2, and Image 3. "
+        "Treat all visible panels as separate views of the same user question."
+    )
 
 
 # ============================================================
@@ -402,7 +470,24 @@ class Generate:
                 continue
             new_images.append(new_path)
 
-        return {"user": user_message, "images": new_images, "location": location}
+        panel_hint = ""
+        if len(new_images) >= 1:
+            item_id = item.get("id")
+            combined_dir = Path(self.output_file).resolve().parent / "combined_images"
+            safe_id = re.sub(r"[^A-Za-z0-9._-]+", "_", str(item_id))
+            out_path = combined_dir / f"{safe_id}.jpg"
+            combined_path, n_used = combine_images(
+                new_images, str(out_path), item_id=item_id
+            )
+            new_images = [combined_path]
+            panel_hint = build_panel_hint(n_used)
+
+        return {
+            "user": user_message,
+            "images": new_images,
+            "location": location,
+            "panel_hint": panel_hint,
+        }
 
     def _filter_items_by_allowed_states(self, items: list) -> list:
         if not self.allowed_states:
@@ -449,9 +534,19 @@ class Generate:
             item["RAG_status"] = "disabled"
             item["RAG_used"] = False
             item["RAG_endpoint"] = None
+
+            user_text = prompt["user"]
+            panel_hint = prompt.get("panel_hint", "")
+            if panel_hint:
+                user_text = user_text + "\n\n" + panel_hint
+                print(
+                    f"[MAIN] Item {item.get('id')}: appended panel hint "
+                    f"({len(panel_hint)} chars) to generation prompt"
+                )
+
             pool.apply_async(
                 generation_worker,
-                args=((item, prompt["user"], prompt["images"],
+                args=((item, user_text, prompt["images"],
                        self.model_name,
                        self.offline_model,
                        self.openai_api_base,
@@ -664,6 +759,14 @@ class Generate:
                     continue
 
             del pending[item_id]
+
+            panel_hint = prompt.get("panel_hint", "")
+            if panel_hint:
+                enhanced = enhanced + "\n\n" + panel_hint
+                print(
+                    f"[MAIN] Item {item_id}: appended panel hint "
+                    f"({len(panel_hint)} chars) to generation prompt"
+                )
 
             pool.apply_async(
                 generation_worker,
