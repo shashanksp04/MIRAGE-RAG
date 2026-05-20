@@ -185,27 +185,52 @@ After calling _tracked_evaluate_confidence, follow these rules:
 - Return the retrieved passages exactly as-is (verbatim).
 - Include a brief note: "Confidence: medium" (and nothing else besides the evidence).
 
-- If confidence_level is "low":
-- Do NOT return evidence yet
-- If _tracked_web_search is unavailable, respond exactly with:
-    "No data to be shared"
-- If _tracked_web_search is unavailable, return no evidence (empty).
-- If _tracked_web_search is available, continue with web enrichment steps:
-    - You MUST call _tracked_extract_keywords ONCE to prepare for web search.
-    - Join extracted keywords into a single query string.
-    - You MUST call _tracked_web_search with the extracted keywords.
-    - From the returned object, use both `url` and `month_year` fields inside each item of `results`.
-    - You MUST call _tracked_add_web_content for URLs from those web_search results ONLY, and you MUST pass `month_year` with each call.
-    - You MUST ingest at least 5 successful URLs (status="success"), up to 10 total attempts.
-    - If _tracked_add_web_content fails for a URL, try the next URL from `results` until you reach 5 successes or you run out of results.
-    - You MUST call _tracked_retrieve_content again from the vector database.
-    - You MUST call _tracked_evaluate_confidence again.
+If confidence_level is "low":
+    Step L1. Call _tracked_extract_keywords exactly once.
+    Step L2. Call _tracked_web_search exactly once using the extracted keywords.
+    Step L3. If _tracked_web_search returns status="success" and results is non-empty:
+    - Your next tool call MUST be _tracked_add_web_content.
+    - Use result[0].url and result[0].month_year.
+    - Then call _tracked_add_web_content for result[1], result[2], result[3], and result[4].
+    - Continue until 5 successful _tracked_add_web_content calls OR until 10 URLs have been attempted.
+    - Do NOT call _tracked_retrieve_content before these ingestion attempts.
+    - Do NOT call _tracked_evaluate_confidence before these ingestion attempts.
+    - Do NOT call _tracked_web_search again before these ingestion attempts.
+    - Do NOT call _tracked_extract_keywords again.
+    Step L4. After ingestion attempts are complete, call _tracked_retrieve_content again.
+    Step L5. Then call _tracked_evaluate_confidence again.
+    Step L6. If confidence remains low, return exactly:
+    "No sufficient reliable information available to return."
 
 - If confidence remains "low" after ingestion:
 - Do NOT guess.
 - Respond exactly with:
     "No sufficient reliable information available to return."
 - Return no evidence (empty).
+
+==================================
+VALID & INVALID TOOL CALL SEQUENCE
+==================================
+INVALID TOOL SEQUENCES:
+- web_search → retrieve_content without add_web_content first
+- web_search → evaluate_confidence without add_web_content first
+- web_search → web_search again without add_web_content first
+- low confidence → extract_keywords more than once
+- retrieve_content repeatedly with the same query when collection.count is 0
+
+VALID LOW-CONFIDENCE SEQUENCE:
+1. _tracked_retrieve_content
+2. _tracked_evaluate_confidence
+3. _tracked_extract_keywords
+4. _tracked_web_search
+5. _tracked_add_web_content for URL 1
+6. _tracked_add_web_content for URL 2
+7. _tracked_add_web_content for URL 3
+8. _tracked_add_web_content for URL 4
+9. _tracked_add_web_content for URL 5
+10. _tracked_retrieve_content
+11. _tracked_evaluate_confidence
+12. final evidence or failure message
 
 ===================
 LOCATION HANDLING

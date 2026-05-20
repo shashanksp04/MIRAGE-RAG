@@ -17,13 +17,13 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **pers
 ### 1.2 Main directories
 
 
-| Path                | Role                                                                                                                                                                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rag_agent/`        | Chroma client, embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (LangChain `AgentExecutor` + `create_tool_calling_agent` over `ChatOpenAI`, wrapped by an ADK-compatible runner shim). |
-| `preload_pipeline/` | Manifest-driven preload: lock, backup, adapters (CSV, web list, PDF dir), JSON run report.                                                                                        |
-| `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                             |
-| `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                              |
-| `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                           |
+| Path                | Role                                                                                                                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rag_agent/`        | Chroma client, embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
+| `preload_pipeline/` | Manifest-driven preload: lock, backup, adapters (CSV, web list, PDF dir), JSON run report.                                                                                                                                                                   |
+| `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                                                                                                        |
+| `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                                                                                                         |
+| `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                                                                                                      |
 
 
 Run batch jobs from the `Inference/` directory (or ensure the process working directory matches where `MainAgent` expects its Chroma path—see [§2.1](#21-chroma-persistence-and-collection-name)).
@@ -61,13 +61,13 @@ The crop dictionary does **not** replace or duplicate the vector store; it only 
 
 Project policy (see `preload_pipeline/docs/README.md`) includes:
 
-- `**location`**: Used to derive `**hardiness_zone**` via `rag_agent.utils.metadata` helpers. Preferred forms: `**"State"**` or `**"State, County"**` (full state name or two-letter abbreviation).
+- `**location`**: Used to derive `**hardiness_zone`** via `rag_agent.utils.metadata` helpers. Preferred forms: `**"State"**` or `**"State, County"**` (full state name or two-letter abbreviation).
 - `**hardiness_zone**`: Expected when `location` resolves; may be empty if lookup cannot resolve.
 - `**month_year**`: For **preload** web/PDF sources, provide `**YYYY-MM`** in the manifest when you want consistent dating. CSV ingestion may leave `month_year` empty by design. Runtime web-search ingestion derives/validates `month_year` from search/page metadata per `rag_agent` tools.
 
 Preload **manifest validation** (`preload_pipeline/preload/config.py`) enforces:
 
-- **CSV**: each source must have `**location`** or `**location_field**` (for per-row location).
+- **CSV**: each source must have `**location`** or `**location_field`** (for per-row location).
 - `**web_page_list` and `pdf_dir**`: each source must have `**location**` (for hardiness derivation).
 
 #### 2.3.1 Canonical metadata stored on each chunk
@@ -96,11 +96,11 @@ Extra keys may be merged via `extra_metadata` on some paths (e.g. CSV tags). Emp
 
 #### 2.3.2 How query-time inputs map to filters
 
-`retrieve_content` / `_tracked_retrieve_content` pass optional `**location`**, `**month_year**`, and `**title**` into `ContentUtils.retrieve_with_priority_filters`. The `**location` string is not matched directly** on chunks for filtering; it is normalized and used only to **derive `hardiness_zone`** (see comment in `ContentUtils.py`). Batch inference sets `MainAgent.current_location` from the dataset so the effective location matches the user’s state/county when the model omits an explicit location argument.
+`retrieve_content` / `_tracked_retrieve_content` pass optional `**location`**, `**month_year`**, and `**title**` into `ContentUtils.retrieve_with_priority_filters`. The `**location` string is not matched directly** on chunks for filtering; it is normalized and used only to **derive `hardiness_zone`** (see comment in `ContentUtils.py`). Batch inference sets `MainAgent.current_location` from the dataset so the effective location matches the user’s state/county when the model omits an explicit location argument.
 
 #### 2.3.3 Eligible candidate filters (the “priority ladder”)
 
-`ContentUtils.retrieve_with_priority_filters` builds a **list of candidate strategies** (`filter_attempts`). Each entry is a `(strategy_name, where_filter)` pair. A strategy is **only added** if every metadata field it needs is present after cleaning (see §2.3.2): e.g. `hardiness_zone+month_year+title` is skipped unless `**hardiness_zone`**, `**month_year**`, and `**title**` are all non-empty.
+`ContentUtils.retrieve_with_priority_filters` builds a **list of candidate strategies** (`filter_attempts`). Each entry is a `(strategy_name, where_filter)` pair. A strategy is **only added** if every metadata field it needs is present after cleaning (see §2.3.2): e.g. `hardiness_zone+month_year+title` is skipped unless `**hardiness_zone`**, `**month_year`**, and `**title**` are all non-empty.
 
 The **append order** encodes design intent (prefer combinations that tie chunks to place, time, and document identity when data exists):
 
@@ -112,7 +112,7 @@ The **append order** encodes design intent (prefer combinations that tie chunks 
 6. `hardiness_zone` alone
 7. `**semantic_only`** — `where` is omitted; pure embedding similarity over the full collection.
 
-If the query supplies no usable `title`/`month_year`/derived `hardiness_zone`, several combined strategies never appear, and the list may reduce to `**month_year**`, `**hardiness_zone**`, and/or `**semantic_only**` depending on what remains. That is why consistent ingest metadata improves precision when the user’s region and time are known.
+If the query supplies no usable `title`/`month_year`/derived `hardiness_zone`, several combined strategies never appear, and the list may reduce to `**month_year`**, `**hardiness_zone**`, and/or `**semantic_only**` depending on what remains. That is why consistent ingest metadata improves precision when the user’s region and time are known.
 
 **Important:** this ladder is **not** “first strategy that returns enough hits wins.” See §2.3.4.
 
@@ -128,13 +128,11 @@ Implementation reference: `rag_agent/utils/ContentUtils.py` — `retrieve_with_p
 s_i = 1 / (1 + max(d_i, 0))
 ```
 
-
 **Strategy score (normalized score for one candidate).** Let `n` be the number of documents returned for that query (up to `k`). The strategy’s aggregate score is the **mean** of per-hit similarities:
 
 ```text
 normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 ```
-
 
 **Winner selection.**
 
@@ -162,7 +160,7 @@ normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 
 #### 2.3.6 Web search and metadata (`WebSearch`)
 
-`WebSearch.web_search` accepts `**use_domain_filter`** (default `True`). When this flag is `True`, and `**location**` is provided, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. When `use_domain_filter` is `False`, web search runs as an open query (no `.edu` site-clause restriction). In `MainAgent`, `_tracked_web_search` supports an optional per-call override and otherwise uses the code-controlled class setting `self.use_domain_filter` for run-level ablations. Results carry `**month_year`** derived from `page_age` (or validated provider fields) for downstream `**_tracked_add_web_content**` so ingestion stays consistent with retrieval policies.
+`WebSearch.web_search` accepts `**use_domain_filter`** (default `True`). When this flag is `True`, and `**location`** is provided, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. When `use_domain_filter` is `False`, web search runs as an open query (no `.edu` site-clause restriction). In `MainAgent`, `_tracked_web_search` supports an optional per-call override and otherwise uses the code-controlled class setting `self.use_domain_filter` for run-level ablations. Results carry `**month_year`** derived from `page_age` (or validated provider fields) for downstream `**_tracked_add_web_content`** so ingestion stays consistent with retrieval policies.
 
 #### 2.3.7 Runtime vs preload responsibilities
 
@@ -199,7 +197,7 @@ CSV rows are turned into narrative text inside the preload adapter, then passed 
 
 ### 3.2 Stage 1 — Manifest loading
 
-- The manifest is a YAML file with a top-level `**sources:`** list (non-empty). Each entry must include `**name**` and `**type**`.
+- The manifest is a YAML file with a top-level `**sources:`** list (non-empty). Each entry must include `**name`** and `**type**`.
 - Supported types: `**csv**`, `**web_page_list**`, `**pdf_dir**` (see `preload_pipeline/bootstrap.py`).
 - Validation rules for location are in [§2.3](#23-metadata-conventions-location-hardiness-monthyear).
 
@@ -220,7 +218,7 @@ With `--dry-run`, writes to the collection are suppressed via a shim that still 
 #### 3.4.1 `web_page_list`
 
 - **Requires** `urls` (non-empty list).
-- Passes `**location`** and `**month_year**` from the manifest into `WebAddition.add_web_content(url=..., location=..., month_year=...)`.
+- Passes `**location`** and `**month_year`** from the manifest into `WebAddition.add_web_content(url=..., location=..., month_year=...)`.
 - Success/failure is tracked per URL; chunks added and duplicate skips are aggregated from the tool response.
 
 #### 3.4.2 `pdf_dir`
@@ -246,7 +244,7 @@ The report includes manifest path, persist dir, collection name, timestamps, opt
 
 For many URLs sharing one base path and metadata, use the flow documented in `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md`:
 
-- Inputs: `**--base-url`** and exactly one of `**--names-file**` (one name per line) or `**--urls-file**` (one full URL per line), plus optional `**--output**`, `**--location**`, `**--entity-type**`, `**--source-org**`, repeatable `**--tag**`, etc.
+- Inputs: `**--base-url`** and exactly one of `**--names-file`** (one name per line) or `**--urls-file**` (one full URL per line), plus optional `**--output**`, `**--location**`, `**--entity-type**`, `**--source-org**`, repeatable `**--tag**`, etc.
 - In names mode, names are normalized to URL slugs; in URL mode, full URLs are preserved and source names are derived using the `--base-url` context.
 
 ### 3.7 How to run preload
@@ -257,9 +255,9 @@ From the **repository root**, install dependencies once:
 pip install -r requirments.txt
 ```
 
-Filename spelling (**`requirments`**) is deliberate. Details: **[§8.7](#87-example-python-environment-hpc-style-sglang)**.
+Filename spelling (`**requirments**`) is deliberate. Details: **[§8.7](#87-example-python-environment-hpc-style-sglang)**.
 
-Then run preload from **`preload_pipeline/`** (or with adjusted paths):
+Then run preload from `**preload_pipeline/`** (or with adjusted paths):
 
 ```text
 python bootstrap.py \
@@ -351,7 +349,7 @@ Some user questions refer to **category-level** crop information (pests, disease
 
 ### 4.2 Building the dictionary
 
-- The authoritative build scripts live under `preload_pipeline/Dict-Value-Database/scripts/` (e.g. `**build_crop_dictionary.py**`).
+- The authoritative build scripts live under `preload_pipeline/Dict-Value-Database/scripts/` (e.g. `**build_crop_dictionary.py`**).
 - YAML `**url_batches**` for that pipeline can be produced with `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.py` (see `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.md`): `**--base-url**`, `**--names-file**`, `**--state**`, `**--category**`, `**--output**`, optional `**--url-style**`.
 
 ### 4.3 Runtime placement and CLI (`Inference/`)
@@ -364,8 +362,8 @@ If the file is missing, `Generate` logs and runs with enrichment effectively off
 
 ### 4.4 Implementation behavior (`rag_agent/crop_query_enrichment.py`)
 
-- **Not** dependent on Chroma, ADK, or LangChain; uses the OpenAI-compatible client directly against the **same `api_base` and model** as that RAG worker.
-- Splits the full user string into `**prefix`** (optional `[User location: …]\n\n`) and `**body**` via regex.
+- **Not** dependent on Chroma or ADK; uses the OpenAI-compatible client against the **same `api_base` and model** as that RAG worker.
+- Splits the full user string into `**prefix`** (optional `[User location: …]\n\n`) and `**body`** via regex.
 - If enrichment is enabled and a dictionary is loaded, the worker passes a **state slice** of the JSON (matching the state from the location line) plus an **allowlist** of crop names into one chat completion.
 - **Fallback:** on any failure (missing state in dict, empty list, serialize error, LLM error, bad JSON, or model output that is not a pure **insertion** supersequence of the original body), `**enrich()` returns the original full query unchanged**.
 - Dictionary size is capped for prompting (`_MAX_DICT_JSON_CHARS`); allowlist text may truncate with a note.
@@ -405,17 +403,17 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 3. Build a **multiprocessing** context with `**spawn`**.
 4. Detect **GPU count** (`torch.cuda.device_count()`); if zero, treat as **one** logical GPU.
 5. Build one OpenAI-compatible **endpoint per GPU**: `http://<host>:<11434 + i>/v1` unless `--openai_api_base` supplies a host/scheme (see `_build_endpoints`).
-6. Create `**rag_request_q`** (bounded by `num_gpus * rag_inflight_per_gpu`, default inflight 2 per GPU) and `**rag_response_q**`.
+6. Create `**rag_request_q`** (bounded by `num_gpus * rag_inflight_per_gpu`, default inflight 2 per GPU) and `**rag_response_q`**.
 7. Start **rank-0** RAG worker first; wait until it signals **READY** on `**rag_status_q`** (timeout 300s). If rank0 fails, abort.
 8. Start remaining RAG workers; wait until all **READY**.
-9. For each item, `**get_prompt`** builds `prompt["user"]` (optional `[User location: state, county]\n\n` + question), `**images**`, and `**location**`.
+9. For each item, `**get_prompt`** builds `prompt["user"]` (optional `[User location: state, county]\n\n` + question), `**images`**, and `**location**`.
 10. The run-level `**ablation_id**` is provided by `Inference/bash_generate.sh` (`ABLATION_ID`) to `Inference/generate.py` (`--ablation_id`) and forwarded into each `MainAgent` instance.
 11. Workers dequeue `(item_id, prompt["user"], location, attempt)`, set `**current_location**`, run `**CropQueryEnricher.enrich**` → `**effective_query**`, then `**run_debug(effective_query, session_id=...)**`.
-12. Inside `MainAgent`, the agent (a LangChain `AgentExecutor` exposed via an ADK-compatible runner shim) resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
+12. Inside `MainAgent`, the agent resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
 13. Main process receives `**(item_id, rag_answer, error, web_search_flag, endpoint, attempt, effective_query)**`.
 14. On **successful** RAG (not soft failure), build
   `**enhanced = effective_query + "\n\nadditional context: " + rag_answer`**  
-    and dispatch `**generation_worker**` with that string.
+    and dispatch `**generation_worker`** with that string.
 15. On **soft** RAG failure, `**enhanced = effective_query`** (no context block), generation still runs.
 16. On **hard** RAG failure, optional **retry** up to `**max_rag_attempts`** (2); else write item with hard-fail status and **skip generation**.
 
@@ -426,7 +424,7 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 
 ### 5.3 Rank0 barrier and Chroma collection reset
 
-Only **rank0** starts with `**do_reset_collection=True`**, calling `**MainAgent.reset_collection()**` once so the collection is dropped and recreated cleanly.
+Only **rank0** starts with `**do_reset_collection=True`**, calling `**MainAgent.reset_collection()`** once so the collection is dropped and recreated cleanly.
 
 Other workers start with `**do_reset_collection=False**` and explicitly `**get_or_create_collection**` after startup so they bind to the **current** collection ID.
 
@@ -439,7 +437,7 @@ If `**_tracked_retrieve_content`** catches an error whose message indicates the 
 ### 5.5 RAG failure classification
 
 - `**_is_hard_rag_failure`**: connection/timeouts/5xx/“exception” style errors → retry then hard fail.
-- `**_is_soft_rag_failure**`: short or empty answers, or non-hard errors → fallback to `**effective_query**` without RAG context, still generate.
+- `**_is_soft_rag_failure`**: short or empty answers, or non-hard errors → fallback to `**effective_query**` without RAG context, still generate.
 
 ### 5.6 Other notable parameters
 
@@ -480,7 +478,7 @@ flowchart LR
 
 ### 5.8 Serving LLM backends (OpenAI-compatible API)
 
-Batch inference and the RAG agent expect an **OpenAI-compatible** HTTP API (for example `**http://127.0.0.1:11434/v1`** for the first GPU). `**Inference/generate.py**` builds endpoints starting at port **11434** and increments by one per detected GPU.
+Batch inference and the RAG agent expect an **OpenAI-compatible** HTTP API (for example `**http://127.0.0.1:11434/v1`** for the first GPU). `**Inference/generate.py`** builds endpoints starting at port **11434** and increments by one per detected GPU.
 
 **Run these commands from the repository root** so paths like `./chat_template.jinja` resolve correctly for vLLM.
 
@@ -499,6 +497,7 @@ CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
   --trust-remote-code \
   --mem-fraction-static 0.9 \
   --max-total-tokens 32768
+  --attention-backend flashinfer
 ```
 
 Use `CUDA_VISIBLE_DEVICES=1`, port **11435**, and so on, for additional GPUs to match `generate.py`’s endpoint list.
@@ -524,20 +523,13 @@ Model IDs, ports, and templates should match your deployment; align `**--test_mo
 
 ### 6.1 Agent contract (tools-first)
 
-`MainAgent.main()` builds a **LangChain tool-calling agent** whose instructions require **function calling** (no fake tool outputs in plain text):
+`MainAgent.main()` configures an `**LlmAgent**` ("Rag_Agent") whose instructions require **function calling** (no fake tool outputs in plain text).  
 
-- A `ChatOpenAI` LLM is pointed at the same OpenAI-compatible `api_base` used by the rest of the worker, with `model_kwargs={"tool_choice": "required"}` so the model is forced into function-calling on every turn.
-- Each `_tracked_*` method is wrapped via `StructuredTool.from_function(func=..., name=..., description=...)`, preserving the original Python name so the tool names referenced in `rag_agent/model_instructions.md` (`_tracked_retrieve_content`, `_tracked_evaluate_confidence`, `_tracked_web_search`, `_tracked_extract_keywords`, `_tracked_add_web_content`, `_tracked_add_pdf_content`) still match.
-- A `ChatPromptTemplate` is assembled with the resolved ablation instruction as the system message, `{input}` as the human turn, and a `MessagesPlaceholder("agent_scratchpad")` for intermediate tool calls.
-- The agent is constructed via `create_tool_calling_agent(llm, lc_tools, prompt)` and wrapped in an `AgentExecutor` with `return_intermediate_steps=True`, `handle_parsing_errors=True`, and `max_iterations=15`.
-
-To keep `Inference/generate.py`, `Inference/test.py`, and `rag_agent/test_standalone.py` unchanged after the migration, the executor is returned wrapped in `_RunnerShim`, which preserves the `await runner.run_debug(query, session_id=...)` contract and adapts each `(AgentAction, observation)` pair from `intermediate_steps` into ADK-shaped events: one event whose `get_function_calls()` returns `[_FunctionCall(tool_name, tool_input)]`, followed by an event whose `content.parts[*].text` is the tool observation, and a final event whose `content.parts[*].text` is the agent's `output`.
-
-Runtime behavior is **ablation-driven**:
+Runtime behavior is now **ablation-driven**:
 
 - `ablation_id` is resolved in `MainAgent` against `rag_agent/ablation_configs.json`.
 - Resolved settings assign toggles (`use_progressive_filtering`, `use_confidence_eval`, `use_web_search`, `use_domain_filter`, `use_ingestion_loop`).
-- Tool exposure is then gated from toggles in `_build_tools_list()` (retrieve always available; confidence/web/ingestion tools only when corresponding toggles are enabled). When no template matches the `ablation_id`, fallback uses `_build_full_tools_list()` (all six `_tracked_*` tools).
+- Tool exposure is then gated from toggles (retrieve always available; confidence/web/ingestion tools only when corresponding toggles are enabled).
 - Instruction template selection first tries `templates[ablation_id]` in `rag_agent/model_instructions.md`; if missing, fallback is `fallback_ablation`.
 
 Because of this, the exact tool-call sequence is **template-dependent per ablation**, not a single fixed path for all runs.
@@ -545,14 +537,13 @@ Because of this, the exact tool-call sequence is **template-dependent per ablati
 ### 6.2 Location handling
 
 - User messages may begin with `**[User location: X]`**; that string is passed through to retrieve and web search as required by the agent instructions.
-- `**_tracked_add_web_content**` does not take a user-supplied location in the same way; location for `.edu` URLs can be **derived** from the institution’s state (see metadata policy in `preload_pipeline/docs/README.md` and `Datasets/land_grant_universities.csv`).
+- `**_tracked_add_web_content`** does not take a user-supplied location in the same way; location for `.edu` URLs can be **derived** from the institution’s state (see metadata policy in `preload_pipeline/docs/README.md` and `Datasets/land_grant_universities.csv`).
 
 ### 6.3 Assumptions for RAG
 
 - An **OpenAI-compatible** server is reachable at `**api_base`** for the tool-calling model.
 - **Chroma** is populated and paths/collection match the running process.
 - **Embedding model** and tokenizer settings align with how chunks were ingested.
-- `MainAgent.main()` sets `**OPENAI_API_BASE**` and `**OPENAI_API_KEY**` (to `"EMPTY"`) from `self.api_base` so LangChain `ChatOpenAI` resolves the right endpoint without extra environment configuration; vLLM/SGLang ignore the API key.
 
 ---
 
@@ -611,16 +602,16 @@ This supports full-run ablations by setting a single class-level flag while pres
 The matrix below follows the requested ablation set and ordering. Displayed keys use simplified names (without the `ablation_` prefix).
 
 
-| Ablation key | Name | Db | Crop Dict | Progressive Filtering | Confidence | Web Search | Domain Filter | Ingestion Loop |
-|--------------|------|----|-----------|------------------------|------------|------------|---------------|----------------|
-| `baseline` | Baseline | OFF | OFF | OFF | OFF | OFF | OFF | OFF |
-| `static_rag` | Static RAG | ON | OFF | OFF | OFF | OFF | OFF | OFF |
-| `static_rag_crop_dict` | Static RAG + Crop Dict | ON | ON | OFF | OFF | OFF | OFF | OFF |
-| `progressive_rag` | Progressive RAG | ON | OFF | ON | OFF | OFF | OFF | OFF |
-| `uncertainty_aware_rag` | Uncertainty-Aware RAG | ON | ON | ON | ON | OFF | OFF | OFF |
-| `custom_db_off_crop_dict_off` | Custom_db_off_crop_dict_off | OFF | OFF | ON | ON | ON | ON | ON |
-| `full_no_domain_filter` | Full System (No Domain Filter) | ON | ON | ON | ON | ON | OFF | ON |
-| `full_domain_filtered` | Full System (Domain Filtered) | ON | ON | ON | ON | ON | ON | ON |
+| Ablation key                  | Name                           | Db  | Crop Dict | Progressive Filtering | Confidence | Web Search | Domain Filter | Ingestion Loop |
+| ----------------------------- | ------------------------------ | --- | --------- | --------------------- | ---------- | ---------- | ------------- | -------------- |
+| `baseline`                    | Baseline                       | OFF | OFF       | OFF                   | OFF        | OFF        | OFF           | OFF            |
+| `static_rag`                  | Static RAG                     | ON  | OFF       | OFF                   | OFF        | OFF        | OFF           | OFF            |
+| `static_rag_crop_dict`        | Static RAG + Crop Dict         | ON  | ON        | OFF                   | OFF        | OFF        | OFF           | OFF            |
+| `progressive_rag`             | Progressive RAG                | ON  | OFF       | ON                    | OFF        | OFF        | OFF           | OFF            |
+| `uncertainty_aware_rag`       | Uncertainty-Aware RAG          | ON  | ON        | ON                    | ON         | OFF        | OFF           | OFF            |
+| `custom_db_off_crop_dict_off` | Custom_db_off_crop_dict_off    | OFF | OFF       | ON                    | ON         | ON         | ON            | ON             |
+| `full_no_domain_filter`       | Full System (No Domain Filter) | ON  | ON        | ON                    | ON         | ON         | OFF           | ON             |
+| `full_domain_filtered`        | Full System (Domain Filtered)  | ON  | ON        | ON                    | ON         | ON         | ON            | ON             |
 
 
 ---
@@ -629,8 +620,8 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.1 Before preload
 
-- Install **`pip install -r requirments.txt`** from the **repository root** (see §8.7). Filename **`requirments.txt`** (**spelling deliberate**).
-- Prepare `**manifest.yaml**` with valid `sources` and required **location** fields.
+- Install `**pip install -r requirments.txt`** from the **repository root** (see §8.7). Filename `**requirments.txt`** (**spelling deliberate**).
+- Prepare `**manifest.yaml`** with valid `sources` and required **location** fields.
 - Ensure enough disk for **backup +** new chunks.
 - **Stop** any service or batch job using the target `**--persist-dir`**.
 
@@ -638,7 +629,7 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 - Start one **LLM server per GPU** on the expected ports (or configure `**--openai_api_base`** host consistently with `_build_endpoints`).
 - Align **Chroma path** with `MainAgent` (run from the directory where `./chroma_database/chroma_db` is correct, or adjust code/deploy layout accordingly).
-- Match `**--embed_model_name`** and `**--device**` to how the DB was built.
+- Match `**--embed_model_name`** and `**--device`** to how the DB was built.
 - Set run-level ablation in `Inference/bash_generate.sh` via `**ABLATION_ID**` (forwarded as `--ablation_id`).
 - Confirm the selected `ABLATION_ID` exists in `rag_agent/ablation_configs.json` (currently documented IDs: 2,3,4,5,7,8).
 - Confirm `rag_agent/model_instructions.md` has a matching `<!-- instruction:<ablation_id> -->` section (or intentional fallback to `fallback_ablation`).
@@ -708,11 +699,11 @@ pip install -r requirments.txt
 python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
 ```
 
-If **`pip install -r requirments.txt`** fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, **`pip install --no-deps`** selective packages second, then re-run **`pip install -r requirments.txt`** (expect some “already satisfied” lines).
+If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirments.txt**` (expect some “already satisfied” lines).
 
 ### 8.7.1 `requirments.txt` — consolidated environment
 
-Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, the **LangChain stack** (`langchain`, `langchain-core`, `langchain-openai`, `langchain-text-splitters`, `langchain-protocol`, `langgraph*`, `langsmith`), `google-adk` (still pinned at the environment level even though `rag_agent/main.py` no longer imports it), the rest of the Google client wheels, and CUDA-associated wheels (**~358** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -731,7 +722,7 @@ CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
 
 Use `CUDA_VISIBLE_DEVICES=1`, port **11435**, and so on, for additional GPUs to match `generate.py`'s endpoint list.
 
-Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, etc.) with this server (model ID and multimodal/tool settings must agree with **`--model-path`** above). On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node. For a vLLM-based alternative server, see **§5.8**.
+Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, etc.) with this server (model ID and multimodal/tool settings must agree with `**--model-path**` above). On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node. For a vLLM-based alternative server, see **§5.8**.
 
 ---
 
@@ -740,19 +731,19 @@ Align `**Inference/generate.py**` flags (`--openai_api_base`, `--test_model`, et
 ### 9.1 File index (primary entry points)
 
 
-| Topic                                                | Path                                                                    |
-| ---------------------------------------------------- | ----------------------------------------------------------------------- |
-| Batch inference CLI                                  | `Inference/generate.py`                                                 |
-| Batch run wrapper + ablation selector                | `Inference/bash_generate.sh` (`ABLATION_ID`)                            |
-| RAG agent + tools (LangChain `AgentExecutor` + ADK-compatible runner shim) | `rag_agent/main.py`, `rag_agent/tools/`                                 |
-| Ablation settings map                                | `rag_agent/ablation_configs.json`                                       |
-| Instruction templates (`confidence_*`, `ablation_*`) | `rag_agent/model_instructions.md`                                       |
-| Query enrichment                                     | `rag_agent/crop_query_enrichment.py`                                    |
-| Preload CLI                                          | `preload_pipeline/bootstrap.py`                                         |
-| Manifest example                                     | `preload_pipeline/docs/manifest.example.yaml`                           |
-| Preload config validation                            | `preload_pipeline/preload/config.py`                                    |
-| Crop dictionary build                                | `preload_pipeline/Dict-Value-Database/scripts/build_crop_dictionary.py` |
-| Python dependency pins (`pip install -r`)                           | `requirments.txt` (repo root; see §8.7.1)                             |
+| Topic                                                                      | Path                                                                    |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Batch inference CLI                                                        | `Inference/generate.py`                                                 |
+| Batch run wrapper + ablation selector                                      | `Inference/bash_generate.sh` (`ABLATION_ID`)                            |
+| RAG agent + tools                                    | `rag_agent/main.py`, `rag_agent/tools/`                                 |
+| Ablation settings map                                                      | `rag_agent/ablation_configs.json`                                       |
+| Instruction templates (`confidence_`*, `ablation_*`)                       | `rag_agent/model_instructions.md`                                       |
+| Query enrichment                                                           | `rag_agent/crop_query_enrichment.py`                                    |
+| Preload CLI                                                                | `preload_pipeline/bootstrap.py`                                         |
+| Manifest example                                                           | `preload_pipeline/docs/manifest.example.yaml`                           |
+| Preload config validation                                                  | `preload_pipeline/preload/config.py`                                    |
+| Crop dictionary build                                                      | `preload_pipeline/Dict-Value-Database/scripts/build_crop_dictionary.py` |
+| Python dependency pins (`pip install -r`)                                  | `requirments.txt` (repo root; see §8.7.1)                               |
 
 
 ### 9.2 Cross-references (in-scope Markdown sources)

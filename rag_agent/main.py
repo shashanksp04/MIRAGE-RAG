@@ -10,76 +10,10 @@ from .tools.confidence_evaluator import ConfidenceEvaluator
 from .tools.keyword_extractor import KeywordExtractor
 from .utils.ContentUtils import ContentUtils
 from .utils.Embedding import SentenceTransformerEmbeddingFunction
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.tools import StructuredTool
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.adk.models.lite_llm import LiteLlm
 from typing import Optional, Dict, List, Any
-
-
-class _Part:
-    def __init__(self, text=None):
-        self.text = text
-
-
-class _Content:
-    def __init__(self, parts):
-        self.parts = parts
-
-
-class _FunctionCall:
-    def __init__(self, name, args=None):
-        self.name = name
-        self.args = args or {}
-
-
-class _Event:
-    def __init__(self, author, content=None, function_calls=None):
-        self.author = author
-        self.content = content
-        self._fcs = function_calls or []
-
-    def get_function_calls(self):
-        return self._fcs
-
-
-class _RunnerShim:
-    """ADK-compatible runner wrapper around a LangChain AgentExecutor.
-
-    Preserves the `await runner.run_debug(query, session_id=...)` contract used by
-    Inference/generate.py, Inference/test.py, and rag_agent/test_standalone.py, and
-    returns a list of events shaped like ADK events (author, content.parts[*].text,
-    get_function_calls()).
-    """
-
-    def __init__(self, executor):
-        self._executor = executor
-
-    async def run_debug(self, query, session_id=None):
-        result = await self._executor.ainvoke({"input": query})
-        events: List[_Event] = []
-        for action, observation in result.get("intermediate_steps", []):
-            tool_name = getattr(action, "tool", "unknown")
-            tool_input = getattr(action, "tool_input", {}) or {}
-            events.append(
-                _Event(
-                    author="Rag_Agent",
-                    function_calls=[_FunctionCall(tool_name, tool_input)],
-                )
-            )
-            events.append(
-                _Event(
-                    author=tool_name,
-                    content=_Content(parts=[_Part(text=str(observation))]),
-                )
-            )
-        events.append(
-            _Event(
-                author="Rag_Agent",
-                content=_Content(parts=[_Part(text=result.get("output", ""))]),
-            )
-        )
-        return events
 
 
 class MainAgent:
@@ -599,10 +533,11 @@ class MainAgent:
     def main(self):
         import os
         # Set API base URL for OpenAI-compatible endpoints (vLLM)
-        # LangChain ChatOpenAI honors OPENAI_API_BASE / OPENAI_API_KEY as fallbacks
+        # google-adk uses OPENAI_API_BASE environment variable
         os.environ["OPENAI_API_BASE"] = self.api_base
         os.environ["OPENAI_API_KEY"] = "EMPTY"  # vLLM ignores this
-
+        
+        # Format model name for google-adk: "openai/model_name" for OpenAI-compatible APIs
         model_name = f"openai/{self.test_model}"
         instruction_text = self._get_agent_instruction()
         
@@ -624,47 +559,28 @@ class MainAgent:
         SGLANG_MODEL = self.test_model
         API_KEY = "EMPTY"
 
-        # Wrap each _tracked_* method as a LangChain StructuredTool, preserving the
-        # original function name so model_instructions.md keeps referencing valid tools.
-        lc_tools = [
-            StructuredTool.from_function(
-                func=m,
-                name=getattr(m, "__name__", "unknown"),
-                description=(m.__doc__ or "").strip(),
-            )
-            for m in self.tools_list
-        ]
-
-        llm = ChatOpenAI(
-            model=SGLANG_MODEL,
-            base_url=SGLANG_BASE_URL,
+        model_litellm = LiteLlm(
+            model=f"openai/{SGLANG_MODEL}",
+            api_base=SGLANG_BASE_URL,
             api_key=API_KEY,
-            model_kwargs={
+            additional_kwargs={
                 "tool_choice": "required",
             },
         )
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", instruction_text),
-            ("human", "{input}"),
-            MessagesPlaceholder("agent_scratchpad"),
-        ])
-
-        rag_agent = create_tool_calling_agent(llm, lc_tools, prompt)
-
-        executor = AgentExecutor(
-            agent=rag_agent,
-            tools=lc_tools,
-            return_intermediate_steps=True,
-            handle_parsing_errors=True,
-            max_iterations=15,
+        
+        rag_agent = LlmAgent(
+            name="Rag_Agent",
+            model=model_litellm,
+            description="An agent that retrieves, evaluates, and ingests knowledge.",
+            instruction=instruction_text,
+            tools=self.tools_list,
         )
-
+        
         # Debug: Verify tools were registered
         try:
-            # Check if tools attribute exists (tools list passed to AgentExecutor)
-            if hasattr(executor, 'tools'):
-                tools_attr = executor.tools
+            # Check if tools attribute exists (tools list passed to LlmAgent)
+            if hasattr(rag_agent, 'tools'):
+                tools_attr = rag_agent.tools
                 if tools_attr is not None:
                     tool_count = len(tools_attr) if isinstance(tools_attr, (list, tuple)) else 0
                     print(f"[RAG Agent Init] Agent has {tool_count} tool(s) in tools attribute")
@@ -677,21 +593,20 @@ class MainAgent:
                 print(f"[RAG Agent Init] WARNING: Agent does not have 'tools' attribute")
             
             # List all attributes of the agent to debug
-            print(f"[RAG Agent Init] Agent attributes: {[attr for attr in dir(executor) if not attr.startswith('_')][:20]}")
+            print(f"[RAG Agent Init] Agent attributes: {[attr for attr in dir(rag_agent) if not attr.startswith('_')][:20]}")
         except Exception as e:
             print(f"[RAG Agent Init] Could not verify tool registration: {e}")
             import traceback
             print(f"[RAG Agent Init] Traceback: {traceback.format_exc()}")
 
-        runner = _RunnerShim(executor)
+        runner = InMemoryRunner(agent=rag_agent)
 
         return runner
 
 if __name__ == "__main__":
-    import asyncio
     main_agent = MainAgent()
     runner = main_agent.main()
-    response = asyncio.run(runner.run_debug(
+    response = runner.run_debug(
         "What is Agent Development Kit from Google? What languages is the SDK available in?"
-    ))
+    )
     print(response)
