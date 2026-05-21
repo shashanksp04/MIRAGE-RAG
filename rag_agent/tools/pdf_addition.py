@@ -12,17 +12,17 @@ class PDFAddition:
 
     def __init__(
         self,
-        collection,
+        store,
         content_utils,
         null_str: str = "",
     ):
         """
         Args:
-            collection: Vector database collection instance
+            store: QdrantStore instance
             content_utils: Instance of ContentUtils
             null_str: Placeholder value for empty metadata fields
         """
-        self.collection = collection
+        self.store = store
         self.content_utils = content_utils
         self.null_str = null_str
 
@@ -206,7 +206,7 @@ class PDFAddition:
                     continue
 
                 if self.content_utils.content_hash_exists(
-                    self.collection,
+                    self.store,
                     content_hash
                 ):
                     skipped += 1
@@ -240,10 +240,10 @@ class PDFAddition:
                 "error_message": "No new content to add after deduplication",
             }
 
-        self.collection.add(
-            documents=documents,
+        self.store.upsert_chunks(
+            texts=documents,
             metadatas=metadatas,
-            ids=ids,
+            string_ids=ids,
         )
 
         return {

@@ -211,10 +211,17 @@ Examples:
     )
     
     parser.add_argument(
+        '--qdrant-url',
+        type=str,
+        default=None,
+        help='Qdrant server URL (default: QDRANT_URL env or http://127.0.0.1:6333)'
+    )
+
+    parser.add_argument(
         '--db-path',
         type=str,
         default=None,
-        help='Path to ChromaDB database directory (default: ./chroma_database/chroma_db relative to script)'
+        help='Deprecated alias for --qdrant-url (Chroma path no longer used)'
     )
     
     parser.add_argument(
@@ -254,6 +261,8 @@ Examples:
     print(f"Embed Model: {args.embed_model}")
     print(f"Device: {args.device}")
     print(f"API Base: {args.api_base}")
+    qdrant_url = args.qdrant_url or args.db_path or os.getenv("QDRANT_URL", "http://127.0.0.1:6333")
+    print(f"Qdrant URL: {qdrant_url}")
     print(f"Reset Collection: {args.reset_collection}")
     print(f"Verbose: {args.verbose}")
     print("=" * 80)
@@ -268,15 +277,9 @@ Examples:
             test_model=args.test_model,
             embed_model_name=args.embed_model,
             device=args.device,
-            api_base=args.api_base
+            api_base=args.api_base,
+            qdrant_url=qdrant_url,
         )
-        
-        # Handle custom database path if provided
-        # Note: This would require modifying MainAgent to accept db_path parameter
-        # For now, we'll note this limitation
-        if args.db_path:
-            print(f"[WARNING] Custom db-path not yet supported. Using default: ./chroma_database/chroma_db")
-            print(f"[WARNING] To use custom path, modify MainAgent.__init__ to accept db_path parameter")
         
         # Reset collection if requested
         if args.reset_collection:

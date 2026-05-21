@@ -8,50 +8,84 @@ This document describes how data moves through the project: from offline prepara
 
 ### 1.1 What this system does
 
-MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **persistent Chroma** vector store. Documents are chunked, embedded, and stored with metadata (including location and hardiness zone where applicable). At query time, an LLM-driven **RAG agent** retrieves evidence, evaluates confidence, and may search the web and ingest new pages when confidence is low.
+MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdrant** vector store in **server mode**. Documents are chunked, embedded in-process, and stored in Qdrant with metadata (including location and hardiness zone where applicable). RAG workers connect to the Qdrant server over HTTP—they do not open local database files directly. At query time, an LLM-driven **RAG agent** retrieves evidence, evaluates confidence, and may search the web and ingest new pages when confidence is low.
 
 **Batch inference** (`Inference/generate.py`) runs many items through that RAG stack and then a separate **generation** step, using a multi-process, GPU-aware layout so RAG load is controlled and scalable.
 
-**Offline ingestion** (`preload_pipeline/bootstrap.py`) fills or refreshes the same Chroma database using a **manifest** so seeding is repeatable and auditable.
+**Offline ingestion** (`preload_pipeline/bootstrap.py`) can bulk-seed content using a **manifest** so seeding is repeatable and auditable (see [§3](#3-offline-pipeline-a--building-the-vector-database-preload) for preload vs runtime storage notes).
 
 ### 1.2 Main directories
 
 
 | Path                | Role                                                                                                                                                                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `rag_agent/`        | Chroma client, embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
+| `rag_agent/`        | Qdrant client (`QdrantStore`), embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
 | `preload_pipeline/` | Manifest-driven preload: lock, backup, adapters (CSV, web list, PDF dir), JSON run report.                                                                                                                                                                   |
 | `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                                                                                                        |
 | `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                                                                                                         |
 | `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                                                                                                      |
 
 
-Run batch jobs from the `Inference/` directory (or ensure the process working directory matches where `MainAgent` expects its Chroma path—see [§2.1](#21-chroma-persistence-and-collection-name)).
+Run batch jobs from the `Inference/` directory. Before starting workers, run the **Qdrant server** and set `QDRANT_URL` (see [§2.1](#21-qdrant-server-and-collection-name) and [§5.9](#59-starting-the-qdrant-server)).
 
 ### 1.3 How to read this guide
 
-- **Sections 2–4** cover shared concepts, **preload** (vector DB), and the **crop dictionary** (query enrichment only—not stored in Chroma).
+- **Sections 2–4** cover shared concepts, **preload** (vector DB), and the **crop dictionary** (query enrichment only—not stored in Qdrant).
 - **Sections 5–6** cover **batch inference** and **runtime RAG agent** behavior.
 - **Section 7** covers ablation controls and the run matrix; **Section 8** is an operational checklist (cluster jobs, pre-run checks, monitoring, environment setup); **Section 9** lists primary files and doc references.
-- **§3.8** and **§4.5** collect **working-directory-specific** commands for the vector DB and crop dictionary; **§5.8** covers local LLM servers.
+- **§3.8** and **§4.5** collect **working-directory-specific** commands for the vector DB and crop dictionary; **§5.8** covers local LLM servers; **§5.9** covers **starting the Qdrant server** (copy-paste steps).
 
 ---
 
 ## 2. Core concepts and shared artifacts
 
-### 2.1 Chroma persistence and collection name
+### 2.1 Qdrant server and collection name
 
-- The RAG stack uses **Chroma** with a named collection. The default collection name in code is `**meta-mirage_collection`** (see `rag_agent/main.py` and preload `--collection`).
-- `MainAgent` constructs `chromadb.PersistentClient(path=...)` pointing at a **directory** on disk. The path is currently set inside `MainAgent.__init__` — treat it as a **site-specific constant** and adjust for your deployment. Preload should write to the **same** persistence directory `MainAgent` will read, or you must copy the entire persistence directory to that location before running `generate.py`.
-- **Embedding model** must match between preload and runtime: default in both `bootstrap.py` and `Generate` is `**BAAI/bge-base-en-v1.5`** (`--embed-model` / `--embed_model_name`).
+- The RAG stack uses **Qdrant** with a named collection. The default collection name in code is **`meta-mirage_collection`** (see `rag_agent/main.py` and preload `--collection`).
+- `MainAgent` connects with `QdrantClient(url=...)` to a **running Qdrant server**. Set the URL via environment variable **`QDRANT_URL`** (default `http://127.0.0.1:6333`) or constructor argument `qdrant_url=...`. Optional **`QDRANT_API_KEY`** for secured deployments.
+- **On-disk storage** is owned by the Qdrant **server process**, not by each worker. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§5.9](#59-starting-the-qdrant-server)).
+- **Embeddings** are computed in-process by `SentenceTransformerEmbeddingFunction`; vectors are sent to Qdrant on upsert and query via `rag_agent/utils/qdrant_store.py` (`QdrantStore`).
+- **Embedding model** must match between preload and runtime when both are in use: default in both `bootstrap.py` and `generate.py` is **`BAAI/bge-base-en-v1.5`** (`--embed-model` / `--embed_model_name`).
 - **Device** for the sentence-transformer embedder should match (`--device` / `device`, often `"None"` for auto).
+
+#### 2.1.1 Why we moved from ChromaDB to Qdrant (server mode)
+
+Previously, each RAG worker opened the same Chroma persistence directory with `chromadb.PersistentClient(path=...)`. That caused problems in multi-worker batch inference:
+
+- **Unsafe concurrent writes:** multiple workers reading/writing the same local SQLite/HNSW files risked contention and corruption.
+- **Stale collection handles:** when rank-0 called `reset_collection()`, other workers cached invalid Chroma collection UUIDs and crashed until manually rebound.
+
+**Qdrant server mode** fixes this: one Qdrant process owns storage on NVMe; all workers are HTTP clients to that single server. Concurrent upserts and queries are handled safely server-side.
+
+```mermaid
+flowchart LR
+  subgraph before [Chroma per worker]
+    W1[Worker1] --> Files[(local chroma_db)]
+    W2[Worker2] --> Files
+  end
+  subgraph after [Qdrant server]
+    W1Q[Worker1] --> Server[QdrantServer]
+    W2Q[Worker2] --> Server
+    Server --> NVMe[(qdrant_database)]
+  end
+```
+
+**Operational model (three terminals):**
+
+| Terminal | Role |
+| -------- | ---- |
+| 1 | Qdrant server (`~/bin/qdrant` with `QDRANT__STORAGE__STORAGE_PATH=...`) |
+| 2 | GPU LLM server(s) + `Inference/generate.py` workers (`export QDRANT_URL=...`) |
+| 3 | Batch driver (`Inference/bash_generate.sh` or your inference script) |
+
+For migration details, see [MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md](MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md).
 
 ### 2.2 Two different artifacts: vector DB vs crop dictionary
 
 
 | Artifact                            | Purpose                                                                                                                             | Consumed by                                                                                      |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Chroma DB** (chunks + embeddings) | Retrieval for agricultural/extension content                                                                                        | `MainAgent` retrieve / confidence / optional web ingest                                          |
+| **Qdrant collection** (chunks + embeddings) | Retrieval for agricultural/extension content                                                                                        | `MainAgent` retrieve / confidence / optional web ingest                                          |
 | **Crop dictionary JSON**            | Optional **query enrichment** only: may insert crop names into the user question when the query implies a crop but does not name it | `CropQueryEnricher` in `rag_agent/crop_query_enrichment.py`, called from `Inference/generate.py` |
 
 
@@ -72,7 +106,7 @@ Preload **manifest validation** (`preload_pipeline/preload/config.py`) enforces:
 
 #### 2.3.1 Canonical metadata stored on each chunk
 
-Ingestion paths (web, PDF, CSV preload) ultimately attach metadata through `rag_agent.utils.metadata.build_canonical_chunk_metadata`. Typical **canonical keys** on each Chroma document include:
+Ingestion paths (web, PDF, CSV preload) ultimately attach metadata through `rag_agent.utils.metadata.build_canonical_chunk_metadata`. Typical **canonical keys** stored in each chunk **payload** in Qdrant include:
 
 
 | Field            | Role                                                                                                                                                                                          |
@@ -120,9 +154,9 @@ If the query supplies no usable `title`/`month_year`/derived `hardiness_zone`, s
 
 Implementation reference: `rag_agent/utils/ContentUtils.py` — `retrieve_with_priority_filters`.
 
-**Concept.** *Priority retrieval* means: for one user query, run **one Chroma `collection.query` per candidate strategy** (each with the same embedding and `n_results=k`, default 5). Every strategy that returns at least `**min_results`** hits (default 1) is **valid**. Among valid strategies, the implementation picks the one with the **highest normalized similarity score** (not the first in the list). So a broader filter can win if its top-k hits are semantically stronger than a stricter filter’s hits.
+**Concept.** *Priority retrieval* means: for one user query, run **one Qdrant search per candidate strategy** (each with the same query embedding and `limit=k`, default 5). Every strategy that returns at least **`min_results`** hits (default 1) is **valid**. Among valid strategies, the implementation picks the one with the **highest normalized similarity score** (not the first in the list). So a broader filter can win if its top-k hits are semantically stronger than a stricter filter’s hits.
 
-**Per-hit similarity (distance to score).** Chroma returns distances where **lower is better**. For each hit `i` with distance `d_i >= 0`, the code converts to a **higher-is-better** similarity in `(0, 1]`:
+**Per-hit similarity (distance to score).** Qdrant returns a cosine **score** where higher is better. The code normalizes to a Chroma-compatible **distance** (`distance = 1.0 - score`) so downstream confidence logic is unchanged. For each hit `i` with distance `d_i >= 0`, the code converts to a **higher-is-better** similarity in `(0, 1]`:
 
 ```text
 s_i = 1 / (1 + max(d_i, 0))
@@ -148,7 +182,7 @@ normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 
 | Parameter     | Role                                                                                      |
 | ------------- | ----------------------------------------------------------------------------------------- |
-| `k`           | Top-k hits per strategy (`n_results` in Chroma).                                          |
+| `k`           | Top-k hits per strategy (`limit` in Qdrant / `k` in code).                                          |
 | `min_results` | Minimum `doc_count` for a strategy to participate in the max-score selection (default 1). |
 
 
@@ -186,6 +220,8 @@ CSV rows are turned into narrative text inside the preload adapter, then passed 
 ---
 
 ## 3. Offline pipeline A — Building the vector database (preload)
+
+> **Note:** `preload_pipeline/bootstrap.py` still ingests into **ChromaDB** today. Runtime **`rag_agent`** reads/writes **Qdrant** via a shared server ([§2.1](#21-qdrant-server-and-collection-name)). Preload migration to Qdrant is a follow-up; until then, bulk-seed via runtime ingestion during inference, or migrate preload separately (see [MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md](MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md) §4.7–4.9).
 
 ### 3.1 Stage 0 — Lock and backup
 
@@ -362,7 +398,7 @@ If the file is missing, `Generate` logs and runs with enrichment effectively off
 
 ### 4.4 Implementation behavior (`rag_agent/crop_query_enrichment.py`)
 
-- **Not** dependent on Chroma or ADK; uses the OpenAI-compatible client against the **same `api_base` and model** as that RAG worker.
+- **Not** dependent on Qdrant or ADK; uses the OpenAI-compatible client against the **same `api_base` and model** as that RAG worker.
 - Splits the full user string into `**prefix`** (optional `[User location: …]\n\n`) and `**body`** via regex.
 - If enrichment is enabled and a dictionary is loaded, the worker passes a **state slice** of the JSON (matching the state from the location line) plus an **allowlist** of crop names into one chat completion.
 - **Fallback:** on any failure (missing state in dict, empty list, serialize error, LLM error, bad JSON, or model output that is not a pure **insertion** supersequence of the original body), `**enrich()` returns the original full query unchanged**.
@@ -422,17 +458,19 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 - Each worker binds to `**api_base`** for the LLM (RAG agent + enrichment both use that base URL).
 - Port numbering starts at **11434** and increments by one per GPU when using default host.
 
-### 5.3 Rank0 barrier and Chroma collection reset
+### 5.3 Rank0 barrier and Qdrant collection reset
 
-Only **rank0** starts with `**do_reset_collection=True`**, calling `**MainAgent.reset_collection()`** once so the collection is dropped and recreated cleanly.
+Only **rank0** starts with **`do_reset_collection=True`**, calling **`MainAgent.reset_collection()`** once so the remote collection is dropped and recreated cleanly (including payload indexes).
 
-Other workers start with `**do_reset_collection=False**` and explicitly `**get_or_create_collection**` after startup so they bind to the **current** collection ID.
+Other workers start with **`do_reset_collection=False`** and connect to the **existing** collection on the Qdrant server. No per-worker local database copies or collection-handle rebind is required.
 
-**Why:** Chroma collections have internal IDs; deleting a collection from one process leaves **stale handles** in others. Starting non-rank0 workers only after rank0 is **READY** avoids “collection does not exist” errors from old UUIDs.
+**Why the rank0 barrier remains:** rank0 must finish reset before other workers ingest or query, so everyone sees the same empty (or freshly recreated) collection at run start. Workers still wait for rank0 **READY** on `rag_status_q` before processing items.
 
-### 5.4 Self-healing retrieval
+### 5.4 Qdrant connectivity during inference
 
-If `**_tracked_retrieve_content`** catches an error whose message indicates the collection **does not exist**, `MainAgent` **rebinds** the collection and dependent tools (`PDFAddition`, `WebAddition`, `ConfidenceEvaluator`) and **retries once**. This matches the behavior described in `Documentation.md`.
+If Qdrant is unreachable (server stopped, wrong `QDRANT_URL`, network error), retrieval and ingestion tools fail and may classify as hard or soft RAG failures per **§5.5**. **Keep the Qdrant server running** for the full inference job (Terminal 1 in [§2.1.1](#211-why-we-moved-from-chromadb-to-qdrant-server-mode)).
+
+The old Chroma **stale-handle self-heal** (rebind after collection delete) was removed from `MainAgent`—it is unnecessary with server mode.
 
 ### 5.5 RAG failure classification
 
@@ -517,6 +555,129 @@ python -m vllm.entrypoints.openai.api_server \
 
 Model IDs, ports, and templates should match your deployment; align `**--test_model` / `--model_name**` in `generate.py` with the served model name.
 
+### 5.9 Starting the Qdrant server
+
+Follow these steps **before** starting `Inference/generate.py` or any `MainAgent` worker. **`pip install qdrant-client` installs the Python client only**—it does **not** install the `qdrant` server command.
+
+#### Step 1 — Install the Python client (once per venv)
+
+From your activated environment (e.g. `mirage`):
+
+```bash
+pip install qdrant-client==1.18.0
+python -c "from qdrant_client import QdrantClient; print('qdrant-client OK')"
+```
+
+#### Step 2 — Download the Qdrant server binary (once per user)
+
+On Linux x86_64 clusters, use the **musl** build if the gnu build fails with `GLIBC_2.38 not found`:
+
+```bash
+mkdir -p ~/bin
+cd ~/bin
+wget https://github.com/qdrant/qdrant/releases/download/v1.18.0/qdrant-x86_64-unknown-linux-musl.tar.gz
+tar -xzf qdrant-x86_64-unknown-linux-musl.tar.gz
+chmod +x qdrant
+./qdrant --version
+```
+
+Optional: add `~/bin` to your PATH for the session:
+
+```bash
+export PATH="$HOME/bin:$PATH"
+```
+
+#### Step 3 — Create the storage directory
+
+```bash
+mkdir -p /work/nvme/bfox/ssingh38/qdrant_database
+```
+
+Adjust the path if your site uses a different NVMe mount.
+
+#### Step 4 — Start the server (Terminal 1; keep this running)
+
+Qdrant **1.18+** does **not** accept `--storage-path` on the command line. Set storage via environment variable:
+
+```bash
+export QDRANT__STORAGE__STORAGE_PATH=/work/nvme/bfox/ssingh38/qdrant_database
+~/bin/qdrant
+```
+
+Or as a one-liner:
+
+```bash
+QDRANT__STORAGE__STORAGE_PATH=/work/nvme/bfox/ssingh38/qdrant_database ~/bin/qdrant
+```
+
+**Run in the background** (optional):
+
+```bash
+nohup env QDRANT__STORAGE__STORAGE_PATH=/work/nvme/bfox/ssingh38/qdrant_database \
+  ~/bin/qdrant > ~/qdrant.log 2>&1 &
+tail -f ~/qdrant.log
+```
+
+**Alternative — config file:** create `~/qdrant_config.yaml`:
+
+```yaml
+storage:
+  storage_path: /work/nvme/bfox/ssingh38/qdrant_database
+service:
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+```
+
+Then start with:
+
+```bash
+~/bin/qdrant --config-path ~/qdrant_config.yaml
+```
+
+**Alternative — Docker** (if `docker` is available on the node):
+
+```bash
+docker run -p 6333:6333 -p 6334:6334 \
+  -v /work/nvme/bfox/ssingh38/qdrant_database:/qdrant/storage \
+  qdrant/qdrant
+```
+
+#### Step 5 — Verify the server
+
+In another terminal:
+
+```bash
+curl http://127.0.0.1:6333/collections
+```
+
+You should receive JSON (possibly an empty `collections` list on first start).
+
+#### Step 6 — Point RAG workers at the server (Terminal 2+)
+
+```bash
+export QDRANT_URL=http://127.0.0.1:6333
+cd /path/to/MIRAGE-RAG   # repository root
+python -c "from rag_agent.main import MainAgent; a=MainAgent(device='cuda'); print('count', a.store.count())"
+```
+
+Expected log lines include `[RAG Init] Qdrant URL: http://127.0.0.1:6333`.
+
+#### Step 7 — Three-terminal layout for a full run
+
+| Terminal | Role | What to run |
+| -------- | ---- | ----------- |
+| **1** | Qdrant server | `QDRANT__STORAGE__STORAGE_PATH=... ~/bin/qdrant` |
+| **2** | LLM + RAG workers | Start SGLang/vLLM per **§5.8**, then `export QDRANT_URL=...` and `python Inference/generate.py ...` |
+| **3** | Batch driver | `Inference/bash_generate.sh` or your inference script |
+
+**Smoke test** (optional, no LLM required beyond embeddings):
+
+```bash
+export QDRANT_URL=http://127.0.0.1:6333
+python rag_agent/test_qdrant_migration.py
+```
+
 ---
 
 ## 6. Runtime pipeline — RAG agent behavior (`rag_agent`)
@@ -541,9 +702,10 @@ Because of this, the exact tool-call sequence is **template-dependent per ablati
 
 ### 6.3 Assumptions for RAG
 
-- An **OpenAI-compatible** server is reachable at `**api_base`** for the tool-calling model.
-- **Chroma** is populated and paths/collection match the running process.
-- **Embedding model** and tokenizer settings align with how chunks were ingested.
+- An **OpenAI-compatible** server is reachable at **`api_base`** for the tool-calling model.
+- A **Qdrant server** is running and reachable at **`QDRANT_URL`** (default `http://127.0.0.1:6333`).
+- The collection may start **empty**; rank0 **`reset_collection()`** clears it at worker startup; chunks are added during the run via web/PDF ingestion tools when enabled.
+- **Embedding model** and tokenizer settings align with how chunks were ingested (default `BAAI/bge-base-en-v1.5`).
 
 ---
 
@@ -627,19 +789,24 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.2 Before batch inference (`generate.py`)
 
-- Start one **LLM server per GPU** on the expected ports (or configure `**--openai_api_base`** host consistently with `_build_endpoints`).
-- Align **Chroma path** with `MainAgent` (run from the directory where `./chroma_database/chroma_db` is correct, or adjust code/deploy layout accordingly).
-- Match `**--embed_model_name`** and `**--device`** to how the DB was built.
-- Set run-level ablation in `Inference/bash_generate.sh` via `**ABLATION_ID**` (forwarded as `--ablation_id`).
+- **Start Qdrant** and verify connectivity (**§5.9**): `curl http://127.0.0.1:6333/collections`.
+- **`export QDRANT_URL=http://127.0.0.1:6333`** (or your server host/port) in the worker environment.
+- Start one **LLM server per GPU** on the expected ports (or configure **`--openai_api_base`** host consistently with `_build_endpoints`).
+- Expect **rank0** to **`reset_collection()`** on startup—do not rely on pre-existing Qdrant data unless you change that behavior.
+- Match **`--embed_model_name`** and **`--device`** to your embedding setup.
+- Set run-level ablation in `Inference/bash_generate.sh` via **`ABLATION_ID`** (forwarded as `--ablation_id`).
 - Confirm the selected `ABLATION_ID` exists in `rag_agent/ablation_configs.json` (currently documented IDs: 2,3,4,5,7,8).
 - Confirm `rag_agent/model_instructions.md` has a matching `<!-- instruction:<ablation_id> -->` section (or intentional fallback to `fallback_ablation`).
-- If using enrichment: place `**CropDatabase.json**` or pass `**--crop_dictionary_path**`; use `**--disable_query_enrichment**` to force-disable.
+- If using enrichment: place **`CropDatabase.json`** or pass **`--crop_dictionary_path`**; use **`--disable_query_enrichment`** to force-disable.
 
 ### 8.3 Troubleshooting pointers
 
-- **Stale Chroma handles after reset:** see **§5.3** and self-healing in **§5.4** (`Documentation.md`).
+- **Qdrant `Connection refused` on `:6333`:** server not running—start Terminal 1 per **§5.9**.
+- **`GLIBC_2.38 not found` when running `./qdrant`:** use the **musl** tarball, not the gnu build (**§5.9** Step 2).
+- **`unexpected argument '--storage-path'`:** Qdrant 1.18+ uses **`QDRANT__STORAGE__STORAGE_PATH`**, not `--storage-path`.
+- **`qdrant: command not found`:** `pip install qdrant-client` does not install the server binary—download from GitHub releases (**§5.9** Step 2).
 - **Keyword extraction reliability:** `Documentation.md` notes a **fresh client per `extract_keywords` call** in `KeywordExtractor` to avoid context overflow when reusing sessions.
-- **Enrichment disabled unexpectedly:** missing file at resolved path, or `**--disable_query_enrichment`**; workers log when the dictionary is missing or enrichment is off.
+- **Enrichment disabled unexpectedly:** missing file at resolved path, or **`--disable_query_enrichment`**; workers log when the dictionary is missing or enrichment is off.
 
 ### 8.4 Submitting jobs on an HPC cluster (example: Delta)
 
@@ -662,7 +829,8 @@ Before long runs, verify resources and basic connectivity (adapt paths and ports
 | -------------------------------- | -------------------------------------------------------------------------------------------- |
 | Disk space on output volume      | `df -h /path/to/output/directory`                                                            |
 | GPU visibility and memory        | `nvidia-smi`                                                                                 |
-| Chroma persistence present       | `ls -la ./chroma_database/chroma_db` (from the cwd you use for `generate.py` / `MainAgent`)  |
+| Qdrant server reachable          | `curl http://127.0.0.1:6333/collections`                                                     |
+| RAG stack → Qdrant               | `QDRANT_URL=http://127.0.0.1:6333 python -c "from rag_agent.main import MainAgent; a=MainAgent(); print('count', a.store.count())"` |
 | RAG stack imports                | `python -c "from rag_agent.main import MainAgent; agent = MainAgent(); print('RAG OK')"`     |
 | OpenAI-compatible API (optional) | `curl http://127.0.0.1:8000/v1/models` — use your `--openai_api_base` host/port if different |
 | Writable output path             | `touch /path/to/output/file.jsonl && rm /path/to/output/file.jsonl`                          |
@@ -703,7 +871,7 @@ If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your 
 
 ### 8.7.1 `requirments.txt` — consolidated environment
 
-Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Chroma ingestion**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Qdrant client**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -736,6 +904,8 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Batch inference CLI                                                        | `Inference/generate.py`                                                 |
 | Batch run wrapper + ablation selector                                      | `Inference/bash_generate.sh` (`ABLATION_ID`)                            |
 | RAG agent + tools                                    | `rag_agent/main.py`, `rag_agent/tools/`                                 |
+| Qdrant store adapter                                 | `rag_agent/utils/qdrant_store.py`                                       |
+| Qdrant migration smoke test                          | `rag_agent/test_qdrant_migration.py`                                    |
 | Ablation settings map                                                      | `rag_agent/ablation_configs.json`                                       |
 | Instruction templates (`confidence_`*, `ablation_*`)                       | `rag_agent/model_instructions.md`                                       |
 | Query enrichment                                                           | `rag_agent/crop_query_enrichment.py`                                    |
@@ -751,7 +921,8 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 
 | Document                                                               | Contents                                                                                        |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `Documentation.md`                                                     | Multi-GPU queue design, Rank0 reset, self-healing, RAG failure handling, keyword extractor note |
+| `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping, preload migration notes, testing checklist                         |
+| `Documentation.md`                                                     | Multi-GPU queue design, Rank0 reset, RAG failure handling, keyword extractor note               |
 | `preload_pipeline/docs/README.md`                                      | Preload stages, metadata policy, CLI, persistence strategy                                      |
 | `Inference/README.md`                                                  | Crop DB filename and enrichment flags                                                           |
 | `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`     | Enrichment design and `effective_query` data flow                                               |

@@ -1,8 +1,9 @@
-import chromadb
+import os
 import time
 import re
 import json
 from pathlib import Path
+from qdrant_client import QdrantClient
 from .tools.pdf_addition import PDFAddition
 from .tools.web_search import WebSearch
 from .tools.web_addition import WebAddition
@@ -10,6 +11,7 @@ from .tools.confidence_evaluator import ConfidenceEvaluator
 from .tools.keyword_extractor import KeywordExtractor
 from .utils.ContentUtils import ContentUtils
 from .utils.Embedding import SentenceTransformerEmbeddingFunction
+from .utils.qdrant_store import QdrantStore
 from google.adk.agents import LlmAgent
 from google.adk.runners import InMemoryRunner
 from google.adk.models.lite_llm import LiteLlm
@@ -17,29 +19,49 @@ from typing import Optional, Dict, List, Any
 
 
 class MainAgent:
-    def __init__(self, test_model: str = "Qwen2.5-VL-3B-Instruct", embed_model_name: str = "BAAI/bge-base-en-v1.5", device: str = "None", api_base: str = "http://127.0.0.1:11434/v1", ablation_id: str = "default"):
+    def __init__(
+        self,
+        test_model: str = "Qwen2.5-VL-3B-Instruct",
+        embed_model_name: str = "BAAI/bge-base-en-v1.5",
+        device: str = "None",
+        api_base: str = "http://127.0.0.1:11434/v1",
+        ablation_id: str = "default",
+        qdrant_url: Optional[str] = None,
+    ):
         self.test_model = test_model
         self.api_base = api_base
         self.ablation_id = (ablation_id or "").strip() or "default"
         self.embedding_function = SentenceTransformerEmbeddingFunction(embed_model_name, device)
-        persist_path = "/work/nvme/bfox/ssingh38/chroma_database/chroma_db"
-        self.client = chromadb.PersistentClient(path=persist_path) # path has to be a valid path to a directory, shifted to nvme for storage reasons
-        self.collection = self.client.get_or_create_collection(name="meta-mirage_collection", embedding_function=self.embedding_function)
-        print(f"[RAG Init] Chroma persist path: {persist_path}", flush=True)
+
+        resolved_qdrant_url = qdrant_url or os.getenv("QDRANT_URL", "http://127.0.0.1:6333")
+        qdrant_api_key = os.getenv("QDRANT_API_KEY") or None
+        self.client = QdrantClient(
+            url=resolved_qdrant_url,
+            api_key=qdrant_api_key,
+            check_compatibility=False,
+        )
+        self.collection_name = "meta-mirage_collection"
+        self.store = QdrantStore(self.client, self.collection_name, self.embedding_function)
+        self.store.ensure_collection()
+
+        print(f"[RAG Init] Qdrant URL: {resolved_qdrant_url}", flush=True)
         try:
-            collections = self.client.list_collections()
-            collection_names = [c.name if hasattr(c, "name") else str(c) for c in collections]
-            print(f"[RAG Init] Chroma collections: {collection_names}", flush=True)
+            collections_response = self.client.get_collections()
+            collection_names = [c.name for c in collections_response.collections]
+            print(f"[RAG Init] Qdrant collections: {collection_names}", flush=True)
         except Exception as e:
             print(f"[RAG Init] Failed to list collections: {e}", flush=True)
         print("[RAG Init] Skipping startup collection.count() debug check.", flush=True)
         self.null_str = "__null__"
         self.null_int = -1
-        self.content_utils = ContentUtils(embed_model=embed_model_name)
-        self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
+        self.content_utils = ContentUtils(
+            embed_model=embed_model_name,
+            embedding_fn=self.embedding_function,
+        )
+        self.pdf_addition = PDFAddition(self.store, self.content_utils, self.null_str)
         self.web_search = WebSearch()
-        self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
-        self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
+        self.web_addition = WebAddition(self.store, self.content_utils, self.null_str, self.null_int)
+        self.confidence_evaluator = ConfidenceEvaluator(self.store, self.content_utils)
         self.keyword_extractor = KeywordExtractor(model_name=test_model, openai_api_base=api_base)
         self.current_location: Optional[str] = None
         # Ablation toggle: set False to disable location-aware domain filtering for all web searches.
@@ -209,45 +231,12 @@ class MainAgent:
                 title=title,
             )
         except Exception as e:
-            # Self-heal: stale collection handle after another worker reset/deleted the collection
-            msg = str(e).lower()
-            if "does not exist" in msg or "not exist" in msg:
-                print(
-                    f"[RAG Tools] retrieve_content: Detected stale collection handle ({e}). "
-                    f"Re-binding collection + dependent tools and retrying once...",
-                    flush=True,
-                )
-                try:
-                    self.collection = self.client.get_or_create_collection(
-                        name="meta-mirage_collection",
-                        embedding_function=self.embedding_function,
-                    )
-                    # Rebind components that depend on collection
-                    self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
-                    self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
-                    self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
-
-                    # Retry once after rebind
-                    result = self.retrieve_content(
-                        query=query,
-                        location=effective_location,
-                        month_year=month_year,
-                        title=title,
-                    )
-                except Exception as e2:
-                    print(f"[RAG Tools] ✗ retrieve_content: FAILED after rebind - {e2}", flush=True)
-                    return {
-                        "status": "error",
-                        "error_message": f"Collection stale handle; retry after rebind failed: {e2}",
-                        "results": [],
-                    }
-            else:
-                print(f"[RAG Tools] ✗ retrieve_content: EXCEPTION - {e}", flush=True)
-                return {
-                    "status": "error",
-                    "error_message": str(e),
-                    "results": [],
-                }
+            print(f"[RAG Tools] ✗ retrieve_content: EXCEPTION - {e}", flush=True)
+            return {
+                "status": "error",
+                "error_message": str(e),
+                "results": [],
+            }
 
         status = result.get("status", "unknown")
         if status == "success":
@@ -261,62 +250,50 @@ class MainAgent:
         return result
 
         
+    def _rebind_store_tools(self) -> None:
+        """Rebind ingestion/retrieval tools after collection lifecycle changes."""
+        self.pdf_addition = PDFAddition(self.store, self.content_utils, self.null_str)
+        self.web_addition = WebAddition(self.store, self.content_utils, self.null_str, self.null_int)
+        self.confidence_evaluator = ConfidenceEvaluator(self.store, self.content_utils)
+
     def reset_collection(self) -> None:
         """Drop and recreate the collection (clean slate)."""
-        name = "meta-mirage_collection"
+        name = self.collection_name
 
-        # Delete if exists (tolerate missing / concurrent deletion)
         try:
-            self.client.delete_collection(name=name)
+            self.store.delete_collection()
             print(f"[RAG reset_collection] Deleted collection: {name}")
         except Exception as e:
             msg = str(e).lower()
             if "does not exist" in msg or "not exist" in msg:
                 print(f"[RAG reset_collection] Collection missing (ok): {e}")
             else:
-                # If another process deleted it between checks, some clients throw differently.
-                # You can choose to re-raise, but for testing it's better to proceed.
                 print(f"[RAG reset_collection] Delete failed (continuing for test): {e}")
 
-        # Always recreate (get_or_create is idempotent)
         try:
-            self.collection = self.client.get_or_create_collection(
-                name=name,
-                embedding_function=self.embedding_function
-            )
+            self.store.ensure_collection()
             print(f"[RAG reset_collection] Created/loaded collection: {name}")
         except Exception as e:
-            # Rare case: if DB is mid-delete in another process, a short retry helps.
-            print(f"[RAG reset_collection] get_or_create failed, retrying once: {e}")
+            print(f"[RAG reset_collection] ensure_collection failed, retrying once: {e}")
             time.sleep(0.5)
-            self.collection = self.client.get_or_create_collection(
-                name=name,
-                embedding_function=self.embedding_function
-            )
+            self.store.ensure_collection()
 
-        self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
-        self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
-        self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
+        self._rebind_store_tools()
 
     def reload_existing_collection(self):
-        """Reload existing Chroma collection and rebind ALL dependent components."""
-
-        name = "meta-mirage_collection"
+        """Reload existing Qdrant collection and rebind ALL dependent components."""
+        name = self.collection_name
 
         print(f"[RAG reload] Reloading existing collection: {name}", flush=True)
 
-        # 🔥 IMPORTANT: use get_collection (NOT get_or_create)
-        self.collection = self.client.get_collection(
-            name=name,
-            embedding_function=self.embedding_function,
-        )
+        existing = [c.name for c in self.client.get_collections().collections]
+        if name not in existing:
+            raise ValueError(f"Collection '{name}' does not exist")
 
-        print(f"[RAG reload] Collection count: {self.collection.count()}", flush=True)
+        count = self.client.count(collection_name=name).count
+        print(f"[RAG reload] Collection count: {count}", flush=True)
 
-        # 🔥 CRITICAL: rebind ALL components that depend on collection
-        self.pdf_addition = PDFAddition(self.collection, self.content_utils, self.null_str)
-        self.web_addition = WebAddition(self.collection, self.content_utils, self.null_str, self.null_int)
-        self.confidence_evaluator = ConfidenceEvaluator(self.collection, self.content_utils)
+        self._rebind_store_tools()
 
         print(f"[RAG reload] Rebinding complete", flush=True)
         
@@ -416,10 +393,10 @@ class MainAgent:
                 "status": "error",
                 "error_message": "month_year is required for web ingestion and must be in YYYY-MM format.",
             }
-        before = self.collection.count()
+        before = self.client.count(collection_name=self.collection_name).count
         result = self.web_addition.add_web_content(url=url, location=location, 
                 month_year=month_year, language=language)
-        after = self.collection.count()
+        after = self.client.count(collection_name=self.collection_name).count
         print(f"[RAG Tools] add_web_content: count delta={after-before} (before={before}, after={after})", flush=True)
         status = result.get("status", "unknown")
         if status == "success":
@@ -501,7 +478,7 @@ class MainAgent:
                 "results": [],
             }
 
-        print(f"[RAG Tools] collection.count()={self.collection.count()}", flush=True)
+        print(f"[RAG Tools] collection.count()={self.store.count()}", flush=True)
         effective_use_progressive_filtering = (
             use_progressive_filtering
             if use_progressive_filtering is not None
@@ -509,7 +486,7 @@ class MainAgent:
         )
         used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
             query=query,
-            collection=self.collection,
+            store=self.store,
             location=location,
             month_year=month_year,
             title=title,

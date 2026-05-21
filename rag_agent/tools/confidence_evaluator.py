@@ -7,13 +7,13 @@ class ConfidenceEvaluator:
     Agent tool for evaluating confidence in retrieved evidence.
     """
 
-    def __init__(self, collection, content_utils):
+    def __init__(self, store, content_utils):
         """
         Args:
-            collection: Vector database collection
+            store: QdrantStore instance
             content_utils: Instance of ContentUtils
         """
-        self.collection = collection
+        self.store = store
         self.content_utils = content_utils
 
     def evaluate_retrieval_confidence(
@@ -72,7 +72,7 @@ class ConfidenceEvaluator:
 
         used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
             query=query,
-            collection=self.collection,
+            store=self.store,
             location=location,
             month_year=month_year,
             title=title,

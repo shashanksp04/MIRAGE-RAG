@@ -1,8 +1,12 @@
-from typing import Any, List, Dict, Optional, Tuple
+from typing import Any, List, Dict, Optional, Tuple, TYPE_CHECKING
 import re
 import hashlib
 from transformers import AutoTokenizer
 from rag_agent.utils.metadata import extract_hardiness_zone_for_location
+from rag_agent.utils.qdrant_store import chroma_where_to_qdrant_filter
+
+if TYPE_CHECKING:
+    from rag_agent.utils.qdrant_store import QdrantStore
 
 
 class ContentUtils:
@@ -15,9 +19,11 @@ class ContentUtils:
         self,
         embed_model: str = "BAAI/bge-base-en-v1.5",
         chunk_config: Dict | None = None,
+        embedding_fn=None,
     ):
         self.embed_model = embed_model
         self.tokenizer = AutoTokenizer.from_pretrained(embed_model)
+        self.embedding_fn = embedding_fn
 
         self.chunk_config = {
             "pdf": {
@@ -46,10 +52,9 @@ class ContentUtils:
     # -------------------------
 
     @staticmethod
-    def content_hash_exists(collection, content_hash: str) -> bool:
+    def content_hash_exists(store: "QdrantStore", content_hash: str) -> bool:
         """Checks whether a content hash already exists in the collection."""
-        result = collection.get(where={"content_hash": content_hash})
-        return len(result.get("ids", [])) > 0
+        return store.content_hash_exists(content_hash)
 
     # -------------------------
     # Chunking
@@ -102,7 +107,7 @@ class ContentUtils:
         self,
         *,
         query: str,
-        collection,
+        store: "QdrantStore",
         location: Optional[str] = None,
         month_year: Optional[str] = None,
         title: Optional[str] = None,
@@ -115,7 +120,7 @@ class ContentUtils:
 
         Args:
             query: Query text to retrieve against.
-            collection: Vector store collection handle.
+            collection: QdrantStore handle for vector search.
             location: Optional location used to derive hardiness zone.
             month_year: Optional month/year metadata filter.
             title: Optional title metadata filter.
@@ -245,20 +250,22 @@ class ContentUtils:
             )
 
         for strategy_name, where_filter in filter_attempts:
-            query_args = {
-                "query_texts": [query],
-                "n_results": k,
-                "include": ["documents", "metadatas", "distances"],
-            }
+            if self.embedding_fn is None:
+                raise RuntimeError("embedding_fn is required for Qdrant retrieval")
 
-            if where_filter is not None:
-                query_args["where"] = where_filter
+            query_vector = self.embedding_fn.embed_one(query)
+            qdrant_filter = (
+                chroma_where_to_qdrant_filter(where_filter) if where_filter else None
+            )
+            formatted = store.search(
+                query_vector=query_vector,
+                limit=k,
+                qdrant_filter=qdrant_filter,
+            )
 
-            results = collection.query(**query_args)
-
-            docs = results.get("documents", [[]])[0]
-            metadatas = results.get("metadatas", [[]])[0]
-            distances = results.get("distances", [[]])[0]
+            docs = [r["text"] for r in formatted]
+            metadatas = [r["metadata"] for r in formatted]
+            distances = [r["distance"] for r in formatted]
 
             similarity_scores = []
             for distance in distances:
