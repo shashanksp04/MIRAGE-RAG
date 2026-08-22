@@ -9,7 +9,7 @@ from preload.transforms.normalize import normalize_text
 
 def ingest_csv_row_record(
     *,
-    collection,
+    store,
     content_utils,
     source_name: str,
     csv_path: str,
@@ -22,7 +22,7 @@ def ingest_csv_row_record(
     dry_run: bool,
 ) -> Dict[str, int]:
     """
-    Row -> text -> rag_agent token chunking -> rag_agent dedupe -> collection.add()
+    Row -> text -> rag_agent token chunking -> rag_agent dedupe -> Qdrant upsert.
 
     Reuses:
       - content_utils.tokenizer
@@ -58,7 +58,7 @@ def ingest_csv_row_record(
             continue
 
         # dedupe against DB
-        if content_utils.content_hash_exists(collection, content_hash):
+        if content_utils.content_hash_exists(store, content_hash):
             skipped += 1
             continue
 
@@ -98,5 +98,5 @@ def ingest_csv_row_record(
     if dry_run or not documents:
         return {"chunks_added": added, "chunks_skipped": skipped}
 
-    collection.add(documents=documents, metadatas=metadatas, ids=ids)
+    store.upsert_chunks(texts=documents, metadatas=metadatas, string_ids=ids)
     return {"chunks_added": added, "chunks_skipped": skipped}

@@ -1,41 +1,37 @@
 from __future__ import annotations
 
-from pathlib import Path
+import os
 from typing import Any, Tuple
 
-import chromadb
+from qdrant_client import QdrantClient
 
-# ✅ Correct imports for your directory structure
 from rag_agent.utils.Embedding import SentenceTransformerEmbeddingFunction
 from rag_agent.utils.ContentUtils import ContentUtils
+from rag_agent.utils.qdrant_store import QdrantStore
 from rag_agent.tools.web_addition import WebAddition
 from rag_agent.tools.pdf_addition import PDFAddition
 
 
-class _DryRunCollection:
+class _DryRunStore:
     """
-    A tiny shim to prevent writing to disk during --dry-run while still exercising ingestion logic.
-    Mimics the subset of Chroma Collection used by rag_agent tools:
-      - get(where=...)
-      - add(documents=..., metadatas=..., ids=...)
+    A tiny shim to prevent Qdrant writes during --dry-run while still exercising ingestion logic.
     """
-    def __init__(self, real_collection, logger=None):
-        self.real = real_collection
+    def __init__(self, real_store, logger=None):
+        self.real = real_store
         self.logger = logger
 
-    def get(self, *args, **kwargs):
-        return self.real.get(*args, **kwargs)
+    def content_hash_exists(self, content_hash):
+        return self.real.content_hash_exists(content_hash)
 
-    def add(self, *args, **kwargs):
+    def upsert_chunks(self, *, texts, metadatas, string_ids):
         if self.logger:
-            docs = kwargs.get("documents") or []
-            self.logger.info(f"[DRY-RUN] Would add {len(docs)} docs")
-        return None
+            self.logger.info(f"[DRY-RUN] Would upsert {len(texts)} chunks")
 
 
 def create_rag_agent_collection_and_utils(
     *,
-    persist_dir: Path,
+    qdrant_url: str,
+    qdrant_api_key: str | None,
     collection_name: str,
     embed_model: str,
     device: str,
@@ -43,20 +39,23 @@ def create_rag_agent_collection_and_utils(
     logger=None,
 ) -> Tuple[Any, ContentUtils, WebAddition, PDFAddition]:
     """
-    Creates the same Chroma collection + ContentUtils + tools that rag_agent uses,
-    so chunking + dedupe + document formatting match exactly.
+    Creates the same Qdrant store + ContentUtils + tools that rag_agent uses,
+    so chunking, dedupe, embeddings, and document formatting match exactly.
     """
     embedding_fn = SentenceTransformerEmbeddingFunction(embed_model, device)
-    client = chromadb.PersistentClient(path=str(persist_dir))
-    collection = client.get_or_create_collection(name=collection_name, embedding_function=embedding_fn)
+    client = QdrantClient(
+        url=qdrant_url,
+        api_key=qdrant_api_key or os.getenv("QDRANT_API_KEY") or None,
+        check_compatibility=False,
+    )
+    store = QdrantStore(client, collection_name, embedding_fn)
+    store.ensure_collection()
 
-    # ContentUtils uses transformers tokenizer with embed_model
-    content_utils = ContentUtils(embed_model=embed_model)
+    content_utils = ContentUtils(embed_model=embed_model, embedding_fn=embedding_fn)
 
-    # Optionally wrap collection to prevent writes in dry run
-    tool_collection = _DryRunCollection(collection, logger=logger) if dry_run else collection
+    tool_store = _DryRunStore(store, logger=logger) if dry_run else store
 
-    web_adder = WebAddition(collection=tool_collection, content_utils=content_utils)
-    pdf_adder = PDFAddition(collection=tool_collection, content_utils=content_utils)
+    web_adder = WebAddition(store=tool_store, content_utils=content_utils)
+    pdf_adder = PDFAddition(store=tool_store, content_utils=content_utils)
 
-    return collection, content_utils, web_adder, pdf_adder
+    return tool_store, content_utils, web_adder, pdf_adder

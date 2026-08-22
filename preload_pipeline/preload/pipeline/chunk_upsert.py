@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import chromadb
+from qdrant_client import QdrantClient
 
 from preload.utils.hashing import sha1_hex
 from preload.transforms.normalize import split_into_chunks
+from rag_agent.utils.Embedding import SentenceTransformerEmbeddingFunction
+from rag_agent.utils.qdrant_store import QdrantStore
 
 
 @dataclass
@@ -17,30 +19,32 @@ class UpsertStats:
     chunks_failed: int = 0
 
 
-class ChromaUpserter:
+class QdrantUpserter:
     """
-    Standalone upserter that writes text chunks into a Chroma persistent collection.
+    Standalone upserter that writes text chunks into a Qdrant collection.
 
     This does NOT depend on your RAG agent internals, so it works even if you can't import them.
     """
 
     def __init__(
         self,
-        persist_dir: Path,
+        qdrant_url: str,
         collection_name: str,
         embedding_model_label: str,
+        device: str = "None",
+        qdrant_api_key: Optional[str] = None,
         dry_run: bool = False,
         logger=None,
     ):
-        self.persist_dir = Path(persist_dir)
         self.collection_name = collection_name
         self.embedding_model_label = embedding_model_label
         self.dry_run = dry_run
         self.logger = logger
 
-        self.persist_dir.mkdir(parents=True, exist_ok=True)
-        self.client = chromadb.PersistentClient(path=str(self.persist_dir))
-        self.collection = self.client.get_or_create_collection(name=self.collection_name)
+        embedding_fn = SentenceTransformerEmbeddingFunction(embedding_model_label, device)
+        client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key, check_compatibility=False)
+        self.store = QdrantStore(client, collection_name, embedding_fn)
+        self.store.ensure_collection()
 
     def chunk_and_upsert(self, text: str, metadata: Dict[str, Any], stable_id: Optional[str]) -> Dict[str, int]:
         chunks = split_into_chunks(text)
@@ -72,15 +76,13 @@ class ChromaUpserter:
                 "chunks_failed": stats.chunks_failed,
             }
 
-        # Chroma upsert is idempotent for ids (overwrites existing with same id).
-        # If your Chroma version lacks upsert, swap to add and handle conflicts.
         try:
-            self.collection.upsert(documents=docs, metadatas=metas, ids=ids)
+            self.store.upsert_chunks(texts=docs, metadatas=metas, string_ids=ids)
             stats.chunks_upserted = len(ids)
         except Exception:
             stats.chunks_failed = len(ids)
             if self.logger:
-                self.logger.exception("Chroma upsert failed.")
+                self.logger.exception("Qdrant upsert failed.")
         return {
             "chunks_created": stats.chunks_created,
             "chunks_upserted": stats.chunks_upserted,
@@ -88,5 +90,4 @@ class ChromaUpserter:
         }
 
     def close(self):
-        # PersistentClient writes as it goes; nothing mandatory here.
         return

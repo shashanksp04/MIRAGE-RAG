@@ -10,13 +10,11 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class RunReport:
     manifest_path: str
-    persist_dir: str
+    qdrant_url: str
     collection: str
 
     started_at: str = field(default_factory=lambda: datetime.now().isoformat())
     finished_at: Optional[str] = None
-    backup_path: Optional[str] = None
-
     sources_started: int = 0
     sources_succeeded: int = 0
     sources_failed: int = 0
@@ -35,11 +33,10 @@ class RunReport:
         self.finalize()
         return {
             "manifest_path": self.manifest_path,
-            "persist_dir": self.persist_dir,
+            "qdrant_url": self.qdrant_url,
             "collection": self.collection,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
-            "backup_path": self.backup_path,
             "sources_started": self.sources_started,
             "sources_succeeded": self.sources_succeeded,
             "sources_failed": self.sources_failed,

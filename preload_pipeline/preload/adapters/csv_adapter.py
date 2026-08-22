@@ -9,9 +9,9 @@ from preload.ingestion.csv_ingestion import ingest_csv_row_record
 
 
 class CSVAdapter(BaseAdapter):
-    def __init__(self, source_cfg: Dict[str, Any], *, collection, content_utils, dry_run: bool):
+    def __init__(self, source_cfg: Dict[str, Any], *, store, content_utils, dry_run: bool):
         super().__init__(source_cfg, dry_run=dry_run)
-        self.collection = collection
+        self.store = store
         self.content_utils = content_utils
 
     def run(self, logger=None) -> Dict[str, int]:
@@ -41,7 +41,7 @@ class CSVAdapter(BaseAdapter):
                             f"Provide source-level 'location' or populate '{location_field}'."
                         )
                     stats = ingest_csv_row_record(
-                        collection=self.collection,
+                        store=self.store,
                         content_utils=self.content_utils,
                         source_name=self.source_name,
                         csv_path=str(path),

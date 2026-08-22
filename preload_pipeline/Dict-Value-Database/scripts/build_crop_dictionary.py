@@ -763,7 +763,7 @@ def main() -> int:
             pass
 
         try:
-            web_adder = web_addition_cls(collection=None, content_utils=_ContentUtilsStub())  # type: ignore[arg-type]
+            web_adder = web_addition_cls(store=None, content_utils=_ContentUtilsStub())  # type: ignore[arg-type]
             _log("WebAddition available for HTML extraction")
         except Exception:
             web_adder = None

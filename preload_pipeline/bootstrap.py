@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -27,7 +28,6 @@ def _setup_rag_agent_path() -> None:
 _setup_rag_agent_path()
 
 from preload.config import PreloadConfig
-from preload.pipeline.backup import backup_persist_dir
 from preload.pipeline.lock import FileLock
 from preload.pipeline.report import RunReport
 from preload.utils.logging import setup_logger
@@ -41,14 +41,22 @@ from preload.adapters.pdf_adapter import PDFDirAdapter
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser("Manifest-driven preload pipeline (reuses rag_agent ingestion + chunking).")
     p.add_argument("--manifest", required=True, help="Path to manifest.yaml")
-    p.add_argument("--persist-dir", required=True, help="Chroma persistence directory")
-    p.add_argument("--collection", required=True, help="Chroma collection name")
+    p.add_argument(
+        "--qdrant-url",
+        default=os.getenv("QDRANT_URL", "http://127.0.0.1:6333"),
+        help="Qdrant server URL (default: QDRANT_URL or http://127.0.0.1:6333)",
+    )
+    p.add_argument("--qdrant-api-key", default=None, help="Qdrant API key (default: QDRANT_API_KEY)")
+    p.add_argument("--collection", required=True, help="Qdrant collection name")
     p.add_argument("--rag-agent-dir", required=True, help="Path to rag_agent directory (sibling to preload_pipeline)")
-    p.add_argument("--backups-root", default=None, help="Backup root dir (default: <persist_parent>/backups)")
-    p.add_argument("--keep-last", type=int, default=20, help="Keep newest N backups")
+    p.add_argument(
+        "--reports-dir",
+        default=str(Path(__file__).resolve().parent / "reports"),
+        help="Local directory for preload reports and lock files",
+    )
     p.add_argument("--embed-model", default="BAAI/bge-base-en-v1.5", help="Embedding model (match rag_agent)")
     p.add_argument("--device", default="None", help="Device for embedding model (match rag_agent)")
-    p.add_argument("--dry-run", action="store_true", help="Do everything except writing to Chroma")
+    p.add_argument("--dry-run", action="store_true", help="Do everything except writing to Qdrant")
     return p.parse_args()
 
 
@@ -58,8 +66,7 @@ def main() -> int:
 
     manifest_path = Path(args.manifest).resolve()
     rag_agent_dir = Path(args.rag_agent_dir).resolve()
-    persist_dir = Path(args.persist_dir).resolve()
-    backups_root = Path(args.backups_root).resolve() if args.backups_root else persist_dir.parent / "backups"
+    reports_dir = Path(args.reports_dir).resolve()
 
     # Ensure `import rag_agent...` works by adding the *parent* of rag_agent to sys.path
     add_project_root_to_syspath(rag_agent_dir)
@@ -69,36 +76,22 @@ def main() -> int:
 
     cfg = PreloadConfig.from_manifest(
         manifest_path=manifest_path,
-        persist_dir=persist_dir,
+        qdrant_url=args.qdrant_url,
         collection_name=args.collection,
-        backups_root=backups_root,
-        keep_last=args.keep_last,
+        reports_dir=reports_dir,
         embed_model=args.embed_model,
         device=args.device,
         dry_run=args.dry_run,
     )
 
-    report = RunReport(manifest_path=str(manifest_path), persist_dir=str(persist_dir), collection=cfg.collection_name)
+    report = RunReport(manifest_path=str(manifest_path), qdrant_url=cfg.qdrant_url, collection=cfg.collection_name)
 
-    lock_path = persist_dir.parent / ".preload.lock"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = reports_dir / ".preload.lock"
     with FileLock(lock_path, logger=logger):
-        # Stage 0: backup (runs first)
-        if persist_dir.exists():
-            backup_path = backup_persist_dir(
-                persist_dir=persist_dir,
-                backups_root=cfg.backups_root,
-                label="before_preload",
-                keep_last=cfg.keep_last,
-                logger=logger,
-            )
-            report.backup_path = str(backup_path)
-        else:
-            logger.info(f"Persist dir not found yet, creating new: {persist_dir}")
-            persist_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create collection + ContentUtils using rag_agent classes
-        collection, content_utils, web_adder, pdf_adder = create_rag_agent_collection_and_utils(
-            persist_dir=cfg.persist_dir,
+        store, content_utils, web_adder, pdf_adder = create_rag_agent_collection_and_utils(
+            qdrant_url=cfg.qdrant_url,
+            qdrant_api_key=args.qdrant_api_key,
             collection_name=cfg.collection_name,
             embed_model=cfg.embed_model,
             device=cfg.device,
@@ -111,7 +104,7 @@ def main() -> int:
         for s in cfg.sources:
             st = s["type"].strip().lower()
             if st == "csv":
-                adapters.append(CSVAdapter(s, collection=collection, content_utils=content_utils, dry_run=cfg.dry_run))
+                adapters.append(CSVAdapter(s, store=store, content_utils=content_utils, dry_run=cfg.dry_run))
             elif st == "web_page_list":
                 adapters.append(WebPageListAdapter(s, web_adder=web_adder, dry_run=cfg.dry_run))
             elif st == "pdf_dir":
@@ -137,7 +130,7 @@ def main() -> int:
                 report.errors.append({"source": adapter.source_name, "error": repr(e)})
                 logger.exception(f"Failed source {adapter.source_name}: {e}")
 
-    out_path = report.write_json(out_dir=persist_dir.parent, logger=logger)
+    out_path = report.write_json(out_dir=cfg.reports_dir, logger=logger)
     logger.info(f"Wrote report: {out_path}")
     logger.info(report.summary_str())
     return 0 if report.sources_failed == 0 else 2

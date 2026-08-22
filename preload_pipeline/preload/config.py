@@ -10,10 +10,9 @@ import yaml
 @dataclass(frozen=True)
 class PreloadConfig:
     manifest_path: Path
-    persist_dir: Path
+    qdrant_url: str
     collection_name: str
-    backups_root: Path
-    keep_last: int
+    reports_dir: Path
     sources: List[Dict[str, Any]]
     embed_model: str
     device: str
@@ -23,10 +22,9 @@ class PreloadConfig:
     def from_manifest(
         *,
         manifest_path: Path,
-        persist_dir: Path,
+        qdrant_url: str,
         collection_name: str,
-        backups_root: Path,
-        keep_last: int,
+        reports_dir: Path,
         embed_model: str,
         device: str,
         dry_run: bool,
@@ -55,10 +53,9 @@ class PreloadConfig:
 
         return PreloadConfig(
             manifest_path=manifest_path,
-            persist_dir=persist_dir,
+            qdrant_url=qdrant_url,
             collection_name=collection_name,
-            backups_root=backups_root,
-            keep_last=keep_last,
+            reports_dir=reports_dir,
             sources=sources,
             embed_model=embed_model,
             device=device,

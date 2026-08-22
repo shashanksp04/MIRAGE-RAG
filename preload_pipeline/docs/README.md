@@ -2,17 +2,17 @@
 
 ## Overview
 
-The **Preload Pipeline** is a manifest-driven ingestion system that pre-populates the Chroma vector database used by the `rag_agent`.
+The **Preload Pipeline** is a manifest-driven ingestion system that pre-populates the Qdrant collection used by the `rag_agent`.
 
 Its primary purpose is to:
 
 * Seed the vector database with authoritative reference sources
 * Prevent cold-start retrieval failures
 * Ensure first queries have meaningful semantic context
-* Maintain versioned backups before every ingestion run
+* Serialize ingestion runs with a local lock and produce run reports
 * Reuse as much of the existing `rag_agent` ingestion logic as possible
 
-This pipeline is designed to operate independently of the runtime RAG agent, while producing a fully compatible persistent Chroma database directory.
+This pipeline is designed to operate independently of the runtime RAG agent, while writing to the same Qdrant collection and storage contract.
 
 ---
 
@@ -20,7 +20,7 @@ This pipeline is designed to operate independently of the runtime RAG agent, whi
 
 The pipeline is built around five core principles:
 
-1. Safety-first ingestion (automatic versioned backups)
+1. Safety-first ingestion (serialized runs and structured reports)
 2. Reuse rag_agent chunking and deduplication logic
 3. Manifest-driven configuration
 4. Source-type modular adapters
@@ -54,27 +54,16 @@ The `preload_pipeline` and `rag_agent` directories exist as siblings under the s
 
 # High-Level Pipeline Stages
 
-## Stage 0 — Lock + Backup (Safety Layer)
+## Stage 0 — Lock (Safety Layer)
 
 This stage runs before any ingestion occurs.
 
 Steps:
 
 1. Acquire a file lock to prevent concurrent preload runs
-2. Copy the entire Chroma persistence directory to:
+2. Use a local lock file so concurrent preload runs cannot write to the same collection.
 
-   ```
-   <persist_parent>/backups/<timestamp>_before_preload/
-   ```
-3. Optionally prune older backups
-
-Why this matters:
-
-* Guarantees rollback capability
-* Protects against partial ingestion failures
-* Allows experimentation without risk
-
-This stage makes the preload pipeline behave like a transactional system.
+Qdrant persistence and snapshots are managed by the Qdrant server. Create a Qdrant snapshot or use the server's backup workflow when rollback is required.
 
 ---
 
@@ -142,15 +131,16 @@ This guarantees:
 * Identical embedding function
 * Identical metadata structure (for web/pdf)
 
-The preload pipeline creates the same Chroma client + collection as the rag agent:
+The preload pipeline creates the same Qdrant client + store as the rag agent:
 
 ```python
 SentenceTransformerEmbeddingFunction(...)
-chromadb.PersistentClient(...)
-get_or_create_collection(...)
+QdrantClient(...)
+QdrantStore(...)
+store.ensure_collection()
 ```
 
-This ensures the produced persistence directory is fully compatible with the RAG agent.
+This ensures preload writes are directly compatible with the RAG agent.
 
 ---
 
@@ -300,23 +290,9 @@ Null vs non-null cases under the policy:
 
 ---
 
-# Persistence Directory Strategy
+# Qdrant Connection Strategy
 
-The pipeline writes directly to the Chroma persistence directory used by rag_agent.
-
-You have two options:
-
-Option A:
-
-* Preload writes to a temp directory
-* Copy full directory into rag_agent
-
-Option B (recommended):
-
-* Preload writes directly to rag_agent’s persistence directory
-
-In both cases:
-Always copy the entire directory, never just SQLite files.
+The pipeline writes directly to the Qdrant server used by `rag_agent`. Set `QDRANT_URL` and, when required, `QDRANT_API_KEY` in the environment, or pass the URL on the command line.
 
 ---
 
@@ -373,7 +349,7 @@ From `preload_pipeline/`:
 ```
 python bootstrap.py \
   --manifest manifest.yaml \
-  --persist-dir ../rag_agent/chroma_database/chroma_db \
+  --qdrant-url http://127.0.0.1:6333 \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
 ```
@@ -381,9 +357,11 @@ python bootstrap.py \
 Arguments explained:
 
 * `--manifest` → Path to manifest.yaml
-* `--persist-dir` → Chroma persistence directory
-* `--collection` → Chroma collection name (must match rag_agent)
+* `--qdrant-url` → Qdrant server URL (defaults to `QDRANT_URL` or `http://127.0.0.1:6333`)
+* `--qdrant-api-key` → Optional Qdrant API key (defaults to `QDRANT_API_KEY`)
+* `--collection` → Qdrant collection name (must match rag_agent)
 * `--rag-agent-dir` → Path to rag_agent directory
+* `--reports-dir` → Local directory for reports and the preload lock
 * `--embed-model` → Must match rag_agent embedding model
 * `--device` → Must match rag_agent device setting
 * `--dry-run` → Runs pipeline without writing to DB
@@ -403,7 +381,6 @@ Arguments explained:
 
 Every run:
 
-* Creates versioned backup
 * Prevents concurrent runs
 * Logs ingestion results
 * Maintains deduplication
@@ -419,7 +396,7 @@ Possible enhancements:
 * Add incremental update mode
 * Add source-level refresh policies
 * Add validation queries after ingestion
-* Add checksum validation of persistence directory
+* Add Qdrant snapshot validation
 
 ---
 
@@ -440,13 +417,13 @@ python Ingestion/URLs/scripts/generate_web_sources.py --base-url "https://extens
 
 python bootstrap.py \
   --manifest Ingestion/URLs/YAMLfiles/uiuc_generated_sources.yaml \
-  --persist-dir ./chroma_database_src/chroma_db \
+  --qdrant-url http://127.0.0.1:6333 \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
 
 python bootstrap.py \
   --manifest Ingestion/PDFs/YAMLfiles/uiuc_.yaml \
-  --persist-dir ./chroma_database_src/chroma_db \
+  --qdrant-url http://127.0.0.1:6333 \
   --collection meta-mirage_collection \
   --rag-agent-dir ../rag_agent
 
