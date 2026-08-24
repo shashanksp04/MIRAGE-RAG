@@ -1,0 +1,3235 @@
+state_fips,state,state_abbr,county,hardiness_zone
+31,Nebraska,NE,Cuming,5b
+53,Washington,WA,Wahkiakum,8b
+35,New Mexico,NM,De Baca,7a
+31,Nebraska,NE,Lancaster,6a
+31,Nebraska,NE,Nuckolls,6a
+72,,,Las Piedras,
+46,South Dakota,SD,Minnehaha,4b
+48,Texas,TX,Menard,8a
+06,California,CA,Sierra,6b
+21,Kentucky,KY,Clinton,7a
+39,Ohio,OH,Hancock,6b
+48,Texas,TX,Hale,7b
+01,Alabama,AL,Clay,8a
+48,Texas,TX,Armstrong,7a
+39,Ohio,OH,Allen,6a
+13,Georgia,GA,McDuffie,8b
+55,Wisconsin,WI,Sauk,5a
+05,Arkansas,AR,Stone,7b
+41,Oregon,OR,Wallowa,6b
+42,Pennsylvania,PA,Beaver,6b
+28,Mississippi,MS,Jasper,8b
+29,Missouri,MO,Henry,6b
+08,Colorado,CO,Saguache,5a
+37,North Carolina,NC,Chatham,8a
+49,Utah,UT,Rich,5a
+40,Oklahoma,OK,Adair,7b
+39,Ohio,OH,Lake,6b
+51,Virginia,VA,Salem,7b
+51,Virginia,VA,Montgomery,7a
+47,Tennessee,TN,Hamilton,7b
+35,New Mexico,NM,Otero,7b
+35,New Mexico,NM,Catron,6a
+01,Alabama,AL,Marengo,8b
+56,Wyoming,WY,Lincoln,5b
+29,Missouri,MO,Barton,7a
+48,Texas,TX,Calhoun,9b
+51,Virginia,VA,Poquoson,8b
+54,West Virginia,WV,Pocahontas,5b
+48,Texas,TX,Clay,8a
+51,Virginia,VA,James City,8a
+31,Nebraska,NE,Keith,5b
+31,Nebraska,NE,Phelps,6a
+22,Louisiana,LA,Calcasieu,9a
+22,Louisiana,LA,Union,8b
+40,Oklahoma,OK,Sequoyah,7b
+01,Alabama,AL,DeKalb,8a
+36,New York,NY,Steuben,5b
+42,Pennsylvania,PA,Forest,6a
+22,Louisiana,LA,Tangipahoa,9a
+51,Virginia,VA,Stafford,7a
+26,Michigan,MI,Menominee,5a
+18,Indiana,IN,Jasper,5b
+13,Georgia,GA,Brantley,9a
+13,Georgia,GA,Lamar,8b
+18,Indiana,IN,Steuben,6a
+48,Texas,TX,Orange,9a
+39,Ohio,OH,Fayette,6b
+25,Massachusetts,MA,Hampshire,6a
+21,Kentucky,KY,Allen,7a
+37,North Carolina,NC,Alamance,8a
+20,Kansas,KS,Greenwood,6b
+25,Massachusetts,MA,Suffolk,7a
+16,Idaho,ID,Jefferson,4b
+48,Texas,TX,Gonzales,9a
+47,Tennessee,TN,Marion,7b
+26,Michigan,MI,Alpena,5a
+21,Kentucky,KY,Wayne,7a
+47,Tennessee,TN,White,7a
+48,Texas,TX,Fannin,8a
+20,Kansas,KS,Doniphan,6a
+48,Texas,TX,Kerr,8a
+12,Florida,FL,Hernando,9b
+12,Florida,FL,Wakulla,9a
+12,Florida,FL,Walton,9a
+28,Mississippi,MS,Chickasaw,8a
+02,Alaska,AK,Ketchikan Gateway,
+26,Michigan,MI,Clare,5a
+20,Kansas,KS,Republic,6a
+12,Florida,FL,Volusia,9b
+40,Oklahoma,OK,Canadian,7b
+72,,,Quebradillas,
+78,,,St. Thomas,
+13,Georgia,GA,Floyd,8a
+32,Nevada,NV,Churchill,7a
+31,Nebraska,NE,Webster,5b
+17,Illinois,IL,Hancock,6a
+46,South Dakota,SD,Hutchinson,5a
+41,Oregon,OR,Crook,6b
+50,Vermont,VT,Franklin,5a
+26,Michigan,MI,Marquette,5a
+09,Connecticut,CT,Middlesex,6b
+37,North Carolina,NC,Davidson,8a
+17,Illinois,IL,Clay,6b
+29,Missouri,MO,Knox,6a
+29,Missouri,MO,Livingston,6a
+42,Pennsylvania,PA,Tioga,6a
+31,Nebraska,NE,Dakota,5a
+26,Michigan,MI,Leelanau,6a
+51,Virginia,VA,Surry,7b
+48,Texas,TX,Refugio,9b
+39,Ohio,OH,Butler,6b
+13,Georgia,GA,Terrell,8b
+13,Georgia,GA,Clayton,8b
+56,Wyoming,WY,Fremont,5a
+18,Indiana,IN,Ohio,6b
+13,Georgia,GA,Columbia,8b
+08,Colorado,CO,Sedgwick,5b
+30,Montana,MT,Musselshell,4b
+42,Pennsylvania,PA,Dauphin,6b
+46,South Dakota,SD,Moody,4b
+54,West Virginia,WV,Putnam,7a
+34,New Jersey,NJ,Sussex,6b
+20,Kansas,KS,Decatur,6a
+18,Indiana,IN,Perry,6b
+28,Mississippi,MS,Union,8a
+31,Nebraska,NE,Boyd,5a
+27,Minnesota,MN,Mille Lacs,4a
+38,North Dakota,ND,Walsh,4a
+39,Ohio,OH,Morgan,6b
+39,Ohio,OH,Portage,6a
+56,Wyoming,WY,Uinta,5a
+32,Nevada,NV,Humboldt,6b
+48,Texas,TX,Jim Hogg,9b
+08,Colorado,CO,Cheyenne,6a
+41,Oregon,OR,Clackamas,8b
+05,Arkansas,AR,Polk,8a
+13,Georgia,GA,Macon,8b
+18,Indiana,IN,Benton,5b
+47,Tennessee,TN,Morgan,7a
+46,South Dakota,SD,Douglas,5a
+24,Maryland,MD,Worcester,7b
+17,Illinois,IL,Wabash,6b
+18,Indiana,IN,Huntington,6a
+21,Kentucky,KY,Scott,6b
+19,Iowa,IA,Decatur,5b
+18,Indiana,IN,Wabash,6a
+18,Indiana,IN,Allen,6a
+18,Indiana,IN,Marshall,6a
+31,Nebraska,NE,Thomas,5b
+38,North Dakota,ND,Sioux,4a
+48,Texas,TX,Dimmit,9a
+27,Minnesota,MN,Fillmore,4b
+45,South Carolina,SC,Chester,8a
+27,Minnesota,MN,Lac qui Parle,4b
+49,Utah,UT,Cache,6a
+55,Wisconsin,WI,Pierce,4b
+13,Georgia,GA,Charlton,9a
+13,Georgia,GA,Polk,8a
+17,Illinois,IL,McLean,6a
+23,Maine,ME,Androscoggin,5b
+16,Idaho,ID,Kootenai,6b
+32,Nevada,NV,Clark,9a
+20,Kansas,KS,Phillips,6a
+31,Nebraska,NE,Holt,5a
+29,Missouri,MO,Johnson,6b
+55,Wisconsin,WI,La Crosse,5a
+22,Louisiana,LA,Caldwell,8b
+21,Kentucky,KY,Edmonson,7a
+17,Illinois,IL,Bond,6b
+17,Illinois,IL,Brown,6a
+27,Minnesota,MN,McLeod,4b
+55,Wisconsin,WI,Dunn,4b
+08,Colorado,CO,Custer,5b
+29,Missouri,MO,Madison,6b
+48,Texas,TX,Nolan,8a
+42,Pennsylvania,PA,Wayne,6a
+36,New York,NY,Saratoga,5a
+48,Texas,TX,Brazos,9a
+40,Oklahoma,OK,Marshall,8a
+24,Maryland,MD,Allegany,7a
+54,West Virginia,WV,Wetzel,6b
+55,Wisconsin,WI,Jackson,4b
+41,Oregon,OR,Clatsop,8b
+53,Washington,WA,Lewis,8b
+36,New York,NY,Allegany,5b
+19,Iowa,IA,Cedar,5a
+18,Indiana,IN,Orange,6b
+13,Georgia,GA,DeKalb,8a
+13,Georgia,GA,Pickens,8a
+30,Montana,MT,Chouteau,4a
+31,Nebraska,NE,Brown,5a
+47,Tennessee,TN,Campbell,7a
+37,North Carolina,NC,Franklin,7b
+24,Maryland,MD,Baltimore,7b
+20,Kansas,KS,Lyon,6b
+19,Iowa,IA,Carroll,5a
+22,Louisiana,LA,Tensas,8b
+47,Tennessee,TN,Monroe,7b
+20,Kansas,KS,Hamilton,6a
+19,Iowa,IA,Pocahontas,5a
+16,Idaho,ID,Gem,7a
+05,Arkansas,AR,Independence,8a
+05,Arkansas,AR,Lonoke,8a
+18,Indiana,IN,Newton,5b
+13,Georgia,GA,Franklin,8b
+12,Florida,FL,Hendry,10a
+13,Georgia,GA,Taliaferro,8b
+48,Texas,TX,Jefferson,9b
+30,Montana,MT,Meagher,4b
+08,Colorado,CO,La Plata,6a
+48,Texas,TX,Bell,8b
+28,Mississippi,MS,Kemper,8b
+05,Arkansas,AR,Clark,8a
+41,Oregon,OR,Klamath,6b
+36,New York,NY,Oswego,6a
+72,,,Naranjito,
+01,Alabama,AL,Cherokee,8a
+48,Texas,TX,Bandera,8b
+30,Montana,MT,Rosebud,4b
+35,New Mexico,NM,Union,6b
+26,Michigan,MI,Schoolcraft,5a
+36,New York,NY,Ulster,6b
+34,New Jersey,NJ,Camden,7a
+17,Illinois,IL,Jersey,6b
+51,Virginia,VA,Hanover,7a
+20,Kansas,KS,Wallace,6a
+26,Michigan,MI,Alger,5a
+05,Arkansas,AR,Fulton,7a
+48,Texas,TX,Hidalgo,10a
+37,North Carolina,NC,Robeson,8b
+26,Michigan,MI,Newaygo,5b
+41,Oregon,OR,Morrow,7a
+27,Minnesota,MN,Todd,4a
+05,Arkansas,AR,Logan,8a
+37,North Carolina,NC,Lincoln,8a
+05,Arkansas,AR,Miller,8b
+12,Florida,FL,Orange,10a
+08,Colorado,CO,San Juan,5a
+16,Idaho,ID,Franklin,6a
+13,Georgia,GA,Carroll,8a
+20,Kansas,KS,Riley,6b
+48,Texas,TX,Schleicher,8a
+51,Virginia,VA,Russell,7a
+37,North Carolina,NC,Caldwell,7b
+16,Idaho,ID,Madison,5a
+18,Indiana,IN,Warrick,7a
+21,Kentucky,KY,Adair,7a
+21,Kentucky,KY,Gallatin,6b
+21,Kentucky,KY,Harrison,6b
+23,Maine,ME,Sagadahoc,5b
+30,Montana,MT,Sweet Grass,5a
+48,Texas,TX,Grayson,8a
+42,Pennsylvania,PA,Greene,6a
+02,Alaska,AK,Northwest Arctic,
+20,Kansas,KS,Ellis,6b
+01,Alabama,AL,Hale,8b
+01,Alabama,AL,Perry,8b
+01,Alabama,AL,Colbert,8a
+20,Kansas,KS,Pratt,7a
+21,Kentucky,KY,Bourbon,6b
+47,Tennessee,TN,Rutherford,7b
+13,Georgia,GA,Cook,9a
+20,Kansas,KS,Lane,6a
+40,Oklahoma,OK,Harper,7a
+17,Illinois,IL,Piatt,6a
+48,Texas,TX,Crosby,7b
+72,,,Fajardo,
+01,Alabama,AL,Greene,8b
+16,Idaho,ID,Clark,5b
+19,Iowa,IA,Kossuth,5a
+72,,,Yabucoa,
+38,North Dakota,ND,Burke,4a
+37,North Carolina,NC,Durham,8a
+19,Iowa,IA,Harrison,5b
+31,Nebraska,NE,Keya Paha,5a
+19,Iowa,IA,Webster,5a
+17,Illinois,IL,Pope,7a
+47,Tennessee,TN,Smith,7b
+51,Virginia,VA,Henry,7b
+51,Virginia,VA,Alexandria,7b
+19,Iowa,IA,Jefferson,5b
+30,Montana,MT,Lewis and Clark,4b
+49,Utah,UT,Duchesne,6a
+40,Oklahoma,OK,Alfalfa,7a
+48,Texas,TX,Delta,8b
+47,Tennessee,TN,Trousdale,7b
+21,Kentucky,KY,Perry,7a
+46,South Dakota,SD,Deuel,4b
+41,Oregon,OR,Jackson,8a
+72,,,Hormigueros,
+48,Texas,TX,Zavala,9a
+31,Nebraska,NE,Banner,5a
+19,Iowa,IA,Madison,5b
+12,Florida,FL,Broward,10b
+13,Georgia,GA,Toombs,9a
+26,Michigan,MI,Sanilac,6a
+48,Texas,TX,Rockwall,8b
+26,Michigan,MI,Wayne,6b
+27,Minnesota,MN,Nobles,5a
+27,Minnesota,MN,Aitkin,4a
+38,North Dakota,ND,Ramsey,4a
+37,North Carolina,NC,Person,7b
+20,Kansas,KS,Trego,6a
+28,Mississippi,MS,Washington,8b
+48,Texas,TX,Eastland,8a
+28,Mississippi,MS,Issaquena,8b
+48,Texas,TX,DeWitt,9a
+48,Texas,TX,Angelina,9a
+45,South Carolina,SC,Saluda,8a
+29,Missouri,MO,Maries,6b
+05,Arkansas,AR,Arkansas,8b
+29,Missouri,MO,Lawrence,7a
+51,Virginia,VA,Charlottesville,7b
+17,Illinois,IL,Bureau,5b
+39,Ohio,OH,Scioto,6b
+37,North Carolina,NC,Madison,7a
+16,Idaho,ID,Jerome,6b
+39,Ohio,OH,Vinton,6b
+48,Texas,TX,McLennan,8b
+16,Idaho,ID,Custer,5b
+19,Iowa,IA,Howard,4b
+12,Florida,FL,Palm Beach,10b
+13,Georgia,GA,Lincoln,8b
+01,Alabama,AL,Butler,8b
+47,Tennessee,TN,Sumner,7b
+51,Virginia,VA,King and Queen,7b
+05,Arkansas,AR,Carroll,7a
+51,Virginia,VA,Waynesboro,7a
+02,Alaska,AK,Sitka,
+41,Oregon,OR,Multnomah,9a
+47,Tennessee,TN,Grundy,7a
+27,Minnesota,MN,Hubbard,3b
+38,North Dakota,ND,Sargent,4a
+36,New York,NY,St. Lawrence,4a
+29,Missouri,MO,Reynolds,6b
+06,California,CA,Sacramento,9b
+39,Ohio,OH,Paulding,6a
+18,Indiana,IN,Wells,6a
+51,Virginia,VA,Floyd,7a
+06,California,CA,Santa Barbara,9b
+54,West Virginia,WV,Boone,7a
+28,Mississippi,MS,Benton,7b
+21,Kentucky,KY,Crittenden,7a
+19,Iowa,IA,Palo Alto,5a
+19,Iowa,IA,Ringgold,5b
+37,North Carolina,NC,Randolph,8a
+24,Maryland,MD,Cecil,7b
+18,Indiana,IN,Warren,6a
+31,Nebraska,NE,Greeley,5a
+31,Nebraska,NE,Jefferson,6a
+31,Nebraska,NE,Saline,6a
+21,Kentucky,KY,Knott,7a
+19,Iowa,IA,Clinton,5a
+27,Minnesota,MN,Jackson,5a
+27,Minnesota,MN,Dodge,5a
+27,Minnesota,MN,Freeborn,5a
+06,California,CA,Calaveras,9b
+25,Massachusetts,MA,Barnstable,7a
+51,Virginia,VA,Middlesex,8a
+42,Pennsylvania,PA,Jefferson,6a
+18,Indiana,IN,Lake,6a
+47,Tennessee,TN,Bedford,7b
+47,Tennessee,TN,Clay,7a
+17,Illinois,IL,Coles,6a
+47,Tennessee,TN,Lauderdale,8a
+41,Oregon,OR,Baker,6b
+36,New York,NY,Schuyler,6a
+26,Michigan,MI,Van Buren,6a
+17,Illinois,IL,Mercer,5b
+21,Kentucky,KY,Lawrence,6b
+21,Kentucky,KY,Morgan,6b
+21,Kentucky,KY,Muhlenberg,7a
+17,Illinois,IL,Effingham,6b
+47,Tennessee,TN,Loudon,7b
+46,South Dakota,SD,Clark,4b
+15,Hawaii,HI,Honolulu,
+12,Florida,FL,Gilchrist,9a
+18,Indiana,IN,Tippecanoe,6a
+42,Pennsylvania,PA,Snyder,6b
+48,Texas,TX,Lamar,8a
+12,Florida,FL,Miami-Dade,10b
+31,Nebraska,NE,Dundy,5b
+48,Texas,TX,Leon,8b
+08,Colorado,CO,Pitkin,5a
+38,North Dakota,ND,Grand Forks,4a
+18,Indiana,IN,LaPorte,6a
+18,Indiana,IN,Hamilton,6a
+51,Virginia,VA,Emporia,7b
+40,Oklahoma,OK,Lincoln,7b
+20,Kansas,KS,Greeley,6a
+13,Georgia,GA,Harris,8b
+13,Georgia,GA,Screven,8b
+72,,,San Juan,
+48,Texas,TX,Stonewall,8a
+39,Ohio,OH,Henry,6a
+33,New Hampshire,NH,Grafton,5a
+29,Missouri,MO,Newton,7a
+18,Indiana,IN,Posey,7a
+48,Texas,TX,McMullen,9a
+17,Illinois,IL,Cumberland,6b
+13,Georgia,GA,Walton,8b
+27,Minnesota,MN,Pope,4b
+51,Virginia,VA,Rappahannock,7a
+51,Virginia,VA,Amherst,7b
+06,California,CA,Ventura,10a
+17,Illinois,IL,Crawford,6b
+08,Colorado,CO,Park,5b
+06,California,CA,Los Angeles,11a
+04,Arizona,AZ,Yuma,9b
+13,Georgia,GA,Gordon,8a
+19,Iowa,IA,Calhoun,5a
+12,Florida,FL,Highlands,10a
+51,Virginia,VA,Covington,7b
+50,Vermont,VT,Orange,5a
+20,Kansas,KS,McPherson,6b
+04,Arizona,AZ,Pinal,9a
+39,Ohio,OH,Fulton,6a
+08,Colorado,CO,Alamosa,4b
+12,Florida,FL,Citrus,9a
+72,,,Culebra,
+72,,,Dorado,
+47,Tennessee,TN,DeKalb,7b
+42,Pennsylvania,PA,Clarion,6a
+46,South Dakota,SD,Miner,4b
+46,South Dakota,SD,Jerauld,5a
+18,Indiana,IN,Decatur,6b
+18,Indiana,IN,Dubois,6b
+51,Virginia,VA,Essex,7b
+45,South Carolina,SC,Williamsburg,8b
+36,New York,NY,Essex,4a
+19,Iowa,IA,Worth,5a
+40,Oklahoma,OK,Hughes,7b
+51,Virginia,VA,Buchanan,7a
+51,Virginia,VA,Alleghany,7a
+28,Mississippi,MS,Lowndes,8b
+18,Indiana,IN,Scott,6b
+08,Colorado,CO,Prowers,6a
+48,Texas,TX,Sutton,8a
+72,,,Sabana Grande,
+40,Oklahoma,OK,Muskogee,7b
+29,Missouri,MO,Christian,6b
+72,,,Ciales,
+28,Mississippi,MS,Lamar,8b
+18,Indiana,IN,Ripley,6b
+38,North Dakota,ND,Mercer,4a
+13,Georgia,GA,Hart,8a
+22,Louisiana,LA,Jackson,8b
+51,Virginia,VA,Northumberland,8a
+48,Texas,TX,Fort Bend,9a
+55,Wisconsin,WI,Green Lake,5a
+30,Montana,MT,Pondera,4b
+55,Wisconsin,WI,Walworth,5b
+32,Nevada,NV,Mineral,7a
+17,Illinois,IL,Fulton,6a
+36,New York,NY,Suffolk,7b
+18,Indiana,IN,Union,6a
+29,Missouri,MO,McDonald,7a
+31,Nebraska,NE,Scotts Bluff,5a
+35,New Mexico,NM,San Miguel,6b
+01,Alabama,AL,Lee,8b
+48,Texas,TX,Parker,8a
+38,North Dakota,ND,Dickey,4b
+38,North Dakota,ND,Barnes,4a
+27,Minnesota,MN,Sibley,4b
+13,Georgia,GA,Upson,8b
+06,California,CA,Sonoma,9b
+26,Michigan,MI,Chippewa,5a
+16,Idaho,ID,Bonneville,5b
+13,Georgia,GA,Barrow,8a
+13,Georgia,GA,Long,9a
+48,Texas,TX,Kinney,9a
+40,Oklahoma,OK,Ottawa,7a
+42,Pennsylvania,PA,Clearfield,6a
+26,Michigan,MI,Clinton,6a
+72,,,Santa Isabel,
+17,Illinois,IL,Montgomery,6b
+28,Mississippi,MS,Alcorn,7b
+28,Mississippi,MS,Lafayette,8a
+22,Louisiana,LA,Grant,9a
+29,Missouri,MO,Atchison,5b
+17,Illinois,IL,Macon,6a
+26,Michigan,MI,St. Joseph,6a
+17,Illinois,IL,Franklin,7a
+30,Montana,MT,Garfield,4a
+31,Nebraska,NE,Adams,6a
+27,Minnesota,MN,Olmsted,4b
+34,New Jersey,NJ,Union,7a
+72,,,Trujillo Alto,
+01,Alabama,AL,Mobile,8b
+46,South Dakota,SD,McCook,5a
+01,Alabama,AL,Fayette,7b
+01,Alabama,AL,Chambers,8a
+37,North Carolina,NC,Northampton,8a
+08,Colorado,CO,Moffat,6a
+21,Kentucky,KY,Green,7a
+18,Indiana,IN,Franklin,6b
+37,North Carolina,NC,Beaufort,8b
+72,,,Jayuya,
+38,North Dakota,ND,Burleigh,4a
+37,North Carolina,NC,Rowan,7b
+26,Michigan,MI,Iron,4a
+27,Minnesota,MN,Kandiyohi,4b
+21,Kentucky,KY,Wolfe,7a
+48,Texas,TX,Fayette,9a
+46,South Dakota,SD,Lawrence,5b
+23,Maine,ME,Washington,5b
+48,Texas,TX,Briscoe,7b
+26,Michigan,MI,Ontonagon,4a
+28,Mississippi,MS,Carroll,8a
+41,Oregon,OR,Benton,8b
+27,Minnesota,MN,Rock,5a
+42,Pennsylvania,PA,Indiana,6b
+22,Louisiana,LA,Lincoln,8b
+42,Pennsylvania,PA,Perry,7a
+46,South Dakota,SD,Ziebach,4b
+48,Texas,TX,Harrison,8b
+26,Michigan,MI,Baraga,4a
+40,Oklahoma,OK,Rogers,7a
+29,Missouri,MO,Boone,6b
+72,,,Mayagüez,
+40,Oklahoma,OK,Caddo,7b
+08,Colorado,CO,Jefferson,5b
+54,West Virginia,WV,Cabell,7a
+48,Texas,TX,Reagan,8a
+05,Arkansas,AR,Van Buren,7b
+08,Colorado,CO,Summit,5a
+20,Kansas,KS,Cowley,7a
+05,Arkansas,AR,Johnson,8a
+36,New York,NY,Hamilton,4a
+51,Virginia,VA,Craig,7a
+48,Texas,TX,Coleman,8b
+02,Alaska,AK,Yukon-Koyukuk,
+04,Arizona,AZ,Navajo,7a
+28,Mississippi,MS,Lincoln,8b
+48,Texas,TX,Ochiltree,7a
+48,Texas,TX,Crane,8a
+56,Wyoming,WY,Big Horn,5a
+47,Tennessee,TN,Hickman,7b
+28,Mississippi,MS,Tunica,8a
+29,Missouri,MO,Harrison,5b
+72,,,Canóvanas,
+18,Indiana,IN,Bartholomew,6b
+13,Georgia,GA,Paulding,8a
+39,Ohio,OH,Brown,6b
+47,Tennessee,TN,Putnam,7a
+38,North Dakota,ND,Ward,4a
+25,Massachusetts,MA,Worcester,6a
+39,Ohio,OH,Logan,6a
+06,California,CA,Kings,9a
+06,California,CA,San Diego,10a
+72,,,Salinas,
+13,Georgia,GA,Crawford,8b
+72,,,Naguabo,
+29,Missouri,MO,Cass,6b
+36,New York,NY,Dutchess,6a
+48,Texas,TX,Washington,9a
+08,Colorado,CO,Pueblo,6a
+29,Missouri,MO,Douglas,7a
+38,North Dakota,ND,Bottineau,3b
+37,North Carolina,NC,Cumberland,8b
+56,Wyoming,WY,Hot Springs,4b
+26,Michigan,MI,Alcona,5a
+06,California,CA,Placer,9b
+05,Arkansas,AR,Searcy,7b
+48,Texas,TX,Lynn,7b
+36,New York,NY,Otsego,5b
+37,North Carolina,NC,Richmond,8a
+37,North Carolina,NC,Hoke,8a
+31,Nebraska,NE,Otoe,5b
+42,Pennsylvania,PA,Cameron,5b
+45,South Carolina,SC,Dorchester,8b
+27,Minnesota,MN,Waseca,5a
+46,South Dakota,SD,Brule,5a
+47,Tennessee,TN,Warren,7b
+17,Illinois,IL,Clark,6b
+21,Kentucky,KY,Robertson,6b
+47,Tennessee,TN,Lake,7b
+45,South Carolina,SC,Berkeley,8b
+05,Arkansas,AR,Garland,8a
+20,Kansas,KS,Osage,6b
+39,Ohio,OH,Trumbull,6a
+48,Texas,TX,Mills,8b
+48,Texas,TX,Oldham,7a
+42,Pennsylvania,PA,Butler,6a
+16,Idaho,ID,Idaho,5b
+20,Kansas,KS,Marion,6b
+51,Virginia,VA,Buckingham,7b
+37,North Carolina,NC,Cabarrus,8a
+29,Missouri,MO,Webster,6b
+49,Utah,UT,Davis,7a
+27,Minnesota,MN,Cottonwood,5a
+12,Florida,FL,Okeechobee,10a
+13,Georgia,GA,Union,7b
+19,Iowa,IA,Black Hawk,5a
+48,Texas,TX,Sabine,9a
+39,Ohio,OH,Pike,6b
+01,Alabama,AL,Tuscaloosa,8b
+01,Alabama,AL,Wilcox,8b
+28,Mississippi,MS,Montgomery,8a
+31,Nebraska,NE,Kearney,5b
+31,Nebraska,NE,Hitchcock,6a
+10,Delaware,DE,New Castle,7b
+16,Idaho,ID,Teton,5a
+17,Illinois,IL,Rock Island,5b
+51,Virginia,VA,Gloucester,8a
+05,Arkansas,AR,Sevier,8a
+18,Indiana,IN,Cass,6a
+16,Idaho,ID,Power,6a
+18,Indiana,IN,Carroll,6a
+42,Pennsylvania,PA,Philadelphia,7b
+56,Wyoming,WY,Washakie,4b
+37,North Carolina,NC,Camden,8a
+36,New York,NY,Tompkins,6a
+05,Arkansas,AR,Jefferson,8b
+05,Arkansas,AR,Lincoln,8b
+55,Wisconsin,WI,Vernon,5a
+29,Missouri,MO,Iron,6b
+48,Texas,TX,Hopkins,8b
+36,New York,NY,Albany,6a
+48,Texas,TX,Houston,8b
+39,Ohio,OH,Monroe,6b
+20,Kansas,KS,Rush,6a
+18,Indiana,IN,Montgomery,5b
+20,Kansas,KS,Stanton,6b
+21,Kentucky,KY,Lee,7a
+27,Minnesota,MN,Koochiching,3b
+48,Texas,TX,Bexar,9a
+08,Colorado,CO,Boulder,5b
+47,Tennessee,TN,Jefferson,7b
+40,Oklahoma,OK,Mayes,7a
+27,Minnesota,MN,Watonwan,5a
+16,Idaho,ID,Blaine,5b
+22,Louisiana,LA,Jefferson Davis,9a
+46,South Dakota,SD,Sully,4b
+08,Colorado,CO,Denver,6a
+40,Oklahoma,OK,Coal,7b
+30,Montana,MT,Carter,4b
+48,Texas,TX,Upton,8b
+18,Indiana,IN,Gibson,7a
+31,Nebraska,NE,Kimball,5b
+17,Illinois,IL,Kendall,5b
+11,District of Columbia,DC,District of Columbia,8a
+08,Colorado,CO,Montrose,6b
+27,Minnesota,MN,Wright,4b
+55,Wisconsin,WI,Kenosha,5b
+08,Colorado,CO,Eagle,6a
+06,California,CA,San Francisco,10b
+08,Colorado,CO,San Miguel,6b
+02,Alaska,AK,Anchorage,
+12,Florida,FL,St. Johns,9b
+28,Mississippi,MS,Choctaw,8a
+29,Missouri,MO,Grundy,6a
+26,Michigan,MI,Lake,5b
+26,Michigan,MI,Ottawa,6a
+17,Illinois,IL,Cook,6a
+17,Illinois,IL,Gallatin,7a
+45,South Carolina,SC,Greenwood,8a
+20,Kansas,KS,Franklin,6b
+27,Minnesota,MN,Clay,4a
+47,Tennessee,TN,Haywood,8a
+49,Utah,UT,Box Elder,6b
+28,Mississippi,MS,Tippah,7b
+54,West Virginia,WV,Marshall,6b
+54,West Virginia,WV,Jackson,7a
+16,Idaho,ID,Elmore,7a
+24,Maryland,MD,Baltimore,7a
+38,North Dakota,ND,Benson,4a
+29,Missouri,MO,Pike,6a
+39,Ohio,OH,Lawrence,7a
+29,Missouri,MO,Scott,7a
+39,Ohio,OH,Adams,6b
+48,Texas,TX,Erath,8b
+13,Georgia,GA,Habersham,8a
+13,Georgia,GA,Wilkinson,8b
+54,West Virginia,WV,Monongalia,7a
+39,Ohio,OH,Crawford,6a
+12,Florida,FL,DeSoto,9b
+09,Connecticut,CT,New London,6b
+39,Ohio,OH,Guernsey,6b
+26,Michigan,MI,Barry,6a
+29,Missouri,MO,Stone,7a
+51,Virginia,VA,Richmond,7b
+37,North Carolina,NC,Stokes,7b
+19,Iowa,IA,Clarke,5b
+19,Iowa,IA,Fayette,5a
+06,California,CA,Marin,10a
+48,Texas,TX,Randall,7a
+48,Texas,TX,Rusk,8b
+19,Iowa,IA,Warren,5b
+39,Ohio,OH,Van Wert,6a
+12,Florida,FL,Glades,10a
+13,Georgia,GA,Meriwether,8a
+08,Colorado,CO,Costilla,5a
+48,Texas,TX,Coryell,8b
+19,Iowa,IA,Adair,5b
+13,Georgia,GA,Chattahoochee,8b
+06,California,CA,Mariposa,9b
+29,Missouri,MO,Howard,6b
+41,Oregon,OR,Marion,8b
+55,Wisconsin,WI,Milwaukee,6a
+27,Minnesota,MN,Scott,4b
+39,Ohio,OH,Pickaway,6b
+51,Virginia,VA,Powhatan,7b
+08,Colorado,CO,Broomfield,6a
+47,Tennessee,TN,Lawrence,7b
+26,Michigan,MI,Antrim,5b
+45,South Carolina,SC,Marlboro,8a
+16,Idaho,ID,Benewah,6b
+17,Illinois,IL,Lee,5b
+31,Nebraska,NE,Nemaha,5b
+37,North Carolina,NC,Carteret,8b
+20,Kansas,KS,Pottawatomie,6a
+26,Michigan,MI,Jackson,6a
+48,Texas,TX,Comal,9a
+25,Massachusetts,MA,Nantucket,7b
+45,South Carolina,SC,Bamberg,8b
+48,Texas,TX,Aransas,9b
+13,Georgia,GA,Berrien,9a
+18,Indiana,IN,Vermillion,6a
+26,Michigan,MI,Roscommon,5a
+37,North Carolina,NC,Alleghany,7a
+06,California,CA,Lassen,7a
+51,Virginia,VA,Falls Church,7b
+12,Florida,FL,Manatee,9b
+39,Ohio,OH,Muskingum,6b
+08,Colorado,CO,Chaffee,5b
+08,Colorado,CO,Crowley,5b
+08,Colorado,CO,Fremont,6a
+28,Mississippi,MS,Pearl River,9a
+28,Mississippi,MS,Perry,8b
+31,Nebraska,NE,Custer,5b
+12,Florida,FL,Calhoun,9a
+21,Kentucky,KY,Kenton,6b
+19,Iowa,IA,Chickasaw,5a
+17,Illinois,IL,DeKalb,5b
+19,Iowa,IA,Hancock,5a
+38,North Dakota,ND,Stark,4b
+26,Michigan,MI,Luce,5a
+40,Oklahoma,OK,Carter,8a
+37,North Carolina,NC,Pasquotank,8a
+35,New Mexico,NM,Taos,6a
+28,Mississippi,MS,Bolivar,8b
+32,Nevada,NV,Nye,7a
+47,Tennessee,TN,Hawkins,7b
+38,North Dakota,ND,Bowman,4b
+42,Pennsylvania,PA,Fulton,6b
+22,Louisiana,LA,Lafayette,9a
+48,Texas,TX,Jack,8a
+17,Illinois,IL,Stark,5b
+40,Oklahoma,OK,Greer,7b
+48,Texas,TX,Hemphill,7a
+16,Idaho,ID,Nez Perce,7b
+46,South Dakota,SD,Walworth,4b
+06,California,CA,Napa,9b
+40,Oklahoma,OK,Cotton,8a
+29,Missouri,MO,Washington,6b
+36,New York,NY,Cayuga,6a
+48,Texas,TX,Shackelford,8a
+48,Texas,TX,San Jacinto,9a
+19,Iowa,IA,Dubuque,5a
+51,Virginia,VA,Goochland,7a
+20,Kansas,KS,Sherman,6a
+39,Ohio,OH,Richland,6a
+17,Illinois,IL,Adams,6a
+39,Ohio,OH,Champaign,6a
+33,New Hampshire,NH,Sullivan,6a
+17,Illinois,IL,Iroquois,5b
+19,Iowa,IA,Poweshiek,5a
+39,Ohio,OH,Wayne,6a
+13,Georgia,GA,Fayette,8a
+13,Georgia,GA,Hancock,8b
+48,Texas,TX,Kendall,8b
+36,New York,NY,Greene,5b
+51,Virginia,VA,Orange,7a
+40,Oklahoma,OK,McCurtain,8a
+13,Georgia,GA,Tift,9a
+31,Nebraska,NE,Cass,6a
+46,South Dakota,SD,Kingsbury,4b
+56,Wyoming,WY,Converse,4b
+36,New York,NY,Herkimer,4a
+38,North Dakota,ND,Logan,4b
+26,Michigan,MI,Gogebic,4b
+27,Minnesota,MN,Becker,3b
+01,Alabama,AL,Marshall,8a
+47,Tennessee,TN,Union,7b
+54,West Virginia,WV,Mineral,7a
+55,Wisconsin,WI,Ashland,4a
+17,Illinois,IL,Ford,6a
+38,North Dakota,ND,Emmons,4a
+06,California,CA,Shasta,9a
+22,Louisiana,LA,Vermilion,9b
+05,Arkansas,AR,Randolph,7b
+55,Wisconsin,WI,Oneida,4a
+22,Louisiana,LA,East Carroll,8b
+22,Louisiana,LA,East Feliciana,9a
+22,Louisiana,LA,St. Bernard,9b
+48,Texas,TX,Wharton,9a
+02,Alaska,AK,Prince of Wales-Hyder,
+02,Alaska,AK,Petersburg,
+48,Texas,TX,Floyd,7b
+02,Alaska,AK,Wrangell,
+21,Kentucky,KY,Madison,7a
+47,Tennessee,TN,Blount,7b
+30,Montana,MT,Gallatin,5a
+45,South Carolina,SC,Darlington,8b
+01,Alabama,AL,Escambia,8b
+13,Georgia,GA,Haralson,8a
+20,Kansas,KS,Allen,6b
+17,Illinois,IL,Douglas,6a
+51,Virginia,VA,Greene,7b
+66,,,Guam,
+55,Wisconsin,WI,Waushara,4b
+05,Arkansas,AR,Izard,7b
+06,California,CA,Monterey,9a
+35,New Mexico,NM,Grant,7b
+29,Missouri,MO,Miller,6b
+37,North Carolina,NC,Wilkes,7b
+02,Alaska,AK,Juneau,
+29,Missouri,MO,Platte,6b
+29,Missouri,MO,Buchanan,6a
+01,Alabama,AL,Limestone,7b
+18,Indiana,IN,Henry,6a
+31,Nebraska,NE,Polk,5b
+39,Ohio,OH,Ottawa,6b
+27,Minnesota,MN,Norman,4a
+19,Iowa,IA,Shelby,5b
+24,Maryland,MD,Carroll,7a
+19,Iowa,IA,Benton,5a
+21,Kentucky,KY,Martin,7a
+27,Minnesota,MN,Chisago,4b
+21,Kentucky,KY,Owsley,6b
+42,Pennsylvania,PA,Bradford,6a
+54,West Virginia,WV,Hancock,6b
+29,Missouri,MO,Cole,6b
+26,Michigan,MI,Berrien,6a
+42,Pennsylvania,PA,Huntingdon,7a
+31,Nebraska,NE,Dawes,5a
+51,Virginia,VA,Patrick,7b
+26,Michigan,MI,Montmorency,5a
+26,Michigan,MI,Oscoda,5a
+35,New Mexico,NM,Colfax,6a
+17,Illinois,IL,St. Clair,7a
+17,Illinois,IL,Washington,6b
+42,Pennsylvania,PA,Bedford,6b
+05,Arkansas,AR,Scott,8a
+20,Kansas,KS,Labette,7a
+42,Pennsylvania,PA,Lawrence,6a
+39,Ohio,OH,Harrison,6b
+37,North Carolina,NC,Alexander,8a
+34,New Jersey,NJ,Cape May,7b
+33,New Hampshire,NH,Cheshire,5b
+27,Minnesota,MN,Marshall,4a
+51,Virginia,VA,King William,7b
+08,Colorado,CO,Huerfano,6a
+48,Texas,TX,Karnes,9a
+47,Tennessee,TN,Chester,7b
+17,Illinois,IL,Scott,6a
+49,Utah,UT,Millard,6a
+49,Utah,UT,Morgan,6a
+48,Texas,TX,Kaufman,8b
+04,Arizona,AZ,Greenlee,8a
+04,Arizona,AZ,Maricopa,9b
+26,Michigan,MI,Ogemaw,5a
+47,Tennessee,TN,Jackson,7b
+17,Illinois,IL,Richland,6b
+01,Alabama,AL,Blount,8a
+30,Montana,MT,Liberty,4a
+48,Texas,TX,Duval,9b
+29,Missouri,MO,Ralls,6a
+48,Texas,TX,Johnson,8b
+13,Georgia,GA,Clay,8b
+41,Oregon,OR,Grant,7a
+41,Oregon,OR,Coos,9a
+48,Texas,TX,Franklin,8b
+36,New York,NY,Warren,5a
+51,Virginia,VA,Madison,7a
+40,Oklahoma,OK,Atoka,7b
+17,Illinois,IL,Menard,6a
+13,Georgia,GA,Bartow,8a
+12,Florida,FL,Lake,9b
+40,Oklahoma,OK,Okmulgee,7b
+38,North Dakota,ND,Sheridan,4a
+18,Indiana,IN,Fulton,6a
+20,Kansas,KS,Johnson,6b
+24,Maryland,MD,Calvert,8a
+55,Wisconsin,WI,Washburn,4a
+53,Washington,WA,Jefferson,8b
+72,,,Aguada,
+27,Minnesota,MN,Winona,4b
+28,Mississippi,MS,Warren,8b
+29,Missouri,MO,Andrew,6a
+29,Missouri,MO,Montgomery,6b
+20,Kansas,KS,Cherokee,7a
+37,North Carolina,NC,Halifax,8a
+35,New Mexico,NM,Sandoval,7a
+21,Kentucky,KY,Clay,7a
+42,Pennsylvania,PA,Clinton,6b
+41,Oregon,OR,Linn,8b
+55,Wisconsin,WI,Lafayette,5a
+40,Oklahoma,OK,Washington,7a
+54,West Virginia,WV,Preston,6b
+69,,,Rota,
+55,Wisconsin,WI,Waupaca,5a
+48,Texas,TX,Edwards,8b
+41,Oregon,OR,Lake,6a
+29,Missouri,MO,Ozark,7a
+48,Texas,TX,Waller,9a
+01,Alabama,AL,Monroe,8b
+50,Vermont,VT,Essex,4a
+51,Virginia,VA,Lunenburg,7b
+38,North Dakota,ND,Traill,4a
+13,Georgia,GA,Hall,8a
+13,Georgia,GA,Treutlen,8b
+13,Georgia,GA,Calhoun,8b
+55,Wisconsin,WI,Vilas,4b
+27,Minnesota,MN,Beltrami,3b
+72,,,Coamo,
+72,,,Guánica,
+24,Maryland,MD,Dorchester,7b
+42,Pennsylvania,PA,Columbia,6b
+39,Ohio,OH,Clark,6b
+48,Texas,TX,Maverick,9a
+04,Arizona,AZ,Pima,9a
+35,New Mexico,NM,Cibola,6a
+34,New Jersey,NJ,Burlington,7a
+50,Vermont,VT,Rutland,5a
+13,Georgia,GA,Early,9a
+25,Massachusetts,MA,Dukes,7b
+38,North Dakota,ND,McHenry,4a
+31,Nebraska,NE,Wayne,5b
+38,North Dakota,ND,LaMoure,4a
+16,Idaho,ID,Butte,5a
+33,New Hampshire,NH,Coos,4a
+38,North Dakota,ND,Kidder,4a
+48,Texas,TX,Kleberg,9b
+18,Indiana,IN,Porter,5b
+28,Mississippi,MS,Newton,8b
+37,North Carolina,NC,Sampson,8a
+47,Tennessee,TN,Moore,7b
+12,Florida,FL,Pinellas,10b
+72,,,Barranquitas,
+17,Illinois,IL,Hamilton,7a
+05,Arkansas,AR,Perry,8a
+20,Kansas,KS,Cheyenne,6a
+08,Colorado,CO,Delta,6b
+19,Iowa,IA,Wayne,5b
+48,Texas,TX,Gaines,8a
+01,Alabama,AL,Marion,7b
+37,North Carolina,NC,Watauga,7a
+51,Virginia,VA,Roanoke,7b
+48,Texas,TX,Martin,8a
+48,Texas,TX,Bowie,8b
+49,Utah,UT,Weber,7a
+29,Missouri,MO,Marion,6a
+36,New York,NY,Jefferson,5a
+19,Iowa,IA,Jackson,5a
+38,North Dakota,ND,Nelson,4a
+36,New York,NY,Clinton,5a
+08,Colorado,CO,Garfield,6a
+29,Missouri,MO,Ray,6a
+39,Ohio,OH,Hocking,6a
+01,Alabama,AL,Lowndes,8b
+13,Georgia,GA,Candler,8b
+19,Iowa,IA,Linn,5a
+06,California,CA,Trinity,8b
+13,Georgia,GA,Muscogee,8b
+28,Mississippi,MS,Tallahatchie,8b
+20,Kansas,KS,Atchison,6a
+72,,,Lares,
+48,Texas,TX,Andrews,8a
+39,Ohio,OH,Miami,6a
+48,Texas,TX,Potter,7a
+40,Oklahoma,OK,Seminole,7b
+45,South Carolina,SC,Aiken,8b
+60,,,Manu'a,
+06,California,CA,Mendocino,9a
+51,Virginia,VA,Chesapeake,8a
+69,,,Tinian,
+72,,,Yauco,
+56,Wyoming,WY,Sweetwater,4b
+48,Texas,TX,Garza,8a
+54,West Virginia,WV,Hardy,7a
+72,,,Adjuntas,
+55,Wisconsin,WI,Ozaukee,5b
+47,Tennessee,TN,Sullivan,7b
+45,South Carolina,SC,Laurens,8a
+56,Wyoming,WY,Crook,4b
+55,Wisconsin,WI,Sheboygan,5b
+25,Massachusetts,MA,Hampden,6a
+48,Texas,TX,Caldwell,9a
+20,Kansas,KS,Cloud,6b
+06,California,CA,Inyo,8b
+01,Alabama,AL,Coosa,8a
+19,Iowa,IA,Dickinson,5a
+21,Kentucky,KY,Harlan,7a
+20,Kansas,KS,Geary,6b
+42,Pennsylvania,PA,Berks,7a
+47,Tennessee,TN,Carter,7a
+27,Minnesota,MN,Lyon,5a
+51,Virginia,VA,Charlotte,7b
+47,Tennessee,TN,Washington,7b
+45,South Carolina,SC,Newberry,8a
+51,Virginia,VA,Isle of Wight,8a
+41,Oregon,OR,Wheeler,7a
+29,Missouri,MO,Butler,7b
+22,Louisiana,LA,Iberville,9a
+28,Mississippi,MS,Sharkey,8b
+51,Virginia,VA,Fauquier,7a
+51,Virginia,VA,Radford,7a
+32,Nevada,NV,Douglas,6b
+12,Florida,FL,Franklin,9a
+18,Indiana,IN,Greene,6b
+18,Indiana,IN,Rush,6a
+55,Wisconsin,WI,Washington,5a
+29,Missouri,MO,Laclede,6b
+42,Pennsylvania,PA,Mercer,6a
+05,Arkansas,AR,Craighead,8a
+29,Missouri,MO,Saline,6b
+17,Illinois,IL,White,7a
+17,Illinois,IL,De Witt,6a
+32,Nevada,NV,White Pine,5b
+27,Minnesota,MN,Goodhue,4b
+37,North Carolina,NC,Swain,7a
+12,Florida,FL,Pasco,9b
+12,Florida,FL,Sumter,9a
+36,New York,NY,Nassau,7b
+38,North Dakota,ND,Steele,4a
+18,Indiana,IN,Vanderburgh,7a
+29,Missouri,MO,Franklin,6b
+37,North Carolina,NC,Avery,6b
+54,West Virginia,WV,Wood,6b
+55,Wisconsin,WI,Bayfield,4a
+47,Tennessee,TN,Stewart,7b
+55,Wisconsin,WI,Portage,5a
+45,South Carolina,SC,Lexington,8a
+24,Maryland,MD,Anne Arundel,7b
+55,Wisconsin,WI,Fond du Lac,5a
+54,West Virginia,WV,Webster,6a
+55,Wisconsin,WI,Kewaunee,5b
+48,Texas,TX,Parmer,7a
+40,Oklahoma,OK,Woods,7a
+21,Kentucky,KY,Elliott,6b
+25,Massachusetts,MA,Berkshire,5b
+29,Missouri,MO,Chariton,6a
+08,Colorado,CO,Rio Blanco,6a
+08,Colorado,CO,Morgan,5b
+41,Oregon,OR,Malheur,6b
+34,New Jersey,NJ,Middlesex,7a
+20,Kansas,KS,Russell,6b
+17,Illinois,IL,Putnam,5b
+46,South Dakota,SD,Haakon,5a
+47,Tennessee,TN,Macon,7b
+05,Arkansas,AR,Cleburne,7b
+01,Alabama,AL,Pike,8b
+16,Idaho,ID,Adams,6a
+25,Massachusetts,MA,Bristol,6b
+42,Pennsylvania,PA,Schuylkill,6b
+38,North Dakota,ND,Wells,4a
+37,North Carolina,NC,Cleveland,8a
+05,Arkansas,AR,Hot Spring,8a
+24,Maryland,MD,Frederick,7a
+17,Illinois,IL,Schuyler,6a
+06,California,CA,Mono,6a
+06,California,CA,Tuolumne,9b
+35,New Mexico,NM,Doña Ana,8b
+13,Georgia,GA,Crisp,8b
+05,Arkansas,AR,Columbia,8b
+38,North Dakota,ND,Griggs,4a
+06,California,CA,Solano,9b
+19,Iowa,IA,Clayton,5a
+48,Texas,TX,Titus,8b
+54,West Virginia,WV,Hampshire,7a
+37,North Carolina,NC,Moore,8a
+20,Kansas,KS,Barton,6b
+38,North Dakota,ND,Slope,4b
+22,Louisiana,LA,Richland,8b
+31,Nebraska,NE,Garfield,5a
+22,Louisiana,LA,St. Martin,9a
+01,Alabama,AL,Sumter,8b
+01,Alabama,AL,Winston,7b
+12,Florida,FL,Seminole,9b
+28,Mississippi,MS,Forrest,8b
+26,Michigan,MI,Ingham,6a
+20,Kansas,KS,Shawnee,6b
+46,South Dakota,SD,Hanson,5a
+27,Minnesota,MN,Itasca,3b
+08,Colorado,CO,Lincoln,5b
+36,New York,NY,Madison,5b
+36,New York,NY,Washington,5a
+18,Indiana,IN,Johnson,6a
+48,Texas,TX,Terry,8a
+35,New Mexico,NM,Harding,7a
+01,Alabama,AL,Talladega,8a
+55,Wisconsin,WI,Langlade,4b
+48,Texas,TX,Foard,8a
+19,Iowa,IA,Buena Vista,5a
+19,Iowa,IA,Mills,5b
+48,Texas,TX,Real,8b
+39,Ohio,OH,Delaware,6b
+37,North Carolina,NC,Forsyth,7b
+32,Nevada,NV,Carson City,7b
+19,Iowa,IA,Dallas,5a
+48,Texas,TX,Carson,7a
+13,Georgia,GA,Sumter,8b
+29,Missouri,MO,Wayne,7a
+45,South Carolina,SC,Anderson,8a
+56,Wyoming,WY,Carbon,5a
+30,Montana,MT,Silver Bow,5a
+17,Illinois,IL,Stephenson,5a
+26,Michigan,MI,Lapeer,6a
+22,Louisiana,LA,Claiborne,8b
+28,Mississippi,MS,Yalobusha,8a
+72,,,Maricao,
+26,Michigan,MI,Kalkaska,5a
+72,,,Aguadilla,
+22,Louisiana,LA,Evangeline,9a
+47,Tennessee,TN,Hardeman,7b
+04,Arizona,AZ,Cochise,8b
+35,New Mexico,NM,Hidalgo,8a
+38,North Dakota,ND,Divide,3b
+06,California,CA,San Bernardino,9a
+08,Colorado,CO,Montezuma,7a
+28,Mississippi,MS,Clarke,8b
+19,Iowa,IA,Marion,5b
+31,Nebraska,NE,Douglas,6a
+51,Virginia,VA,Fairfax,7b
+40,Oklahoma,OK,Harmon,7b
+29,Missouri,MO,Cedar,7a
+13,Georgia,GA,Clarke,8b
+16,Idaho,ID,Valley,5a
+48,Texas,TX,Knox,8a
+05,Arkansas,AR,Ouachita,8a
+39,Ohio,OH,Darke,6a
+40,Oklahoma,OK,Kay,7a
+46,South Dakota,SD,Dewey,4b
+41,Oregon,OR,Tillamook,8b
+13,Georgia,GA,Coweta,8a
+28,Mississippi,MS,Simpson,8b
+28,Mississippi,MS,Stone,9a
+06,California,CA,Contra Costa,9b
+47,Tennessee,TN,Carroll,7b
+51,Virginia,VA,Henrico,7b
+18,Indiana,IN,Owen,6a
+36,New York,NY,Westchester,7a
+29,Missouri,MO,Bollinger,6b
+54,West Virginia,WV,McDowell,7a
+54,West Virginia,WV,Harrison,6b
+37,North Carolina,NC,Granville,8a
+09,Connecticut,CT,New Haven,6b
+31,Nebraska,NE,Pierce,5a
+13,Georgia,GA,Bleckley,8b
+13,Georgia,GA,Burke,8b
+17,Illinois,IL,Union,7a
+17,Illinois,IL,Kankakee,5b
+38,North Dakota,ND,McIntosh,4b
+31,Nebraska,NE,Platte,5b
+37,North Carolina,NC,Warren,7b
+72,,,Aibonito,
+13,Georgia,GA,Marion,8b
+46,South Dakota,SD,Clay,5a
+10,Delaware,DE,Sussex,7b
+13,Georgia,GA,Jasper,8b
+29,Missouri,MO,Randolph,6b
+20,Kansas,KS,Butler,7a
+48,Texas,TX,Hays,9a
+48,Texas,TX,Medina,9a
+26,Michigan,MI,Mason,6a
+45,South Carolina,SC,Beaufort,9a
+46,South Dakota,SD,Yankton,5a
+55,Wisconsin,WI,Rock,5b
+45,South Carolina,SC,Pickens,8a
+53,Washington,WA,Columbia,7b
+18,Indiana,IN,Clinton,6a
+17,Illinois,IL,Clinton,6b
+16,Idaho,ID,Minidoka,6a
+42,Pennsylvania,PA,Sullivan,6a
+28,Mississippi,MS,Rankin,8b
+48,Texas,TX,Motley,7b
+41,Oregon,OR,Lane,8b
+48,Texas,TX,Wichita,8a
+26,Michigan,MI,Shiawassee,6a
+20,Kansas,KS,Jewell,6a
+20,Kansas,KS,Mitchell,6a
+12,Florida,FL,Bradford,9a
+28,Mississippi,MS,Marion,8b
+28,Mississippi,MS,George,8b
+17,Illinois,IL,Jo Daviess,5a
+18,Indiana,IN,Hancock,6a
+51,Virginia,VA,Franklin,8a
+48,Texas,TX,Midland,8a
+20,Kansas,KS,Scott,6a
+30,Montana,MT,Cascade,4b
+51,Virginia,VA,Harrisonburg,7a
+17,Illinois,IL,Williamson,7a
+30,Montana,MT,Flathead,5a
+72,,,Peñuelas,
+20,Kansas,KS,Stevens,6b
+21,Kentucky,KY,Fayette,6b
+21,Kentucky,KY,Hancock,7a
+46,South Dakota,SD,Brown,4a
+54,West Virginia,WV,Barbour,6b
+47,Tennessee,TN,Wayne,7b
+31,Nebraska,NE,Box Butte,5a
+42,Pennsylvania,PA,Northumberland,6b
+48,Texas,TX,Victoria,9b
+51,Virginia,VA,Buena Vista,7a
+26,Michigan,MI,St. Clair,6a
+31,Nebraska,NE,Thurston,5a
+50,Vermont,VT,Lamoille,4b
+51,Virginia,VA,Franklin,7b
+40,Oklahoma,OK,Blaine,7b
+53,Washington,WA,Kittitas,7a
+18,Indiana,IN,Randolph,6a
+49,Utah,UT,Kane,7a
+54,West Virginia,WV,Tucker,6a
+72,,,Ponce,
+55,Wisconsin,WI,Crawford,5a
+01,Alabama,AL,Jackson,7b
+19,Iowa,IA,Mahaska,5b
+20,Kansas,KS,Douglas,6b
+21,Kentucky,KY,Daviess,7a
+21,Kentucky,KY,Powell,6b
+29,Missouri,MO,Jasper,7a
+41,Oregon,OR,Union,6b
+13,Georgia,GA,Henry,8a
+38,North Dakota,ND,Adams,4b
+37,North Carolina,NC,Pamlico,8b
+21,Kentucky,KY,Graves,7a
+42,Pennsylvania,PA,Cambria,6a
+47,Tennessee,TN,McMinn,7b
+26,Michigan,MI,Livingston,6a
+08,Colorado,CO,Adams,5b
+42,Pennsylvania,PA,Lackawanna,6a
+40,Oklahoma,OK,Pontotoc,7b
+40,Oklahoma,OK,Creek,7b
+48,Texas,TX,Tyler,9a
+47,Tennessee,TN,Van Buren,7a
+40,Oklahoma,OK,Pottawatomie,7b
+09,Connecticut,CT,Tolland,6b
+35,New Mexico,NM,Socorro,7a
+13,Georgia,GA,Atkinson,9a
+12,Florida,FL,Duval,9b
+48,Texas,TX,Falls,8b
+05,Arkansas,AR,Yell,8a
+20,Kansas,KS,Comanche,6b
+21,Kentucky,KY,Jessamine,7a
+21,Kentucky,KY,Monroe,7a
+40,Oklahoma,OK,Kiowa,7b
+46,South Dakota,SD,Lake,4b
+37,North Carolina,NC,Caswell,8a
+48,Texas,TX,Presidio,8b
+39,Ohio,OH,Greene,6b
+48,Texas,TX,Willacy,10a
+72,,,Bayamón,
+35,New Mexico,NM,Los Alamos,7b
+02,Alaska,AK,Kenai Peninsula,
+01,Alabama,AL,Baldwin,9a
+19,Iowa,IA,Appanoose,5b
+78,,,St. Croix,
+51,Virginia,VA,New Kent,7b
+13,Georgia,GA,Talbot,8b
+36,New York,NY,Lewis,4b
+54,West Virginia,WV,Clay,6b
+18,Indiana,IN,Jefferson,6b
+51,Virginia,VA,Bedford,7b
+35,New Mexico,NM,Mora,6b
+31,Nebraska,NE,Boone,5b
+29,Missouri,MO,Oregon,7a
+47,Tennessee,TN,Houston,7b
+42,Pennsylvania,PA,Wyoming,6a
+37,North Carolina,NC,Lenoir,8a
+18,Indiana,IN,Vigo,6a
+18,Indiana,IN,Elkhart,6a
+51,Virginia,VA,Grayson,7a
+48,Texas,TX,Lubbock,7b
+27,Minnesota,MN,Meeker,4b
+39,Ohio,OH,Ashland,6a
+31,Nebraska,NE,Madison,5b
+12,Florida,FL,Martin,10a
+08,Colorado,CO,Mineral,5a
+13,Georgia,GA,Dawson,8a
+13,Georgia,GA,Johnson,8b
+05,Arkansas,AR,Monroe,8a
+29,Missouri,MO,Dallas,6b
+51,Virginia,VA,Pittsylvania,7b
+02,Alaska,AK,Denali,
+20,Kansas,KS,Pawnee,6b
+20,Kansas,KS,Wyandotte,6b
+12,Florida,FL,Dixie,9a
+26,Michigan,MI,Tuscola,6a
+02,Alaska,AK,Southeast Fairbanks,
+20,Kansas,KS,Graham,6a
+22,Louisiana,LA,St. Landry,9a
+47,Tennessee,TN,Giles,7b
+39,Ohio,OH,Lucas,6b
+05,Arkansas,AR,Mississippi,8a
+72,,,Rincón,
+18,Indiana,IN,Floyd,6b
+20,Kansas,KS,Morton,6b
+21,Kentucky,KY,Grant,6b
+21,Kentucky,KY,Taylor,7a
+37,North Carolina,NC,Graham,7a
+54,West Virginia,WV,Logan,7a
+54,West Virginia,WV,Pleasants,6b
+51,Virginia,VA,Giles,7a
+54,West Virginia,WV,Fayette,6b
+53,Washington,WA,Snohomish,8b
+35,New Mexico,NM,Eddy,8a
+31,Nebraska,NE,McPherson,5b
+31,Nebraska,NE,Red Willow,6a
+31,Nebraska,NE,Rock,5a
+47,Tennessee,TN,Humphreys,7b
+17,Illinois,IL,Mason,6a
+51,Virginia,VA,Wythe,7a
+13,Georgia,GA,Washington,8b
+53,Washington,WA,Yakima,7a
+05,Arkansas,AR,Washington,7a
+48,Texas,TX,Henderson,8b
+55,Wisconsin,WI,Eau Claire,4b
+47,Tennessee,TN,Sequatchie,7b
+48,Texas,TX,Walker,9a
+04,Arizona,AZ,Coconino,7a
+20,Kansas,KS,Sumner,7a
+26,Michigan,MI,Oceana,6a
+27,Minnesota,MN,Kanabec,4a
+39,Ohio,OH,Ashtabula,6a
+06,California,CA,Alpine,6b
+48,Texas,TX,Galveston,9b
+01,Alabama,AL,Bullock,8b
+17,Illinois,IL,Livingston,6a
+39,Ohio,OH,Preble,6a
+39,Ohio,OH,Jackson,6b
+48,Texas,TX,Harris,9b
+25,Massachusetts,MA,Middlesex,6b
+72,,,Vega Baja,
+48,Texas,TX,Dawson,8a
+36,New York,NY,Ontario,6b
+01,Alabama,AL,Autauga,8b
+20,Kansas,KS,Miami,6b
+13,Georgia,GA,Dodge,8b
+36,New York,NY,Cortland,5b
+13,Georgia,GA,Camden,9a
+26,Michigan,MI,Washtenaw,6a
+18,Indiana,IN,LaGrange,6a
+48,Texas,TX,Pecos,8b
+13,Georgia,GA,Peach,8b
+13,Georgia,GA,White,7b
+13,Georgia,GA,Jefferson,8b
+55,Wisconsin,WI,Oconto,5a
+48,Texas,TX,Nacogdoches,8b
+44,Rhode Island,RI,Washington,6b
+53,Washington,WA,Okanogan,6b
+53,Washington,WA,Spokane,6b
+55,Wisconsin,WI,Forest,4b
+55,Wisconsin,WI,Sawyer,4a
+34,New Jersey,NJ,Hudson,7b
+39,Ohio,OH,Stark,6b
+48,Texas,TX,Guadalupe,9a
+53,Washington,WA,Island,8b
+54,West Virginia,WV,Jefferson,7a
+51,Virginia,VA,Prince William,7a
+42,Pennsylvania,PA,Chester,7a
+54,West Virginia,WV,Mercer,7a
+47,Tennessee,TN,Roane,7b
+53,Washington,WA,Clallam,8b
+53,Washington,WA,Stevens,6b
+19,Iowa,IA,Van Buren,5b
+31,Nebraska,NE,Gosper,5b
+28,Mississippi,MS,Monroe,8a
+12,Florida,FL,Escambia,9a
+48,Texas,TX,Tarrant,8b
+24,Maryland,MD,Prince George's,7b
+51,Virginia,VA,Scott,7a
+48,Texas,TX,Jackson,9a
+40,Oklahoma,OK,Love,8a
+13,Georgia,GA,Twiggs,8b
+39,Ohio,OH,Mahoning,6a
+01,Alabama,AL,Macon,8b
+17,Illinois,IL,Wayne,6b
+48,Texas,TX,Swisher,7a
+29,Missouri,MO,Osage,6b
+17,Illinois,IL,Kane,5b
+06,California,CA,El Dorado,9b
+45,South Carolina,SC,Kershaw,8a
+37,North Carolina,NC,Gates,8a
+08,Colorado,CO,Otero,6a
+41,Oregon,OR,Douglas,9a
+42,Pennsylvania,PA,Monroe,6a
+05,Arkansas,AR,Newton,7b
+38,North Dakota,ND,Cavalier,3b
+40,Oklahoma,OK,Noble,7a
+20,Kansas,KS,Gove,6a
+22,Louisiana,LA,Pointe Coupee,9a
+31,Nebraska,NE,Gage,6a
+01,Alabama,AL,St. Clair,8a
+28,Mississippi,MS,Scott,8b
+13,Georgia,GA,Dougherty,9a
+18,Indiana,IN,Harrison,6b
+16,Idaho,ID,Bonner,6b
+13,Georgia,GA,Catoosa,8a
+22,Louisiana,LA,LaSalle,8b
+23,Maine,ME,Waldo,5b
+24,Maryland,MD,Howard,7b
+49,Utah,UT,Salt Lake,7b
+09,Connecticut,CT,Hartford,6b
+09,Connecticut,CT,Windham,6b
+12,Florida,FL,Monroe,10b
+39,Ohio,OH,Tuscarawas,6b
+36,New York,NY,Richmond,7b
+39,Ohio,OH,Highland,6b
+27,Minnesota,MN,Lake of the Woods,3b
+16,Idaho,ID,Bingham,5b
+72,,,Cabo Rojo,
+72,,,Humacao,
+72,,,Juncos,
+45,South Carolina,SC,Greenville,8a
+46,South Dakota,SD,Lyman,5a
+55,Wisconsin,WI,Trempealeau,4b
+06,California,CA,Yolo,9b
+48,Texas,TX,Sterling,8a
+48,Texas,TX,Winkler,8a
+46,South Dakota,SD,Jackson,5a
+49,Utah,UT,Sevier,6a
+51,Virginia,VA,Charles City,7b
+01,Alabama,AL,Choctaw,8b
+18,Indiana,IN,Knox,6b
+31,Nebraska,NE,Dawson,5b
+20,Kansas,KS,Ford,6b
+38,North Dakota,ND,Williams,4a
+38,North Dakota,ND,Cass,4a
+17,Illinois,IL,Hardin,7a
+31,Nebraska,NE,Arthur,5b
+48,Texas,TX,Frio,9a
+19,Iowa,IA,Johnson,5b
+20,Kansas,KS,Neosho,7a
+21,Kentucky,KY,Greenup,6b
+20,Kansas,KS,Linn,6b
+49,Utah,UT,Garfield,7a
+32,Nevada,NV,Eureka,5b
+31,Nebraska,NE,Hayes,5b
+08,Colorado,CO,Phillips,5b
+05,Arkansas,AR,Calhoun,8a
+02,Alaska,AK,Fairbanks North Star,
+21,Kentucky,KY,Henderson,7a
+28,Mississippi,MS,Holmes,8b
+28,Mississippi,MS,Oktibbeha,8a
+72,,,Ceiba,
+72,,,Corozal,
+30,Montana,MT,Fergus,4b
+24,Maryland,MD,Garrett,6a
+22,Louisiana,LA,Webster,8b
+26,Michigan,MI,Hillsdale,6a
+21,Kentucky,KY,Logan,7a
+46,South Dakota,SD,Custer,5a
+33,New Hampshire,NH,Merrimack,5b
+42,Pennsylvania,PA,York,7a
+37,North Carolina,NC,Rutherford,8a
+46,South Dakota,SD,Beadle,4b
+01,Alabama,AL,Cullman,8a
+13,Georgia,GA,Douglas,8a
+31,Nebraska,NE,Johnson,5b
+37,North Carolina,NC,Washington,8a
+46,South Dakota,SD,Jones,5a
+37,North Carolina,NC,Anson,8a
+02,Alaska,AK,Haines,
+38,North Dakota,ND,Billings,4a
+31,Nebraska,NE,Antelope,5b
+29,Missouri,MO,Gasconade,6b
+21,Kentucky,KY,Butler,7a
+78,,,St. John,
+56,Wyoming,WY,Campbell,5a
+13,Georgia,GA,Morgan,8a
+05,Arkansas,AR,Cross,8a
+05,Arkansas,AR,Phillips,8a
+22,Louisiana,LA,St. James,9b
+06,California,CA,Yuba,9b
+01,Alabama,AL,Shelby,8a
+08,Colorado,CO,Ouray,6a
+35,New Mexico,NM,Curry,7a
+40,Oklahoma,OK,Washita,7b
+37,North Carolina,NC,Orange,8a
+18,Indiana,IN,Pulaski,6a
+26,Michigan,MI,Benzie,6a
+36,New York,NY,Erie,6b
+24,Maryland,MD,Montgomery,7b
+51,Virginia,VA,Manassas Park,7a
+51,Virginia,VA,Arlington,7b
+51,Virginia,VA,Carroll,7a
+29,Missouri,MO,St. Charles,6b
+06,California,CA,San Benito,9a
+24,Maryland,MD,Queen Anne's,7b
+20,Kansas,KS,Brown,6a
+13,Georgia,GA,Bulloch,9a
+21,Kentucky,KY,Floyd,7a
+30,Montana,MT,Broadwater,4b
+13,Georgia,GA,Wheeler,8b
+37,North Carolina,NC,Craven,8b
+29,Missouri,MO,Holt,6a
+48,Texas,TX,Lipscomb,7a
+41,Oregon,OR,Columbia,8b
+45,South Carolina,SC,Florence,8b
+38,North Dakota,ND,Mountrail,4a
+49,Utah,UT,Washington,8b
+30,Montana,MT,Big Horn,4b
+42,Pennsylvania,PA,Elk,5b
+31,Nebraska,NE,Sioux,5a
+28,Mississippi,MS,Covington,8b
+72,,,Moca,
+18,Indiana,IN,Brown,6b
+18,Indiana,IN,Clark,7a
+21,Kentucky,KY,Boyle,7a
+21,Kentucky,KY,Estill,6b
+48,Texas,TX,Collingsworth,7b
+48,Texas,TX,Colorado,9a
+17,Illinois,IL,Grundy,5b
+27,Minnesota,MN,Lincoln,4b
+13,Georgia,GA,Evans,9a
+48,Texas,TX,Wise,8a
+02,Alaska,AK,Bethel,
+13,Georgia,GA,Webster,8b
+13,Georgia,GA,Jones,8b
+13,Georgia,GA,Gwinnett,8a
+55,Wisconsin,WI,Polk,4b
+55,Wisconsin,WI,Green,5a
+72,,,Orocovis,
+36,New York,NY,Putnam,6b
+51,Virginia,VA,Newport News,8a
+08,Colorado,CO,Bent,6a
+40,Oklahoma,OK,Jackson,7b
+30,Montana,MT,Sanders,6a
+48,Texas,TX,Glasscock,8a
+05,Arkansas,AR,Franklin,8a
+40,Oklahoma,OK,Major,7a
+47,Tennessee,TN,Montgomery,7b
+53,Washington,WA,Pend Oreille,6a
+38,North Dakota,ND,McLean,4a
+41,Oregon,OR,Hood River,7b
+19,Iowa,IA,Wright,5a
+48,Texas,TX,Shelby,8b
+29,Missouri,MO,Crawford,6b
+51,Virginia,VA,Bath,6b
+27,Minnesota,MN,Otter Tail,4a
+22,Louisiana,LA,Plaquemines,9b
+28,Mississippi,MS,Pontotoc,8a
+22,Louisiana,LA,Morehouse,8b
+21,Kentucky,KY,Bullitt,7a
+01,Alabama,AL,Dallas,8b
+48,Texas,TX,Comanche,8b
+30,Montana,MT,Lincoln,6a
+72,,,San Lorenzo,
+72,,,Toa Alta,
+27,Minnesota,MN,Cass,3b
+08,Colorado,CO,Archuleta,5b
+28,Mississippi,MS,Yazoo,8b
+55,Wisconsin,WI,Outagamie,5a
+29,Missouri,MO,Lafayette,6b
+37,North Carolina,NC,Wilson,8a
+39,Ohio,OH,Morrow,6a
+30,Montana,MT,Granite,5a
+38,North Dakota,ND,Foster,4a
+05,Arkansas,AR,Crawford,7b
+48,Texas,TX,Burnet,8b
+29,Missouri,MO,Ste. Genevieve,6b
+48,Texas,TX,Gray,7a
+17,Illinois,IL,McDonough,6a
+19,Iowa,IA,Montgomery,5b
+05,Arkansas,AR,Jackson,8a
+48,Texas,TX,Hudspeth,7b
+22,Louisiana,LA,Rapides,9a
+31,Nebraska,NE,Lincoln,5b
+48,Texas,TX,Cass,8b
+47,Tennessee,TN,Henry,7b
+51,Virginia,VA,Winchester,7a
+37,North Carolina,NC,Duplin,8a
+37,North Carolina,NC,Haywood,7a
+27,Minnesota,MN,Dakota,4b
+41,Oregon,OR,Harney,6a
+72,,,Maunabo,
+55,Wisconsin,WI,Adams,4b
+29,Missouri,MO,Clark,6a
+21,Kentucky,KY,Boone,6b
+21,Kentucky,KY,Washington,7a
+22,Louisiana,LA,Avoyelles,9a
+28,Mississippi,MS,Tate,8a
+29,Missouri,MO,Worth,5b
+31,Nebraska,NE,Sherman,5b
+46,South Dakota,SD,Campbell,4b
+46,South Dakota,SD,Harding,4b
+26,Michigan,MI,Gratiot,6a
+19,Iowa,IA,Union,5b
+17,Illinois,IL,Massac,7a
+31,Nebraska,NE,Logan,5b
+31,Nebraska,NE,Merrick,5b
+31,Nebraska,NE,Sheridan,5a
+21,Kentucky,KY,Carlisle,7a
+56,Wyoming,WY,Natrona,5a
+13,Georgia,GA,Worth,9a
+18,Indiana,IN,Morgan,6a
+48,Texas,TX,Ellis,8b
+13,Georgia,GA,Pierce,9a
+60,,,Eastern,
+18,Indiana,IN,Grant,6a
+12,Florida,FL,Flagler,9b
+28,Mississippi,MS,Lawrence,8b
+22,Louisiana,LA,Winn,8b
+17,Illinois,IL,Henry,5b
+41,Oregon,OR,Lincoln,9a
+23,Maine,ME,York,6a
+46,South Dakota,SD,Codington,4b
+13,Georgia,GA,Pike,8b
+13,Georgia,GA,Stewart,8b
+34,New Jersey,NJ,Monmouth,7a
+05,Arkansas,AR,Clay,7b
+05,Arkansas,AR,Faulkner,8a
+40,Oklahoma,OK,Delaware,7a
+19,Iowa,IA,Keokuk,5b
+17,Illinois,IL,Greene,6a
+27,Minnesota,MN,Lake,3b
+13,Georgia,GA,Troup,8a
+06,California,CA,Humboldt,9b
+47,Tennessee,TN,Dickson,7b
+27,Minnesota,MN,Anoka,4b
+46,South Dakota,SD,Bon Homme,5a
+47,Tennessee,TN,Greene,7b
+51,Virginia,VA,Sussex,7b
+18,Indiana,IN,St. Joseph,6a
+38,North Dakota,ND,Pembina,4a
+46,South Dakota,SD,Bennett,5a
+22,Louisiana,LA,Vernon,9a
+23,Maine,ME,Penobscot,5a
+24,Maryland,MD,Talbot,7b
+13,Georgia,GA,Stephens,8b
+06,California,CA,Riverside,10a
+05,Arkansas,AR,Baxter,7a
+28,Mississippi,MS,Attala,8a
+19,Iowa,IA,Story,5b
+20,Kansas,KS,Bourbon,7a
+51,Virginia,VA,Cumberland,7a
+45,South Carolina,SC,Sumter,8b
+02,Alaska,AK,Lake and Peninsula,
+54,West Virginia,WV,Wyoming,7a
+06,California,CA,Kern,9b
+48,Texas,TX,Cooke,8a
+45,South Carolina,SC,Orangeburg,8b
+55,Wisconsin,WI,Taylor,4a
+27,Minnesota,MN,Mower,4b
+27,Minnesota,MN,Murray,5a
+44,Rhode Island,RI,Providence,6b
+29,Missouri,MO,Phelps,6b
+28,Mississippi,MS,Prentiss,8a
+21,Kentucky,KY,Whitley,7a
+18,Indiana,IN,Starke,5b
+48,Texas,TX,Williamson,8b
+72,,,Patillas,
+19,Iowa,IA,Mitchell,5a
+13,Georgia,GA,Emanuel,8b
+22,Louisiana,LA,Catahoula,9a
+42,Pennsylvania,PA,Carbon,6b
+31,Nebraska,NE,Pawnee,6a
+47,Tennessee,TN,Unicoi,7a
+45,South Carolina,SC,Spartanburg,8a
+55,Wisconsin,WI,Marathon,4b
+32,Nevada,NV,Elko,6a
+54,West Virginia,WV,Braxton,6b
+26,Michigan,MI,Wexford,5a
+48,Texas,TX,Cochran,7b
+42,Pennsylvania,PA,Blair,6b
+29,Missouri,MO,Hickory,6b
+29,Missouri,MO,Barry,7a
+27,Minnesota,MN,Ramsey,5a
+05,Arkansas,AR,Little River,8b
+32,Nevada,NV,Lyon,7a
+12,Florida,FL,Lee,10a
+41,Oregon,OR,Josephine,8b
+72,,,Manatí,
+28,Mississippi,MS,Pike,8b
+47,Tennessee,TN,Coffee,7b
+16,Idaho,ID,Lemhi,5b
+21,Kentucky,KY,Ohio,7a
+31,Nebraska,NE,Sarpy,5b
+13,Georgia,GA,Colquitt,9a
+27,Minnesota,MN,Wilkin,4a
+17,Illinois,IL,Randolph,7a
+23,Maine,ME,Kennebec,5b
+51,Virginia,VA,Smyth,7a
+35,New Mexico,NM,Roosevelt,7b
+42,Pennsylvania,PA,Somerset,6a
+51,Virginia,VA,Washington,7a
+37,North Carolina,NC,Guilford,8a
+16,Idaho,ID,Ada,7a
+40,Oklahoma,OK,Custer,7b
+39,Ohio,OH,Marion,6a
+17,Illinois,IL,Pike,6a
+17,Illinois,IL,Woodford,5b
+13,Georgia,GA,Richmond,8b
+01,Alabama,AL,Pickens,8a
+40,Oklahoma,OK,Ellis,7a
+17,Illinois,IL,Perry,7a
+19,Iowa,IA,Grundy,5a
+08,Colorado,CO,Routt,5b
+34,New Jersey,NJ,Somerset,7a
+06,California,CA,Colusa,9b
+17,Illinois,IL,Johnson,7a
+08,Colorado,CO,Hinsdale,5a
+16,Idaho,ID,Cassia,6b
+27,Minnesota,MN,Isanti,4b
+42,Pennsylvania,PA,Erie,6a
+28,Mississippi,MS,Copiah,8b
+48,Texas,TX,Van Zandt,8b
+51,Virginia,VA,Roanoke,7b
+51,Virginia,VA,Augusta,7a
+02,Alaska,AK,Bristol Bay,
+49,Utah,UT,Piute,6a
+21,Kentucky,KY,Mason,6b
+27,Minnesota,MN,Benton,4b
+48,Texas,TX,Donley,7a
+12,Florida,FL,Bay,9a
+01,Alabama,AL,Lauderdale,8a
+18,Indiana,IN,Fountain,6a
+17,Illinois,IL,Shelby,6a
+17,Illinois,IL,Fayette,6b
+39,Ohio,OH,Perry,6a
+51,Virginia,VA,Danville,7b
+13,Georgia,GA,Banks,8a
+13,Georgia,GA,Wayne,9a
+40,Oklahoma,OK,Oklahoma,7b
+40,Oklahoma,OK,Johnston,8a
+37,North Carolina,NC,Jackson,7b
+49,Utah,UT,Summit,5b
+29,Missouri,MO,Polk,6b
+32,Nevada,NV,Lander,7a
+19,Iowa,IA,Winneshiek,5a
+21,Kentucky,KY,Bracken,6b
+55,Wisconsin,WI,Florence,4b
+54,West Virginia,WV,Roane,6b
+27,Minnesota,MN,Wadena,4a
+51,Virginia,VA,Hopewell,8a
+17,Illinois,IL,Winnebago,5b
+04,Arizona,AZ,Gila,7b
+24,Maryland,MD,Wicomico,7b
+21,Kentucky,KY,Carter,6b
+37,North Carolina,NC,Iredell,8a
+51,Virginia,VA,Halifax,7b
+37,North Carolina,NC,Hertford,8a
+36,New York,NY,Montgomery,5b
+27,Minnesota,MN,Pennington,4a
+53,Washington,WA,Whatcom,8a
+41,Oregon,OR,Gilliam,7a
+34,New Jersey,NJ,Ocean,7a
+05,Arkansas,AR,Boone,7b
+40,Oklahoma,OK,Comanche,7b
+48,Texas,TX,Jones,8a
+48,Texas,TX,Grimes,9a
+26,Michigan,MI,Genesee,6a
+22,Louisiana,LA,Assumption,9b
+28,Mississippi,MS,Calhoun,8a
+28,Mississippi,MS,Greene,8b
+30,Montana,MT,Custer,4b
+46,South Dakota,SD,Roberts,4b
+17,Illinois,IL,Ogle,5b
+38,North Dakota,ND,Richland,4a
+55,Wisconsin,WI,Barron,4b
+55,Wisconsin,WI,Iron,4a
+27,Minnesota,MN,Wabasha,4b
+06,California,CA,Del Norte,9b
+40,Oklahoma,OK,Pushmataha,7b
+53,Washington,WA,Chelan,7a
+26,Michigan,MI,Presque Isle,5a
+40,Oklahoma,OK,Cleveland,7b
+36,New York,NY,Sullivan,6a
+37,North Carolina,NC,Polk,8a
+37,North Carolina,NC,Scotland,8a
+37,North Carolina,NC,Harnett,8a
+37,North Carolina,NC,Lee,8a
+18,Indiana,IN,Tipton,6a
+20,Kansas,KS,Clay,6b
+40,Oklahoma,OK,Wagoner,7b
+30,Montana,MT,Richland,4a
+05,Arkansas,AR,Ashley,8b
+05,Arkansas,AR,Desha,8b
+72,,,Vieques,
+47,Tennessee,TN,Perry,7b
+27,Minnesota,MN,Washington,5a
+51,Virginia,VA,Portsmouth,8b
+42,Pennsylvania,PA,Fayette,6a
+54,West Virginia,WV,Grant,7a
+51,Virginia,VA,Shenandoah,7a
+48,Texas,TX,Irion,8a
+29,Missouri,MO,Caldwell,6a
+12,Florida,FL,Putnam,9b
+18,Indiana,IN,Crawford,6b
+29,Missouri,MO,Lewis,6a
+31,Nebraska,NE,Grant,5a
+72,,,Loíza,
+16,Idaho,ID,Oneida,6a
+17,Illinois,IL,Moultrie,6a
+21,Kentucky,KY,Hopkins,7a
+16,Idaho,ID,Clearwater,6b
+21,Kentucky,KY,Bell,7a
+27,Minnesota,MN,Crow Wing,4a
+60,,,Western,
+72,,,Añasco,
+04,Arizona,AZ,Graham,8b
+05,Arkansas,AR,St. Francis,8a
+13,Georgia,GA,Echols,9a
+02,Alaska,AK,Dillingham,
+20,Kansas,KS,Lincoln,6b
+20,Kansas,KS,Smith,6a
+12,Florida,FL,Jefferson,9a
+72,,,Cidra,
+28,Mississippi,MS,Amite,8b
+05,Arkansas,AR,Montgomery,8a
+26,Michigan,MI,Calhoun,6a
+01,Alabama,AL,Cleburne,8a
+08,Colorado,CO,Weld,5a
+40,Oklahoma,OK,Beckham,7b
+06,California,CA,Modoc,7a
+19,Iowa,IA,Polk,5b
+13,Georgia,GA,Liberty,9a
+48,Texas,TX,Navarro,8b
+48,Texas,TX,Brooks,9b
+47,Tennessee,TN,Williamson,7b
+56,Wyoming,WY,Laramie,5a
+53,Washington,WA,Asotin,7a
+27,Minnesota,MN,Traverse,4a
+17,Illinois,IL,Cass,6a
+13,Georgia,GA,Rockdale,8b
+42,Pennsylvania,PA,Juniata,6b
+42,Pennsylvania,PA,McKean,5b
+40,Oklahoma,OK,Garvin,7b
+31,Nebraska,NE,Burt,5a
+35,New Mexico,NM,San Juan,7a
+36,New York,NY,Orleans,6b
+22,Louisiana,LA,De Soto,8b
+06,California,CA,Fresno,9a
+13,Georgia,GA,Elbert,8a
+01,Alabama,AL,Barbour,8b
+37,North Carolina,NC,Bladen,8b
+48,Texas,TX,Dallam,6b
+17,Illinois,IL,Sangamon,6a
+40,Oklahoma,OK,Craig,7a
+47,Tennessee,TN,Cumberland,7a
+26,Michigan,MI,Otsego,5a
+19,Iowa,IA,Sac,5a
+49,Utah,UT,Emery,7a
+53,Washington,WA,Ferry,6b
+30,Montana,MT,Wibaux,4a
+35,New Mexico,NM,Lincoln,7a
+40,Oklahoma,OK,Cherokee,7b
+27,Minnesota,MN,Yellow Medicine,4b
+48,Texas,TX,Hunt,8b
+48,Texas,TX,Mitchell,8a
+48,Texas,TX,Wood,8b
+40,Oklahoma,OK,Osage,7a
+37,North Carolina,NC,Cherokee,7b
+26,Michigan,MI,Mecosta,5b
+21,Kentucky,KY,Pike,7a
+12,Florida,FL,Lafayette,9a
+37,North Carolina,NC,Catawba,8a
+21,Kentucky,KY,Breathitt,7a
+48,Texas,TX,Childress,7b
+29,Missouri,MO,Ripley,7a
+17,Illinois,IL,Tazewell,6a
+48,Texas,TX,Jeff Davis,8a
+51,Virginia,VA,Lexington,7a
+05,Arkansas,AR,Sharp,7a
+08,Colorado,CO,Larimer,5b
+37,North Carolina,NC,Tyrrell,8b
+27,Minnesota,MN,Rice,4b
+29,Missouri,MO,Warren,6b
+21,Kentucky,KY,Warren,7a
+22,Louisiana,LA,Caddo,8b
+46,South Dakota,SD,Todd,5a
+19,Iowa,IA,Marshall,5a
+40,Oklahoma,OK,Tillman,8a
+37,North Carolina,NC,Macon,7b
+54,West Virginia,WV,Monroe,6b
+18,Indiana,IN,Switzerland,6b
+21,Kentucky,KY,Hickman,7b
+01,Alabama,AL,Geneva,9a
+17,Illinois,IL,LaSalle,5b
+19,Iowa,IA,Delaware,5a
+20,Kansas,KS,Morris,6b
+19,Iowa,IA,Davis,5b
+16,Idaho,ID,Boise,6b
+55,Wisconsin,WI,Monroe,4b
+37,North Carolina,NC,Perquimans,8a
+12,Florida,FL,Hamilton,9a
+02,Alaska,AK,Matanuska-Susitna,
+18,Indiana,IN,Delaware,6a
+12,Florida,FL,Levy,9a
+72,,,Gurabo,
+72,,,Hatillo,
+28,Mississippi,MS,Hancock,9a
+13,Georgia,GA,Wilcox,8b
+22,Louisiana,LA,Red River,8b
+47,Tennessee,TN,Knox,7b
+23,Maine,ME,Oxford,5a
+29,Missouri,MO,Jackson,6b
+13,Georgia,GA,Towns,7b
+28,Mississippi,MS,Smith,8b
+16,Idaho,ID,Payette,7a
+16,Idaho,ID,Shoshone,6b
+37,North Carolina,NC,Hyde,8b
+19,Iowa,IA,Floyd,5a
+21,Kentucky,KY,McCracken,7a
+21,Kentucky,KY,Union,7a
+46,South Dakota,SD,Turner,5a
+47,Tennessee,TN,Cocke,7b
+47,Tennessee,TN,Hancock,7a
+47,Tennessee,TN,Hardin,7b
+45,South Carolina,SC,Marion,8b
+72,,,Guayama,
+22,Louisiana,LA,Washington,9a
+29,Missouri,MO,Stoddard,7b
+13,Georgia,GA,Dooly,8b
+27,Minnesota,MN,Stearns,4b
+31,Nebraska,NE,Saunders,5b
+27,Minnesota,MN,Sherburne,4b
+46,South Dakota,SD,Davison,5a
+47,Tennessee,TN,Claiborne,7a
+48,Texas,TX,Montague,8a
+48,Texas,TX,Brown,8a
+55,Wisconsin,WI,Racine,5b
+55,Wisconsin,WI,Shawano,5a
+19,Iowa,IA,Audubon,5a
+48,Texas,TX,Haskell,8a
+40,Oklahoma,OK,Logan,7a
+36,New York,NY,Oneida,5b
+08,Colorado,CO,Lake,5a
+40,Oklahoma,OK,Pittsburg,7b
+54,West Virginia,WV,Doddridge,6b
+54,West Virginia,WV,Wirt,6b
+33,New Hampshire,NH,Carroll,5a
+54,West Virginia,WV,Tyler,6b
+69,,,Northern Islands,
+27,Minnesota,MN,Le Sueur,4b
+53,Washington,WA,Douglas,6b
+36,New York,NY,Cattaraugus,5b
+55,Wisconsin,WI,Dodge,5a
+19,Iowa,IA,Jones,5a
+20,Kansas,KS,Barber,7a
+29,Missouri,MO,Pulaski,6b
+01,Alabama,AL,Dale,8b
+20,Kansas,KS,Logan,6a
+06,California,CA,Madera,9a
+29,Missouri,MO,Gentry,6a
+31,Nebraska,NE,Blaine,5a
+49,Utah,UT,Daggett,5b
+56,Wyoming,WY,Platte,5a
+37,North Carolina,NC,Gaston,8a
+35,New Mexico,NM,Guadalupe,7a
+30,Montana,MT,Golden Valley,4b
+37,North Carolina,NC,Johnston,8a
+06,California,CA,Santa Clara,10a
+45,South Carolina,SC,Charleston,9a
+53,Washington,WA,Benton,7b
+29,Missouri,MO,Adair,6a
+39,Ohio,OH,Erie,6b
+17,Illinois,IL,Vermilion,6a
+29,Missouri,MO,St. Louis,7a
+17,Illinois,IL,Boone,5b
+06,California,CA,Tehama,9b
+55,Wisconsin,WI,Dane,5b
+48,Texas,TX,Fisher,8a
+22,Louisiana,LA,Sabine,9a
+17,Illinois,IL,Morgan,6a
+13,Georgia,GA,Pulaski,8b
+37,North Carolina,NC,Bertie,8a
+37,North Carolina,NC,Stanly,8a
+47,Tennessee,TN,Rhea,7b
+37,North Carolina,NC,Greene,8a
+21,Kentucky,KY,Leslie,7a
+24,Maryland,MD,Somerset,7b
+17,Illinois,IL,Marshall,5b
+21,Kentucky,KY,Lyon,7a
+48,Texas,TX,Concho,8a
+48,Texas,TX,Coke,8a
+47,Tennessee,TN,Overton,7a
+26,Michigan,MI,Huron,6a
+26,Michigan,MI,Iosco,5a
+13,Georgia,GA,Coffee,9a
+13,Georgia,GA,Ware,9a
+38,North Dakota,ND,Grant,4a
+22,Louisiana,LA,Jefferson,9b
+22,Louisiana,LA,St. Tammany,9a
+19,Iowa,IA,Hardin,5a
+22,Louisiana,LA,Cameron,9b
+39,Ohio,OH,Clinton,6b
+27,Minnesota,MN,St. Louis,3b
+39,Ohio,OH,Lorain,6a
+72,,,Vega Alta,
+19,Iowa,IA,Boone,5a
+48,Texas,TX,Polk,9a
+31,Nebraska,NE,Dixon,5a
+24,Maryland,MD,Harford,7b
+45,South Carolina,SC,Edgefield,8a
+51,Virginia,VA,Accomack,8a
+55,Wisconsin,WI,Calumet,5b
+21,Kentucky,KY,Knox,7a
+26,Michigan,MI,Ionia,6a
+37,North Carolina,NC,New Hanover,8b
+47,Tennessee,TN,Obion,7b
+21,Kentucky,KY,Calloway,7b
+51,Virginia,VA,Albemarle,7b
+47,Tennessee,TN,Robertson,7a
+51,Virginia,VA,Clarke,7a
+53,Washington,WA,Garfield,7b
+21,Kentucky,KY,Jackson,6b
+27,Minnesota,MN,Cook,3b
+45,South Carolina,SC,Oconee,8a
+22,Louisiana,LA,East Baton Rouge,9a
+28,Mississippi,MS,Claiborne,8b
+24,Maryland,MD,St. Mary's,8a
+26,Michigan,MI,Kent,6a
+37,North Carolina,NC,Pitt,8b
+30,Montana,MT,Carbon,5a
+31,Nebraska,NE,Stanton,5b
+13,Georgia,GA,Appling,9a
+19,Iowa,IA,Jasper,5b
+28,Mississippi,MS,Wayne,8b
+48,Texas,TX,Cottle,8a
+51,Virginia,VA,Greensville,8a
+12,Florida,FL,Polk,10a
+48,Texas,TX,Young,8a
+01,Alabama,AL,Tallapoosa,8a
+33,New Hampshire,NH,Rockingham,6a
+08,Colorado,CO,Rio Grande,5b
+19,Iowa,IA,Plymouth,5a
+36,New York,NY,Yates,6a
+53,Washington,WA,King,8b
+41,Oregon,OR,Deschutes,6b
+19,Iowa,IA,Pottawattamie,5b
+29,Missouri,MO,Wright,6b
+30,Montana,MT,Toole,4a
+36,New York,NY,Tioga,6a
+48,Texas,TX,Lee,9a
+13,Georgia,GA,Fulton,8a
+48,Texas,TX,Cherokee,8b
+29,Missouri,MO,Audrain,6b
+45,South Carolina,SC,Colleton,8b
+55,Wisconsin,WI,Jefferson,5b
+05,Arkansas,AR,Greene,7b
+48,Texas,TX,Hall,7b
+55,Wisconsin,WI,Burnett,4a
+35,New Mexico,NM,Torrance,7a
+53,Washington,WA,Pacific,8a
+37,North Carolina,NC,Pender,8b
+48,Texas,TX,Hood,8b
+46,South Dakota,SD,Stanley,5a
+32,Nevada,NV,Washoe,7a
+21,Kentucky,KY,Ballard,7a
+48,Texas,TX,Archer,8a
+48,Texas,TX,Baylor,8a
+48,Texas,TX,San Augustine,9a
+32,Nevada,NV,Storey,7a
+13,Georgia,GA,Schley,8b
+09,Connecticut,CT,Fairfield,6b
+48,Texas,TX,Madison,9a
+06,California,CA,San Joaquin,9b
+28,Mississippi,MS,Winston,8a
+21,Kentucky,KY,Henry,6b
+21,Kentucky,KY,Mercer,7a
+31,Nebraska,NE,Wheeler,5a
+21,Kentucky,KY,Lewis,6b
+27,Minnesota,MN,Grant,4a
+28,Mississippi,MS,Humphreys,8b
+01,Alabama,AL,Clarke,8b
+20,Kansas,KS,Chase,6b
+21,Kentucky,KY,Trigg,7a
+01,Alabama,AL,Houston,9a
+46,South Dakota,SD,Aurora,5a
+02,Alaska,AK,Aleutians East,
+31,Nebraska,NE,Franklin,6a
+24,Maryland,MD,Kent,7b
+20,Kansas,KS,Crawford,7a
+27,Minnesota,MN,Chippewa,4b
+46,South Dakota,SD,Pennington,5a
+45,South Carolina,SC,Hampton,8b
+16,Idaho,ID,Fremont,5a
+13,Georgia,GA,Bryan,9a
+51,Virginia,VA,Dinwiddie,7b
+12,Florida,FL,St. Lucie,10a
+36,New York,NY,Monroe,6b
+46,South Dakota,SD,Lincoln,5a
+55,Wisconsin,WI,Chippewa,4b
+20,Kansas,KS,Woodson,6b
+21,Kentucky,KY,Marshall,7a
+13,Georgia,GA,Clinch,9a
+13,Georgia,GA,Lowndes,9a
+15,Hawaii,HI,Kalawao,
+15,Hawaii,HI,Kauai,
+26,Michigan,MI,Macomb,6a
+13,Georgia,GA,Turner,9a
+17,Illinois,IL,Jasper,6b
+48,Texas,TX,Milam,9a
+18,Indiana,IN,Spencer,7a
+21,Kentucky,KY,Hart,7a
+21,Kentucky,KY,Lincoln,7a
+30,Montana,MT,Blaine,3b
+51,Virginia,VA,Norfolk,8b
+48,Texas,TX,Reeves,8a
+51,Virginia,VA,Pulaski,7a
+37,North Carolina,NC,Union,8a
+38,North Dakota,ND,McKenzie,4a
+12,Florida,FL,Okaloosa,8b
+06,California,CA,Alameda,10a
+17,Illinois,IL,Calhoun,6b
+18,Indiana,IN,Kosciusko,6a
+28,Mississippi,MS,Noxubee,8b
+05,Arkansas,AR,Woodruff,8a
+34,New Jersey,NJ,Gloucester,7b
+33,New Hampshire,NH,Hillsborough,6a
+30,Montana,MT,Judith Basin,4b
+37,North Carolina,NC,Mitchell,7a
+30,Montana,MT,Powell,4b
+41,Oregon,OR,Polk,8b
+41,Oregon,OR,Wasco,7a
+46,South Dakota,SD,Perkins,4b
+19,Iowa,IA,Taylor,5b
+01,Alabama,AL,Washington,8b
+39,Ohio,OH,Defiance,6a
+54,West Virginia,WV,Greenbrier,6b
+17,Illinois,IL,Marion,6b
+51,Virginia,VA,Dickenson,7a
+51,Virginia,VA,Amelia,7b
+13,Georgia,GA,Randolph,8b
+35,New Mexico,NM,Luna,8a
+48,Texas,TX,Nueces,9b
+56,Wyoming,WY,Weston,4b
+72,,,Toa Baja,
+17,Illinois,IL,Warren,5b
+01,Alabama,AL,Madison,7b
+47,Tennessee,TN,Wilson,7b
+48,Texas,TX,Camp,8b
+40,Oklahoma,OK,Jefferson,8a
+54,West Virginia,WV,Ritchie,6b
+19,Iowa,IA,Page,5b
+20,Kansas,KS,Jefferson,6b
+22,Louisiana,LA,Iberia,9a
+02,Alaska,AK,Kusilvak,
+37,North Carolina,NC,Onslow,8a
+27,Minnesota,MN,Faribault,5a
+47,Tennessee,TN,Grainger,7b
+48,Texas,TX,Freestone,8b
+42,Pennsylvania,PA,Mifflin,7a
+01,Alabama,AL,Crenshaw,8b
+51,Virginia,VA,Bristol,7a
+48,Texas,TX,Runnels,8a
+48,Texas,TX,Terrell,8b
+20,Kansas,KS,Rawlins,6a
+20,Kansas,KS,Thomas,6a
+13,Georgia,GA,Jeff Davis,9a
+19,Iowa,IA,Cherokee,5a
+05,Arkansas,AR,White,8a
+28,Mississippi,MS,Leflore,8b
+29,Missouri,MO,Cooper,6b
+26,Michigan,MI,Dickinson,4b
+17,Illinois,IL,Will,5b
+48,Texas,TX,Deaf Smith,7a
+46,South Dakota,SD,Brookings,4b
+29,Missouri,MO,Clay,6a
+28,Mississippi,MS,Coahoma,8b
+18,Indiana,IN,Boone,6a
+19,Iowa,IA,Des Moines,5b
+19,Iowa,IA,Scott,5b
+20,Kansas,KS,Ottawa,6b
+12,Florida,FL,Columbia,9a
+12,Florida,FL,Holmes,8b
+28,Mississippi,MS,Harrison,9a
+72,,,Utuado,
+47,Tennessee,TN,Bradley,7b
+27,Minnesota,MN,Carlton,4a
+48,Texas,TX,Marion,8b
+36,New York,NY,Schoharie,5b
+40,Oklahoma,OK,Pawnee,7a
+36,New York,NY,Broome,6a
+48,Texas,TX,Liberty,9a
+39,Ohio,OH,Athens,6b
+39,Ohio,OH,Jefferson,6b
+54,West Virginia,WV,Randolph,6a
+54,West Virginia,WV,Marion,6b
+34,New Jersey,NJ,Cumberland,7b
+06,California,CA,Nevada,9b
+55,Wisconsin,WI,Douglas,4a
+21,Kentucky,KY,Pulaski,7a
+37,North Carolina,NC,Edgecombe,8a
+48,Texas,TX,Jasper,9a
+49,Utah,UT,Beaver,6b
+13,Georgia,GA,Murray,8a
+18,Indiana,IN,Jay,6a
+26,Michigan,MI,Montcalm,5b
+36,New York,NY,Rensselaer,5b
+12,Florida,FL,Collier,10a
+35,New Mexico,NM,McKinley,6a
+13,Georgia,GA,Ben Hill,9a
+05,Arkansas,AR,Lee,8a
+12,Florida,FL,Baker,9a
+13,Georgia,GA,Lanier,9a
+20,Kansas,KS,Rice,6b
+01,Alabama,AL,Calhoun,8a
+28,Mississippi,MS,Jackson,9a
+21,Kentucky,KY,Campbell,6b
+21,Kentucky,KY,Cumberland,7a
+28,Mississippi,MS,Panola,8a
+48,Texas,TX,Hansford,6b
+48,Texas,TX,Chambers,9b
+13,Georgia,GA,Quitman,8b
+48,Texas,TX,Hardin,9a
+09,Connecticut,CT,Litchfield,6a
+39,Ohio,OH,Sandusky,6b
+23,Maine,ME,Piscataquis,5a
+17,Illinois,IL,Pulaski,7a
+40,Oklahoma,OK,Okfuskee,7b
+26,Michigan,MI,Saginaw,6a
+35,New Mexico,NM,Rio Arriba,5b
+50,Vermont,VT,Caledonia,4b
+51,Virginia,VA,Botetourt,7b
+17,Illinois,IL,Madison,7a
+48,Texas,TX,Collin,8b
+45,South Carolina,SC,Abbeville,8a
+31,Nebraska,NE,Dodge,5b
+12,Florida,FL,Sarasota,9b
+55,Wisconsin,WI,Marquette,5a
+04,Arizona,AZ,Mohave,9a
+04,Arizona,AZ,Yavapai,7a
+45,South Carolina,SC,Horry,8b
+42,Pennsylvania,PA,Montgomery,7a
+16,Idaho,ID,Lewis,6a
+72,,,Arecibo,
+51,Virginia,VA,Norton,7a
+34,New Jersey,NJ,Morris,6b
+29,Missouri,MO,Sullivan,6a
+20,Kansas,KS,Ness,6a
+48,Texas,TX,Brazoria,9b
+51,Virginia,VA,Staunton,7a
+31,Nebraska,NE,Chase,5b
+39,Ohio,OH,Montgomery,6b
+48,Texas,TX,Throckmorton,8a
+13,Georgia,GA,Oglethorpe,8b
+05,Arkansas,AR,Conway,8a
+29,Missouri,MO,Nodaway,5b
+38,North Dakota,ND,Ransom,4a
+26,Michigan,MI,Bay,6a
+47,Tennessee,TN,Shelby,8a
+06,California,CA,Butte,9b
+27,Minnesota,MN,Pine,4a
+48,Texas,TX,Bastrop,9a
+53,Washington,WA,Klickitat,7a
+53,Washington,WA,San Juan,9a
+55,Wisconsin,WI,Brown,5b
+20,Kansas,KS,Wilson,7a
+22,Louisiana,LA,Natchitoches,8b
+22,Louisiana,LA,Terrebonne,9b
+13,Georgia,GA,Irwin,9a
+02,Alaska,AK,North Slope,
+26,Michigan,MI,Arenac,5b
+19,Iowa,IA,Lee,6a
+20,Kansas,KS,Osborne,6a
+26,Michigan,MI,Emmet,5a
+19,Iowa,IA,Fremont,5b
+23,Maine,ME,Lincoln,5b
+36,New York,NY,Seneca,6b
+21,Kentucky,KY,Laurel,7a
+47,Tennessee,TN,Meigs,7b
+29,Missouri,MO,Taney,7a
+13,Georgia,GA,Taylor,8b
+51,Virginia,VA,Williamsburg,8a
+48,Texas,TX,Scurry,8a
+08,Colorado,CO,Gilpin,5b
+40,Oklahoma,OK,McClain,7b
+54,West Virginia,WV,Pendleton,6a
+51,Virginia,VA,Page,7a
+40,Oklahoma,OK,Le Flore,7b
+54,West Virginia,WV,Summers,7a
+37,North Carolina,NC,Mecklenburg,8a
+34,New Jersey,NJ,Essex,7a
+29,Missouri,MO,Linn,6a
+13,Georgia,GA,Montgomery,8b
+41,Oregon,OR,Sherman,7a
+13,Georgia,GA,Greene,8b
+46,South Dakota,SD,Buffalo,4b
+46,South Dakota,SD,Mellette,5a
+48,Texas,TX,Ector,8a
+48,Texas,TX,Limestone,8b
+53,Washington,WA,Grays Harbor,8b
+54,West Virginia,WV,Berkeley,7a
+72,,,Villalba,
+30,Montana,MT,Park,5a
+48,Texas,TX,Denton,8a
+45,South Carolina,SC,Cherokee,8a
+37,North Carolina,NC,Yancey,7a
+48,Texas,TX,Red River,8b
+48,Texas,TX,Matagorda,9b
+27,Minnesota,MN,Stevens,4b
+13,Georgia,GA,Warren,8b
+48,Texas,TX,Hardeman,7b
+17,Illinois,IL,Monroe,7a
+13,Georgia,GA,Jenkins,8b
+21,Kentucky,KY,Grayson,7a
+48,Texas,TX,Palo Pinto,8a
+13,Georgia,GA,Heard,8a
+01,Alabama,AL,Lawrence,8a
+72,,,Guaynabo,
+28,Mississippi,MS,Marshall,7b
+20,Kansas,KS,Clark,6b
+20,Kansas,KS,Haskell,6b
+22,Louisiana,LA,Bienville,8b
+13,Georgia,GA,Walker,8a
+19,Iowa,IA,Iowa,5a
+31,Nebraska,NE,Buffalo,5b
+40,Oklahoma,OK,Beaver,7a
+19,Iowa,IA,Butler,5a
+30,Montana,MT,Roosevelt,4a
+72,,,Barceloneta,
+53,Washington,WA,Cowlitz,8b
+48,Texas,TX,Live Oak,9a
+29,Missouri,MO,Moniteau,6b
+51,Virginia,VA,Westmoreland,7b
+37,North Carolina,NC,Yadkin,7b
+06,California,CA,Merced,9a
+40,Oklahoma,OK,Dewey,7a
+37,North Carolina,NC,Burke,7b
+37,North Carolina,NC,Wayne,8a
+42,Pennsylvania,PA,Warren,6a
+05,Arkansas,AR,Howard,8a
+37,North Carolina,NC,Davie,7b
+37,North Carolina,NC,McDowell,7b
+05,Arkansas,AR,Nevada,8b
+08,Colorado,CO,Yuma,5b
+48,Texas,TX,Sherman,6b
+48,Texas,TX,Uvalde,9a
+39,Ohio,OH,Auglaize,6a
+22,Louisiana,LA,Bossier,8b
+19,Iowa,IA,Emmet,5a
+20,Kansas,KS,Saline,6b
+21,Kentucky,KY,Magoffin,7a
+48,Texas,TX,Bailey,7a
+29,Missouri,MO,Callaway,6b
+56,Wyoming,WY,Albany,4a
+56,Wyoming,WY,Park,5a
+42,Pennsylvania,PA,Montour,6b
+36,New York,NY,Queens,7b
+12,Florida,FL,Suwannee,9a
+26,Michigan,MI,Cheboygan,5a
+26,Michigan,MI,Gladwin,5b
+21,Kentucky,KY,Montgomery,6b
+45,South Carolina,SC,Lancaster,8a
+21,Kentucky,KY,Larue,7a
+19,Iowa,IA,Woodbury,5a
+12,Florida,FL,Taylor,9a
+17,Illinois,IL,Alexander,7a
+29,Missouri,MO,Jefferson,6b
+29,Missouri,MO,Lincoln,6b
+13,Georgia,GA,Chatham,9a
+12,Florida,FL,Union,9a
+36,New York,NY,Genesee,6a
+19,Iowa,IA,Clay,5a
+30,Montana,MT,Fallon,4b
+46,South Dakota,SD,Potter,4b
+48,Texas,TX,Culberson,8a
+23,Maine,ME,Cumberland,5a
+48,Texas,TX,Atascosa,9a
+20,Kansas,KS,Kingman,7a
+13,Georgia,GA,Rabun,7b
+54,West Virginia,WV,Upshur,6b
+29,Missouri,MO,Texas,6b
+05,Arkansas,AR,Pulaski,8a
+19,Iowa,IA,Crawford,5a
+16,Idaho,ID,Bannock,5b
+39,Ohio,OH,Geauga,6a
+72,,,Cayey,
+06,California,CA,Tulare,9b
+72,,,Arroyo,
+72,,,San Germán,
+36,New York,NY,Wayne,6b
+51,Virginia,VA,Rockbridge,7a
+38,North Dakota,ND,Towner,3b
+42,Pennsylvania,PA,Delaware,7a
+36,New York,NY,Niagara,6b
+50,Vermont,VT,Bennington,5a
+12,Florida,FL,Clay,9a
+37,North Carolina,NC,Wake,8a
+39,Ohio,OH,Hamilton,6b
+34,New Jersey,NJ,Bergen,7b
+32,Nevada,NV,Lincoln,7a
+02,Alaska,AK,Nome,
+30,Montana,MT,McCone,4a
+19,Iowa,IA,Buchanan,5a
+17,Illinois,IL,DuPage,5b
+46,South Dakota,SD,Fall River,5a
+27,Minnesota,MN,Kittson,3b
+13,Georgia,GA,Oconee,8a
+48,Texas,TX,Wilson,9a
+31,Nebraska,NE,Fillmore,6a
+12,Florida,FL,Madison,9a
+72,,,Carolina,
+18,Indiana,IN,Sullivan,6b
+04,Arizona,AZ,La Paz,9a
+13,Georgia,GA,Brooks,9a
+02,Alaska,AK,Aleutians West,
+02,Alaska,AK,Kodiak Island,
+20,Kansas,KS,Stafford,6b
+13,Georgia,GA,Telfair,8b
+26,Michigan,MI,Monroe,6a
+18,Indiana,IN,White,5b
+18,Indiana,IN,Noble,6a
+21,Kentucky,KY,Livingston,7a
+13,Georgia,GA,Miller,9a
+47,Tennessee,TN,Lincoln,7b
+21,Kentucky,KY,Shelby,6b
+31,Nebraska,NE,York,5b
+42,Pennsylvania,PA,Adams,7a
+45,South Carolina,SC,Allendale,8b
+47,Tennessee,TN,Davidson,7b
+49,Utah,UT,Uintah,6a
+49,Utah,UT,Utah,7a
+18,Indiana,IN,Clay,6a
+36,New York,NY,Kings,7b
+29,Missouri,MO,Morgan,6b
+39,Ohio,OH,Holmes,6a
+19,Iowa,IA,Osceola,5a
+18,Indiana,IN,Jennings,6b
+16,Idaho,ID,Twin Falls,7a
+17,Illinois,IL,Saline,7a
+26,Michigan,MI,Kalamazoo,6a
+45,South Carolina,SC,Lee,8b
+56,Wyoming,WY,Johnson,5a
+18,Indiana,IN,Daviess,6b
+26,Michigan,MI,Grand Traverse,6a
+22,Louisiana,LA,Allen,9a
+46,South Dakota,SD,Hughes,4b
+46,South Dakota,SD,Hyde,4b
+45,South Carolina,SC,Clarendon,8b
+30,Montana,MT,Stillwater,4b
+47,Tennessee,TN,Bledsoe,7a
+21,Kentucky,KY,Todd,7a
+47,Tennessee,TN,Weakley,7b
+29,Missouri,MO,Greene,6b
+42,Pennsylvania,PA,Lehigh,7a
+31,Nebraska,NE,Seward,6a
+36,New York,NY,Chemung,5b
+36,New York,NY,Wyoming,6a
+06,California,CA,Stanislaus,9b
+42,Pennsylvania,PA,Northampton,7a
+01,Alabama,AL,Morgan,8a
+21,Kentucky,KY,Breckinridge,7a
+28,Mississippi,MS,Grenada,8a
+21,Kentucky,KY,Simpson,7a
+50,Vermont,VT,Grand Isle,5b
+39,Ohio,OH,Columbiana,6a
+51,Virginia,VA,Nelson,7b
+12,Florida,FL,Osceola,9b
+05,Arkansas,AR,Grant,8a
+13,Georgia,GA,Laurens,8b
+36,New York,NY,New York,7b
+05,Arkansas,AR,Benton,7a
+72,,,Isabela,
+12,Florida,FL,Marion,9a
+51,Virginia,VA,Nottoway,7b
+34,New Jersey,NJ,Warren,6b
+36,New York,NY,Columbia,6a
+51,Virginia,VA,Martinsville,7b
+40,Oklahoma,OK,Choctaw,8a
+20,Kansas,KS,Dickinson,6b
+48,Texas,TX,Starr,9b
+13,Georgia,GA,Effingham,9a
+40,Oklahoma,OK,Roger Mills,7a
+55,Wisconsin,WI,Richland,4b
+35,New Mexico,NM,Lea,7b
+01,Alabama,AL,Lamar,8a
+72,,,Florida,
+47,Tennessee,TN,Marshall,7b
+51,Virginia,VA,Appomattox,7b
+05,Arkansas,AR,Madison,7a
+56,Wyoming,WY,Sheridan,4b
+42,Pennsylvania,PA,Cumberland,7a
+42,Pennsylvania,PA,Franklin,7a
+42,Pennsylvania,PA,Luzerne,6a
+26,Michigan,MI,Crawford,5a
+01,Alabama,AL,Russell,8b
+39,Ohio,OH,Carroll,6b
+51,Virginia,VA,Fluvanna,7a
+17,Illinois,IL,Lake,5b
+13,Georgia,GA,Madison,8a
+05,Arkansas,AR,Dallas,8a
+08,Colorado,CO,Jackson,4b
+08,Colorado,CO,Kit Carson,6a
+16,Idaho,ID,Owyhee,7a
+55,Wisconsin,WI,Wood,4b
+36,New York,NY,Chautauqua,6a
+13,Georgia,GA,Cobb,8a
+47,Tennessee,TN,Johnson,7a
+39,Ohio,OH,Belmont,6b
+51,Virginia,VA,Wise,7a
+29,Missouri,MO,Carter,7a
+40,Oklahoma,OK,Bryan,8a
+31,Nebraska,NE,Clay,6a
+24,Maryland,MD,Charles,7b
+19,Iowa,IA,Cerro Gordo,5a
+19,Iowa,IA,Greene,5a
+21,Kentucky,KY,Rowan,6b
+49,Utah,UT,Wayne,7a
+29,Missouri,MO,Cape Girardeau,7a
+53,Washington,WA,Walla Walla,7b
+29,Missouri,MO,Mississippi,7b
+05,Arkansas,AR,Cleveland,8b
+48,Texas,TX,Dallas,8b
+72,,,Lajas,
+18,Indiana,IN,DeKalb,6a
+22,Louisiana,LA,Ouachita,8b
+22,Louisiana,LA,St. John the Baptist,9b
+22,Louisiana,LA,St. Helena,8b
+29,Missouri,MO,Schuyler,5b
+01,Alabama,AL,Franklin,7b
+21,Kentucky,KY,Carroll,6b
+08,Colorado,CO,Clear Creek,5b
+48,Texas,TX,Kimble,8a
+26,Michigan,MI,Mackinac,5a
+48,Texas,TX,McCulloch,8b
+28,Mississippi,MS,Tishomingo,7b
+48,Texas,TX,Crockett,8a
+48,Texas,TX,Hill,8b
+08,Colorado,CO,Logan,5b
+20,Kansas,KS,Finney,6b
+20,Kansas,KS,Montgomery,7a
+45,South Carolina,SC,Fairfield,8a
+31,Nebraska,NE,Cheyenne,5b
+27,Minnesota,MN,Martin,5a
+47,Tennessee,TN,Sevier,7b
+47,Tennessee,TN,Polk,7b
+48,Texas,TX,Kent,8a
+30,Montana,MT,Teton,4b
+31,Nebraska,NE,Garden,5a
+17,Illinois,IL,Macoupin,6b
+39,Ohio,OH,Ross,6b
+17,Illinois,IL,Whiteside,5b
+48,Texas,TX,El Paso,8b
+48,Texas,TX,Loving,8a
+40,Oklahoma,OK,Latimer,7b
+39,Ohio,OH,Washington,6b
+29,Missouri,MO,Howell,7a
+20,Kansas,KS,Edwards,6b
+21,Kentucky,KY,Jefferson,7a
+17,Illinois,IL,Logan,6a
+55,Wisconsin,WI,Winnebago,5b
+21,Kentucky,KY,Fulton,7b
+20,Kansas,KS,Harvey,6b
+30,Montana,MT,Dawson,4a
+54,West Virginia,WV,Taylor,6b
+26,Michigan,MI,Midland,6a
+28,Mississippi,MS,Quitman,8a
+21,Kentucky,KY,Hardin,7a
+17,Illinois,IL,Jefferson,6b
+46,South Dakota,SD,Hamlin,4b
+55,Wisconsin,WI,Lincoln,4a
+36,New York,NY,Franklin,4a
+51,Virginia,VA,Fredericksburg,7a
+54,West Virginia,WV,Raleigh,6b
+35,New Mexico,NM,Chaves,7b
+35,New Mexico,NM,Santa Fe,6a
+06,California,CA,Orange,10b
+04,Arizona,AZ,Santa Cruz,8b
+37,North Carolina,NC,Currituck,8b
+17,Illinois,IL,Lawrence,6b
+18,Indiana,IN,Howard,6a
+18,Indiana,IN,Pike,6b
+21,Kentucky,KY,Christian,7a
+26,Michigan,MI,Eaton,6a
+19,Iowa,IA,Wapello,5b
+06,California,CA,Imperial,10a
+26,Michigan,MI,Cass,6a
+28,Mississippi,MS,Wilkinson,9a
+02,Alaska,AK,Yakutat,
+20,Kansas,KS,Sheridan,6a
+28,Mississippi,MS,Leake,8b
+72,,,Caguas,
+72,,,Camuy,
+28,Mississippi,MS,Clay,8a
+28,Mississippi,MS,Franklin,8b
+28,Mississippi,MS,Neshoba,8b
+46,South Dakota,SD,Edmunds,4b
+72,,,Río Grande,
+01,Alabama,AL,Conecuh,8b
+18,Indiana,IN,Dearborn,6b
+18,Indiana,IN,Jackson,6b
+28,Mississippi,MS,Lee,8a
+22,Louisiana,LA,West Feliciana,9a
+05,Arkansas,AR,Crittenden,8a
+12,Florida,FL,Jackson,9a
+48,Texas,TX,Dickens,8a
+51,Virginia,VA,Mathews,8a
+38,North Dakota,ND,Renville,4a
+48,Texas,TX,La Salle,9a
+36,New York,NY,Onondaga,6a
+19,Iowa,IA,Henry,5b
+31,Nebraska,NE,Harlan,6a
+30,Montana,MT,Powder River,4b
+72,,,Juana Díaz,
+55,Wisconsin,WI,Pepin,4b
+04,Arizona,AZ,Apache,7a
+29,Missouri,MO,Macon,6a
+48,Texas,TX,Lamb,7a
+20,Kansas,KS,Kiowa,6b
+48,Texas,TX,Austin,9a
+29,Missouri,MO,Daviess,6a
+13,Georgia,GA,Seminole,9a
+26,Michigan,MI,Manistee,5b
+19,Iowa,IA,Lyon,5a
+48,Texas,TX,Hutchinson,7a
+40,Oklahoma,OK,Texas,6b
+40,Oklahoma,OK,Woodward,7a
+19,Iowa,IA,Adams,5b
+06,California,CA,Sutter,9b
+42,Pennsylvania,PA,Potter,5b
+48,Texas,TX,Val Verde,8b
+20,Kansas,KS,Harper,7a
+19,Iowa,IA,Monona,5a
+49,Utah,UT,Juab,6a
+40,Oklahoma,OK,Stephens,8a
+36,New York,NY,Chenango,5b
+17,Illinois,IL,Peoria,5b
+19,Iowa,IA,Humboldt,5a
+31,Nebraska,NE,Washington,6a
+55,Wisconsin,WI,Iowa,5a
+27,Minnesota,MN,Morrison,4a
+42,Pennsylvania,PA,Allegheny,6b
+29,Missouri,MO,Shelby,6a
+39,Ohio,OH,Madison,6b
+20,Kansas,KS,Washington,6a
+17,Illinois,IL,Champaign,6a
+16,Idaho,ID,Washington,7a
+17,Illinois,IL,Edgar,6a
+08,Colorado,CO,Washington,5b
+39,Ohio,OH,Hardin,6a
+26,Michigan,MI,Missaukee,5a
+38,North Dakota,ND,Stutsman,4b
+29,Missouri,MO,Shannon,7a
+48,Texas,TX,Smith,8b
+40,Oklahoma,OK,Tulsa,7b
+40,Oklahoma,OK,McIntosh,7b
+48,Texas,TX,Robertson,9a
+48,Texas,TX,Gillespie,8b
+26,Michigan,MI,Oakland,6a
+38,North Dakota,ND,Golden Valley,4a
+56,Wyoming,WY,Niobrara,5a
+27,Minnesota,MN,Pipestone,4b
+51,Virginia,VA,King George,7b
+53,Washington,WA,Grant,7a
+27,Minnesota,MN,Renville,4b
+12,Florida,FL,Alachua,9a
+31,Nebraska,NE,Hooker,5b
+51,Virginia,VA,Prince Edward,7b
+49,Utah,UT,Carbon,6a
+42,Pennsylvania,PA,Bucks,7a
+46,South Dakota,SD,Hand,4b
+42,Pennsylvania,PA,Lycoming,6a
+16,Idaho,ID,Latah,6b
+13,Georgia,GA,Putnam,8b
+51,Virginia,VA,Galax,7a
+35,New Mexico,NM,Quay,7a
+48,Texas,TX,King,8a
+05,Arkansas,AR,Lafayette,8b
+48,Texas,TX,Tom Green,8a
+12,Florida,FL,Hardee,9b
+39,Ohio,OH,Clermont,6b
+48,Texas,TX,Yoakum,7b
+41,Oregon,OR,Yamhill,8b
+19,Iowa,IA,Louisa,5b
+20,Kansas,KS,Elk,7a
+39,Ohio,OH,Noble,6b
+39,Ohio,OH,Putnam,6a
+48,Texas,TX,Somervell,8b
+42,Pennsylvania,PA,Lebanon,7a
+30,Montana,MT,Glacier,4a
+32,Nevada,NV,Pershing,7a
+27,Minnesota,MN,Mahnomen,4a
+34,New Jersey,NJ,Passaic,6b
+30,Montana,MT,Lake,6a
+48,Texas,TX,Kenedy,9b
+48,Texas,TX,Borden,8a
+29,Missouri,MO,Perry,7a
+48,Texas,TX,San Saba,8b
+40,Oklahoma,OK,Kingfisher,7a
+48,Texas,TX,Burleson,9a
+36,New York,NY,Fulton,5a
+28,Mississippi,MS,Sunflower,8b
+27,Minnesota,MN,Hennepin,4b
+42,Pennsylvania,PA,Centre,6b
+48,Texas,TX,Bee,9b
+47,Tennessee,TN,Henderson,7b
+19,Iowa,IA,Tama,5a
+20,Kansas,KS,Seward,6b
+19,Iowa,IA,Monroe,5b
+31,Nebraska,NE,Richardson,6a
+17,Illinois,IL,Christian,6a
+12,Florida,FL,Nassau,9a
+12,Florida,FL,Washington,9a
+13,Georgia,GA,Baker,9a
+13,Georgia,GA,Thomas,9a
+21,Kentucky,KY,Anderson,6b
+21,Kentucky,KY,Oldham,6b
+13,Georgia,GA,Cherokee,8a
+38,North Dakota,ND,Oliver,4a
+26,Michigan,MI,Osceola,5a
+47,Tennessee,TN,McNairy,7b
+53,Washington,WA,Adams,6b
+29,Missouri,MO,Dade,7a
+22,Louisiana,LA,St. Mary,9b
+50,Vermont,VT,Chittenden,5a
+72,,,Comerío,
+15,Hawaii,HI,Maui,
+22,Louisiana,LA,Lafourche,9b
+19,Iowa,IA,Muscatine,5b
+12,Florida,FL,Santa Rosa,8b
+18,Indiana,IN,Martin,6b
+21,Kentucky,KY,Rockcastle,7a
+21,Kentucky,KY,Trimble,6b
+13,Georgia,GA,Chattooga,7b
+45,South Carolina,SC,Dillon,8b
+37,North Carolina,NC,Jones,8a
+29,Missouri,MO,Scotland,6a
+20,Kansas,KS,Nemaha,6a
+20,Kansas,KS,Norton,6a
+72,,,Aguas Buenas,
+72,,,Cataño,
+31,Nebraska,NE,Furnas,6a
+13,Georgia,GA,Decatur,9a
+18,Indiana,IN,Wayne,6a
+21,Kentucky,KY,Barren,7a
+31,Nebraska,NE,Howard,5b
+38,North Dakota,ND,Dunn,4a
+06,California,CA,Amador,9b
+47,Tennessee,TN,Fentress,7a
+20,Kansas,KS,Coffey,6b
+26,Michigan,MI,Branch,6a
+51,Virginia,VA,Campbell,7b
+39,Ohio,OH,Meigs,6b
+54,West Virginia,WV,Nicholas,6b
+40,Oklahoma,OK,Grant,7a
+46,South Dakota,SD,Spink,4b
+50,Vermont,VT,Windsor,5a
+48,Texas,TX,Trinity,9a
+35,New Mexico,NM,Bernalillo,7b
+13,Georgia,GA,Mitchell,9a
+15,Hawaii,HI,Hawaii,
+21,Kentucky,KY,McCreary,7a
+21,Kentucky,KY,Pendleton,6b
+21,Kentucky,KY,Spencer,7a
+30,Montana,MT,Hill,4a
+31,Nebraska,NE,Valley,5b
+48,Texas,TX,Castro,7a
+24,Maryland,MD,Washington,7a
+21,Kentucky,KY,Letcher,7a
+34,New Jersey,NJ,Salem,7b
+51,Virginia,VA,Lynchburg,7b
+05,Arkansas,AR,Saline,8a
+54,West Virginia,WV,Mason,6b
+54,West Virginia,WV,Gilmer,6b
+28,Mississippi,MS,Jefferson,8b
+38,North Dakota,ND,Rolette,3b
+30,Montana,MT,Treasure,4b
+21,Kentucky,KY,Clark,7a
+72,,,Morovis,
+26,Michigan,MI,Allegan,6a
+47,Tennessee,TN,Benton,7b
+27,Minnesota,MN,Brown,5a
+47,Tennessee,TN,Pickett,7a
+51,Virginia,VA,Louisa,7a
+18,Indiana,IN,Shelby,6b
+39,Ohio,OH,Franklin,6b
+49,Utah,UT,Iron,5b
+32,Nevada,NV,Esmeralda,7a
+26,Michigan,MI,Keweenaw,5b
+49,Utah,UT,Sanpete,6a
+20,Kansas,KS,Kearny,6a
+12,Florida,FL,Brevard,10a
+18,Indiana,IN,Monroe,6b
+19,Iowa,IA,Lucas,5b
+21,Kentucky,KY,Woodford,6b
+45,South Carolina,SC,Jasper,9a
+48,Texas,TX,Brewster,8b
+45,South Carolina,SC,McCormick,8b
+45,South Carolina,SC,Union,8a
+27,Minnesota,MN,Nicollet,4b
+55,Wisconsin,WI,Marinette,4b
+53,Washington,WA,Clark,8b
+55,Wisconsin,WI,Price,4a
+18,Indiana,IN,Miami,6a
+20,Kansas,KS,Ellsworth,6b
+22,Louisiana,LA,West Carroll,8b
+12,Florida,FL,Liberty,9a
+20,Kansas,KS,Hodgeman,6b
+20,Kansas,KS,Meade,6b
+21,Kentucky,KY,McLean,7a
+28,Mississippi,MS,Adams,8b
+72,,,Las Marías,
+28,Mississippi,MS,Itawamba,8a
+21,Kentucky,KY,Franklin,6b
+23,Maine,ME,Hancock,5a
+23,Maine,ME,Knox,5b
+13,Georgia,GA,Newton,8b
+46,South Dakota,SD,Faulk,4b
+26,Michigan,MI,Houghton,5a
+30,Montana,MT,Mineral,6a
+47,Tennessee,TN,Franklin,7b
+22,Louisiana,LA,Concordia,9a
+22,Louisiana,LA,Livingston,9a
+25,Massachusetts,MA,Essex,6b
+46,South Dakota,SD,Butte,4b
+08,Colorado,CO,Douglas,5b
+45,South Carolina,SC,Richland,8b
+18,Indiana,IN,Madison,6a
+40,Oklahoma,OK,Murray,7b
+54,West Virginia,WV,Brooke,6b
+54,West Virginia,WV,Calhoun,6b
+51,Virginia,VA,Bland,6b
+30,Montana,MT,Yellowstone,4b
+54,West Virginia,WV,Lincoln,7a
+06,California,CA,Lake,8b
+13,Georgia,GA,Grady,9a
+08,Colorado,CO,Conejos,5b
+49,Utah,UT,San Juan,7a
+18,Indiana,IN,Putnam,6a
+16,Idaho,ID,Gooding,7a
+47,Tennessee,TN,Tipton,8a
+22,Louisiana,LA,West Baton Rouge,9a
+29,Missouri,MO,Putnam,5b
+56,Wyoming,WY,Teton,5a
+55,Wisconsin,WI,Grant,5a
+38,North Dakota,ND,Morton,4a
+37,North Carolina,NC,Chowan,8a
+37,North Carolina,NC,Buncombe,7b
+06,California,CA,Plumas,7b
+51,Virginia,VA,Petersburg,7b
+50,Vermont,VT,Washington,5a
+46,South Dakota,SD,Meade,4b
+18,Indiana,IN,Marion,6a
+05,Arkansas,AR,Chicot,8b
+13,Georgia,GA,Bibb,8b
+72,,,Guayanilla,
+72,,,San Sebastián,
+05,Arkansas,AR,Pope,8a
+51,Virginia,VA,Southampton,7b
+48,Texas,TX,Gregg,8b
+36,New York,NY,Rockland,7a
+05,Arkansas,AR,Marion,7b
+51,Virginia,VA,Suffolk,8a
+08,Colorado,CO,El Paso,6a
+29,Missouri,MO,St. Francois,6b
+48,Texas,TX,Ward,8a
+08,Colorado,CO,Kiowa,6a
+48,Texas,TX,Wilbarger,8a
+41,Oregon,OR,Curry,9a
+08,Colorado,CO,Teller,5b
+29,Missouri,MO,Clinton,6a
+49,Utah,UT,Wasatch,5b
+16,Idaho,ID,Caribou,5a
+37,North Carolina,NC,Rockingham,7b
+05,Arkansas,AR,Prairie,8a
+05,Arkansas,AR,Bradley,8b
+48,Texas,TX,Hamilton,8b
+24,Maryland,MD,Caroline,7b
+27,Minnesota,MN,Douglas,4b
+30,Montana,MT,Jefferson,4b
+51,Virginia,VA,Fairfax,7b
+30,Montana,MT,Deer Lodge,4b
+47,Tennessee,TN,Anderson,7b
+39,Ohio,OH,Huron,6a
+13,Georgia,GA,Bacon,9a
+10,Delaware,DE,Kent,7b
+39,Ohio,OH,Wood,6b
+13,Georgia,GA,Jackson,8a
+20,Kansas,KS,Anderson,6b
+17,Illinois,IL,Knox,5b
+30,Montana,MT,Wheatland,4b
+47,Tennessee,TN,Cannon,7b
+23,Maine,ME,Franklin,5a
+21,Kentucky,KY,Menifee,7a
+46,South Dakota,SD,McPherson,4b
+08,Colorado,CO,Gunnison,5b
+26,Michigan,MI,Charlevoix,5b
+27,Minnesota,MN,Swift,4b
+39,Ohio,OH,Seneca,6b
+13,Georgia,GA,Tattnall,9a
+48,Texas,TX,Stephens,8a
+37,North Carolina,NC,Martin,8a
+30,Montana,MT,Ravalli,5b
+13,Georgia,GA,Wilkes,8b
+53,Washington,WA,Lincoln,6b
+06,California,CA,San Mateo,10a
+39,Ohio,OH,Williams,6a
+08,Colorado,CO,Baca,6b
+16,Idaho,ID,Boundary,6b
+16,Idaho,ID,Bear Lake,5a
+39,Ohio,OH,Union,6a
+39,Ohio,OH,Cuyahoga,6a
+48,Texas,TX,Lavaca,9a
+40,Oklahoma,OK,Nowata,7a
+13,Georgia,GA,Glascock,8b
+41,Oregon,OR,Umatilla,7a
+46,South Dakota,SD,Oglala Lakota,5a
+20,Kansas,KS,Marshall,6a
+22,Louisiana,LA,Madison,8b
+30,Montana,MT,Valley,4a
+13,Georgia,GA,Whitfield,8a
+20,Kansas,KS,Wichita,6a
+46,South Dakota,SD,Charles Mix,5a
+31,Nebraska,NE,Cedar,5a
+53,Washington,WA,Kitsap,8b
+17,Illinois,IL,McHenry,5b
+30,Montana,MT,Petroleum,4b
+29,Missouri,MO,Carroll,6a
+53,Washington,WA,Whitman,6b
+27,Minnesota,MN,Steele,4b
+31,Nebraska,NE,Thayer,6a
+47,Tennessee,TN,Crockett,7b
+19,Iowa,IA,Hamilton,5a
+39,Ohio,OH,Warren,6b
+13,Georgia,GA,Spalding,8a
+34,New Jersey,NJ,Hunterdon,7a
+29,Missouri,MO,Vernon,6b
+18,Indiana,IN,Parke,6a
+19,Iowa,IA,Franklin,5a
+13,Georgia,GA,Butts,8a
+08,Colorado,CO,Elbert,5b
+44,Rhode Island,RI,Bristol,7a
+48,Texas,TX,Bosque,8b
+44,Rhode Island,RI,Newport,7a
+39,Ohio,OH,Fairfield,6b
+38,North Dakota,ND,Pierce,3b
+17,Illinois,IL,Carroll,5a
+27,Minnesota,MN,Red Lake,3b
+41,Oregon,OR,Jefferson,7a
+47,Tennessee,TN,Cheatham,7b
+46,South Dakota,SD,Union,5a
+01,Alabama,AL,Elmore,8b
+13,Georgia,GA,Lumpkin,8a
+39,Ohio,OH,Knox,6a
+19,Iowa,IA,Bremer,5a
+48,Texas,TX,Goliad,9a
+37,North Carolina,NC,Henderson,7b
+12,Florida,FL,Indian River,10a
+48,Texas,TX,Roberts,7a
+31,Nebraska,NE,Deuel,5b
+36,New York,NY,Livingston,6a
+19,Iowa,IA,O'Brien,5a
+48,Texas,TX,Callahan,8a
+48,Texas,TX,Rains,8b
+20,Kansas,KS,Grant,6b
+51,Virginia,VA,Lee,7a
+35,New Mexico,NM,Sierra,8a
+05,Arkansas,AR,Drew,8b
+31,Nebraska,NE,Morrill,5b
+29,Missouri,MO,Benton,6b
+05,Arkansas,AR,Pike,8a
+08,Colorado,CO,Mesa,6b
+29,Missouri,MO,Dent,6b
+51,Virginia,VA,Tazewell,7a
+42,Pennsylvania,PA,Pike,6a
+42,Pennsylvania,PA,Susquehanna,5b
+48,Texas,TX,Morris,8b
+42,Pennsylvania,PA,Washington,6b
+50,Vermont,VT,Addison,5a
+20,Kansas,KS,Leavenworth,6b
+26,Michigan,MI,Muskegon,6a
+02,Alaska,AK,Copper River,
+02,Alaska,AK,Chugach,
+28,Mississippi,MS,Hinds,8b
+48,Texas,TX,Lampasas,8b
+51,Virginia,VA,Loudoun,7a
+29,Missouri,MO,St. Clair,6b
+36,New York,NY,Delaware,5a
+30,Montana,MT,Phillips,3b
+29,Missouri,MO,Mercer,5b
+53,Washington,WA,Mason,8b
+37,North Carolina,NC,Nash,8a
+51,Virginia,VA,York,8a
+29,Missouri,MO,Pettis,6b
+30,Montana,MT,Missoula,5b
+20,Kansas,KS,Chautauqua,7a
+48,Texas,TX,Upshur,8b
+51,Virginia,VA,Culpeper,7a
+40,Oklahoma,OK,Haskell,7b
+54,West Virginia,WV,Ohio,6b
+54,West Virginia,WV,Morgan,7a
+51,Virginia,VA,Rockingham,7a
+18,Indiana,IN,Whitley,6a
+06,California,CA,Siskiyou,6b
+46,South Dakota,SD,Day,4b
+22,Louisiana,LA,Orleans,9b
+01,Alabama,AL,Jefferson,8a
+01,Alabama,AL,Walker,8a
+29,Missouri,MO,DeKalb,6a
+12,Florida,FL,Gadsden,9a
+13,Georgia,GA,Dade,8a
+28,Mississippi,MS,DeSoto,8a
+51,Virginia,VA,Warren,7a
+17,Illinois,IL,Edwards,6b
+47,Tennessee,TN,Madison,7b
+69,,,Saipan,
+01,Alabama,AL,Randolph,8a
+37,North Carolina,NC,Ashe,7a
+08,Colorado,CO,Dolores,6b
+39,Ohio,OH,Licking,6a
+51,Virginia,VA,Manassas,7a
+05,Arkansas,AR,Union,8b
+17,Illinois,IL,Henderson,5b
+01,Alabama,AL,Montgomery,8b
+08,Colorado,CO,Arapahoe,6a
+21,Kentucky,KY,Marion,7a
+53,Washington,WA,Skagit,8b
+28,Mississippi,MS,Jones,8b
+55,Wisconsin,WI,Columbia,5a
+37,North Carolina,NC,Brunswick,8b
+27,Minnesota,MN,Clearwater,3b
+51,Virginia,VA,Northampton,8b
+20,Kansas,KS,Rooks,6a
+18,Indiana,IN,Fayette,6a
+31,Nebraska,NE,Hall,5b
+31,Nebraska,NE,Hamilton,5b
+31,Nebraska,NE,Loup,5a
+30,Montana,MT,Sheridan,3b
+31,Nebraska,NE,Frontier,5b
+72,,,Luquillo,
+01,Alabama,AL,Bibb,8a
+28,Mississippi,MS,Lauderdale,8b
+27,Minnesota,MN,Big Stone,4b
+27,Minnesota,MN,Blue Earth,5a
+51,Virginia,VA,Highland,6a
+51,Virginia,VA,Spotsylvania,7a
+33,New Hampshire,NH,Strafford,6a
+13,Georgia,GA,Houston,8b
+26,Michigan,MI,Delta,5a
+05,Arkansas,AR,Sebastian,7b
+06,California,CA,Santa Cruz,9b
+13,Georgia,GA,McIntosh,9a
+13,Georgia,GA,Monroe,8b
+29,Missouri,MO,Dunklin,8a
+48,Texas,TX,Wheeler,7a
+13,Georgia,GA,Forsyth,8a
+48,Texas,TX,San Patricio,9b
+28,Mississippi,MS,Walthall,8b
+29,Missouri,MO,Monroe,6a
+26,Michigan,MI,Isabella,6a
+48,Texas,TX,Moore,7a
+45,South Carolina,SC,Calhoun,8b
+56,Wyoming,WY,Sublette,4a
+21,Kentucky,KY,Fleming,6b
+55,Wisconsin,WI,Clark,4b
+45,South Carolina,SC,York,8a
+18,Indiana,IN,Adams,6a
+22,Louisiana,LA,Ascension,9a
+42,Pennsylvania,PA,Union,6b
+51,Virginia,VA,Chesterfield,7b
+22,Louisiana,LA,Acadia,9a
+42,Pennsylvania,PA,Crawford,6a
+46,South Dakota,SD,Tripp,5a
+19,Iowa,IA,Guthrie,5a
+19,Iowa,IA,Washington,5b
+46,South Dakota,SD,Sanborn,4b
+40,Oklahoma,OK,Grady,7b
+54,West Virginia,WV,Kanawha,7a
+55,Wisconsin,WI,St. Croix,4b
+42,Pennsylvania,PA,Venango,6a
+39,Ohio,OH,Summit,6b
+13,Georgia,GA,Glynn,9a
+48,Texas,TX,Webb,9b
+37,North Carolina,NC,Montgomery,8a
+23,Maine,ME,Aroostook,4a
+28,Mississippi,MS,Jefferson Davis,8b
+18,Indiana,IN,Washington,6b
+48,Texas,TX,Blanco,8b
+51,Virginia,VA,Brunswick,7b
+47,Tennessee,TN,Dyer,7b
+47,Tennessee,TN,Gibson,7b
+51,Virginia,VA,Prince George,7b
+05,Arkansas,AR,Lawrence,8a
+38,North Dakota,ND,Eddy,4a
+53,Washington,WA,Pierce,8b
+16,Idaho,ID,Lincoln,6a
+42,Pennsylvania,PA,Lancaster,7a
+55,Wisconsin,WI,Juneau,4b
+47,Tennessee,TN,Scott,7a
+46,South Dakota,SD,Corson,4b
+46,South Dakota,SD,Gregory,5a
+37,North Carolina,NC,Vance,7b
+21,Kentucky,KY,Caldwell,7a
+45,South Carolina,SC,Barnwell,8b
+47,Tennessee,TN,Decatur,7b
+18,Indiana,IN,Blackford,6a
+01,Alabama,AL,Etowah,8a
+16,Idaho,ID,Camas,6a
+20,Kansas,KS,Reno,6b
+47,Tennessee,TN,Maury,7b
+56,Wyoming,WY,Goshen,5a
+55,Wisconsin,WI,Rusk,4b
+55,Wisconsin,WI,Waukesha,5b
+21,Kentucky,KY,Garrard,7a
+25,Massachusetts,MA,Norfolk,6b
+18,Indiana,IN,Hendricks,6a
+17,Illinois,IL,Jackson,7a
+45,South Carolina,SC,Georgetown,8b
+38,North Dakota,ND,Hettinger,4a
+49,Utah,UT,Grand,7a
+49,Utah,UT,Tooele,6b
+51,Virginia,VA,Hampton,8b
+55,Wisconsin,WI,Buffalo,4b
+51,Virginia,VA,Frederick,7a
+54,West Virginia,WV,Lewis,6b
+27,Minnesota,MN,Polk,4a
+27,Minnesota,MN,Redwood,5a
+47,Tennessee,TN,Fayette,8a
+60,,,Swains Island,
+22,Louisiana,LA,St. Charles,9b
+05,Arkansas,AR,Poinsett,8a
+12,Florida,FL,Gulf,9a
+47,Tennessee,TN,Hamblen,7b
+01,Alabama,AL,Chilton,8b
+48,Texas,TX,Newton,9a
+48,Texas,TX,Hockley,7b
+13,Georgia,GA,Baldwin,8b
+37,North Carolina,NC,Transylvania,7b
+37,North Carolina,NC,Surry,7b
+01,Alabama,AL,Coffee,8b
+39,Ohio,OH,Shelby,6a
+16,Idaho,ID,Canyon,7a
+30,Montana,MT,Daniels,3b
+12,Florida,FL,Leon,9a
+40,Oklahoma,OK,Payne,7a
+01,Alabama,AL,Covington,8b
+18,Indiana,IN,Lawrence,6b
+20,Kansas,KS,Gray,6b
+21,Kentucky,KY,Casey,7a
+21,Kentucky,KY,Metcalfe,7a
+21,Kentucky,KY,Russell,7a
+22,Louisiana,LA,Beauregard,9a
+23,Maine,ME,Somerset,4b
+40,Oklahoma,OK,Cimarron,6b
+21,Kentucky,KY,Meade,7a
+21,Kentucky,KY,Nelson,7a
+21,Kentucky,KY,Owen,6b
+29,Missouri,MO,Pemiscot,7b
+31,Nebraska,NE,Nance,5b
+55,Wisconsin,WI,Menominee,4b
+48,Texas,TX,Panola,8b
+21,Kentucky,KY,Bath,6b
+48,Texas,TX,Anderson,8b
+51,Virginia,VA,Caroline,7b
+19,Iowa,IA,Sioux,5a
+06,California,CA,Glenn,9b
+29,Missouri,MO,St. Louis,7a
+13,Georgia,GA,Fannin,7b
+46,South Dakota,SD,Grant,4b
+46,South Dakota,SD,Marshall,4a
+53,Washington,WA,Thurston,8b
+31,Nebraska,NE,Knox,5a
+35,New Mexico,NM,Valencia,7a
+30,Montana,MT,Prairie,4a
+19,Iowa,IA,Allamakee,5a
+48,Texas,TX,Cameron,10a
+48,Texas,TX,Montgomery,9a
+08,Colorado,CO,Las Animas,6a
+48,Texas,TX,Llano,8b
+48,Texas,TX,Mason,8b
+37,North Carolina,NC,Clay,7b
+36,New York,NY,Orange,6b
+36,New York,NY,Schenectady,5b
+54,West Virginia,WV,Mingo,7a
+20,Kansas,KS,Wabaunsee,6b
+27,Minnesota,MN,Houston,5a
+21,Kentucky,KY,Nicholas,6b
+25,Massachusetts,MA,Plymouth,6b
+36,New York,NY,Bronx,7b
+37,North Carolina,NC,Dare,8b
+39,Ohio,OH,Medina,6a
+42,Pennsylvania,PA,Armstrong,6b
+34,New Jersey,NJ,Atlantic,7a
+55,Wisconsin,WI,Manitowoc,5b
+55,Wisconsin,WI,Door,5b
+37,North Carolina,NC,Columbus,8b
+39,Ohio,OH,Gallia,6b
+48,Texas,TX,Taylor,8a
+51,Virginia,VA,Colonial Heights,7b
+39,Ohio,OH,Coshocton,6b
+31,Nebraska,NE,Perkins,5b
+48,Texas,TX,Hartley,7a
+08,Colorado,CO,Grand,5a
+48,Texas,TX,Jim Wells,9b
+19,Iowa,IA,Winnebago,5a
+06,California,CA,San Luis Obispo,9a
+01,Alabama,AL,Henry,8b
+39,Ohio,OH,Wyandot,6a
+48,Texas,TX,Zapata,9b
+13,Georgia,GA,Lee,8b
+21,Kentucky,KY,Boyd,7a
+27,Minnesota,MN,Carver,4b
+31,Nebraska,NE,Colfax,5b
+45,South Carolina,SC,Chesterfield,8a
+47,Tennessee,TN,Lewis,7b
+41,Oregon,OR,Washington,8b
+51,Virginia,VA,Virginia Beach,8b
+30,Montana,MT,Madison,5a
+51,Virginia,VA,Lancaster,8a
+29,Missouri,MO,Bates,6b
+33,New Hampshire,NH,Belknap,5b
+51,Virginia,VA,Richmond,7b
+02,Alaska,AK,Skagway,
+02,Alaska,AK,Hoonah-Angoon,
+53,Washington,WA,Franklin,7a
+19,Iowa,IA,Ida,5a
+20,Kansas,KS,Sedgwick,7a
+48,Texas,TX,Travis,9a
+12,Florida,FL,Hillsborough,9b
+34,New Jersey,NJ,Mercer,7a
+31,Nebraska,NE,Butler,5b
+42,Pennsylvania,PA,Westmoreland,6b
+12,Florida,FL,Charlotte,10a
+19,Iowa,IA,Cass,5b
+39,Ohio,OH,Mercer,6a
+60,,,Rose Island,
+21,Kentucky,KY,Johnson,7a
+44,Rhode Island,RI,Kent,6b
+50,Vermont,VT,Windham,5b
+50,Vermont,VT,Orleans,4b
+20,Kansas,KS,Jackson,6b
+22,Louisiana,LA,Franklin,8b
+28,Mississippi,MS,Webster,8a
+25,Massachusetts,MA,Franklin,5b
+31,Nebraska,NE,Cherry,5b
+30,Montana,MT,Beaverhead,5a
+29,Missouri,MO,New Madrid,7b
+05,Arkansas,AR,Hempstead,8b
+29,Missouri,MO,Camden,6b
+51,Virginia,VA,Mecklenburg,7b
+21,Kentucky,KY,Webster,7a
+40,Oklahoma,OK,Garfield,7a
+53,Washington,WA,Skamania,7b
+26,Michigan,MI,Lenawee,6a
+13,Georgia,GA,Gilmer,8a
+27,Minnesota,MN,Roseau,3b
+28,Mississippi,MS,Madison,8b
+48,Texas,TX,Howard,8a
+54,West Virginia,WV,Wayne,7a
