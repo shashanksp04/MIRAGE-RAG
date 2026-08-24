@@ -357,11 +357,6 @@ The qualification classifier uses:
 meta-llama/Meta-Llama-3.1-8B-Instruct
 ```
 
-Use this Hugging Face token:
-
-```text
-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
-```
 
 ## Reliable method inside the notebook
 
