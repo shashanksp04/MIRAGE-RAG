@@ -12,7 +12,7 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 
 **Batch inference** (`Inference/generate.py`) runs many items through that RAG stack and then a separate **generation** step, using a multi-process, GPU-aware layout so RAG load is controlled and scalable.
 
-**Offline ingestion** (`preload_pipeline/bootstrap.py`) can bulk-seed content using a **manifest** so seeding is repeatable and auditable (see [§3](#3-offline-pipeline-a--building-the-vector-database-preload) for preload vs runtime storage notes).
+**Offline ingestion** now runs from the notebook-first preload architecture in `preload_pipeline/NEW-ARCHITECTURE/` and is executed independently from inference (see [§3](#3-offline-pipeline-a--building-the-vector-database-preload)).
 
 ### 1.2 Main directories
 
@@ -20,7 +20,7 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 | Path                | Role                                                                                                                                                                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `rag_agent/`        | Qdrant client (`QdrantStore`), embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
-| `preload_pipeline/` | Manifest-driven preload: lock, backup, adapters (CSV, web list, PDF dir), JSON run report.                                                                                                                                                                   |
+| `preload_pipeline/` | Notebook-orchestrated preload pipeline: canonical store + SQLite ledger + qualification + embedding + cumulative Qdrant snapshots.                                                                                                                           |
 | `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                                                                                                        |
 | `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                                                                                                         |
 | `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                                                                                                      |
@@ -45,7 +45,7 @@ Run batch jobs from the `Inference/` directory. Before starting workers, run the
 - `MainAgent` connects with `QdrantClient(url=...)` to a **running Qdrant server**. Set the URL via environment variable **`QDRANT_URL`** (default `http://127.0.0.1:6333`) or constructor argument `qdrant_url=...`. Optional **`QDRANT_API_KEY`** for secured deployments.
 - **On-disk storage** is owned by the Qdrant **server process**, not by each worker. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§5.9](#59-starting-the-qdrant-server)).
 - **Embeddings** are computed in-process by `SentenceTransformerEmbeddingFunction`; vectors are sent to Qdrant on upsert and query via `rag_agent/utils/qdrant_store.py` (`QdrantStore`).
-- **Embedding model** must match between preload and runtime when both are in use: default in both `bootstrap.py` and `generate.py` is **`BAAI/bge-base-en-v1.5`** (`--embed-model` / `--embed_model_name`).
+- **Embedding model** should stay aligned between notebook preload and runtime retrieval to avoid vector/schema mismatches.
 - **Device** for the sentence-transformer embedder should match (`--device` / `device`, often `"None"` for auto).
 
 #### 2.1.1 Why we moved from ChromaDB to Qdrant (server mode)
@@ -93,13 +93,13 @@ The crop dictionary does **not** replace or duplicate the vector store; it only 
 
 ### 2.3 Metadata — policy, storage, retrieval, and search
 
-Project policy (see `preload_pipeline/docs/README.md`) includes:
+Project policy (see `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` and `preload_pipeline/NEW-ARCHITECTURE/run.md`) includes:
 
 - `**location`**: Used to derive `**hardiness_zone`** via `rag_agent.utils.metadata` helpers. Preferred forms: `**"State"**` or `**"State, County"**` (full state name or two-letter abbreviation).
 - `**hardiness_zone**`: Expected when `location` resolves; may be empty if lookup cannot resolve.
-- `**month_year**`: For **preload** web/PDF sources, provide `**YYYY-MM`** in the manifest when you want consistent dating. CSV ingestion may leave `month_year` empty by design. Runtime web-search ingestion derives/validates `month_year` from search/page metadata per `rag_agent` tools.
+- `**month_year**`: For preload web/PDF sources, provide `**YYYY-MM`** where available. CSV ingestion may leave `month_year` empty by design. Runtime web-search ingestion derives/validates `month_year` from search/page metadata per `rag_agent` tools.
 
-Preload **manifest validation** (`preload_pipeline/preload/config.py`) enforces:
+Notebook preload preflight/input validation enforces:
 
 - **CSV**: each source must have `**location`** or `**location_field`** (for per-row location).
 - `**web_page_list` and `pdf_dir**`: each source must have `**location**` (for hardiness derivation).
@@ -208,172 +208,84 @@ normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 
 ### 2.4 Shared ingestion behavior (preload vs runtime)
 
-Preload reuses `rag_agent` components so offline and online ingestion stay consistent:
+The notebook preload pipeline remains aligned with runtime retrieval contracts at the data level:
 
-- **Embeddings**: `SentenceTransformerEmbeddingFunction`
-- **Chunking / hashing**: `ContentUtils.chunk_by_tokens`, `compute_content_hash`, `content_hash_exists`
-- **Web**: `WebAddition.add_web_content`
-- **PDF**: `PDFAddition.add_pdf_content`
+- Deterministic content identity and global deduplication via content hash.
+- Metadata-normalized chunk payloads for location/hardiness/time-aware retrieval.
+- Embedding + Qdrant insertion in batches with retry handling.
 
-CSV rows are turned into narrative text inside the preload adapter, then passed through the same chunking and deduplication path.
+Operationally, preload now runs as an offline notebook workflow and no longer depends on inference-time bootstrap steps.
 
 ---
 
 ## 3. Offline pipeline A — Building the vector database (preload)
 
-> **Note:** `preload_pipeline/bootstrap.py` still ingests into **ChromaDB** today. Runtime **`rag_agent`** reads/writes **Qdrant** via a shared server ([§2.1](#21-qdrant-server-and-collection-name)). Preload migration to Qdrant is a follow-up; until then, bulk-seed via runtime ingestion during inference, or migrate preload separately (see [MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md](MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md) §4.7–4.9).
+The preload pipeline now runs as a notebook-orchestrated offline build in `preload_pipeline/NEW-ARCHITECTURE/` and is intentionally decoupled from inference execution.
 
-### 3.1 Stage 0 — Lock and backup
+### 3.1 Architecture and execution model
 
-- A **file lock** is acquired at `**<persist_dir_parent>/.preload_lock`** so two preload runs do not corrupt the same database concurrently.
-- If the persistence directory already exists, it is **copied** to a timestamped folder under `**backups/`** (default: `<persist_dir_parent>/backups/<timestamp>_before_preload/`), with optional pruning of old backups (`--keep-last`, default 20).
-- If the persist dir does not exist, it is created.
+- The orchestrator is the notebook `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb`.
+- Qdrant runs as a separate server process on the same compute node and is accessed at `http://127.0.0.1:6333`.
+- The pipeline persists state in four layers: SQLite processing ledger, canonical content store, Qdrant retrieval index, and cumulative snapshots.
+- One cumulative working collection is used (for example `mirage_base_build`) and advanced state-by-state.
 
-**Assumptions:** You have disk space for a full copy; you run preload when no other process is writing the same Chroma path.
-
-### 3.2 Stage 1 — Manifest loading
-
-- The manifest is a YAML file with a top-level `**sources:`** list (non-empty). Each entry must include `**name`** and `**type**`.
-- Supported types: `**csv**`, `**web_page_list**`, `**pdf_dir**` (see `preload_pipeline/bootstrap.py`).
-- Validation rules for location are in [§2.3](#23-metadata-conventions-location-hardiness-monthyear).
-
-Example patterns appear in `preload_pipeline/docs/manifest.example.yaml`.
-
-### 3.3 Stage 2 — Integration with `rag_agent`
-
-`preload_pipeline/preload/rag_agent_integration.py` builds:
-
-- `chromadb.PersistentClient(path=<persist_dir>)`
-- `get_or_create_collection(name=<collection>, embedding_function=...)`
-- `ContentUtils`, `WebAddition`, `PDFAddition`
-
-With `--dry-run`, writes to the collection are suppressed via a shim that still exercises logic but logs “would add” instead of persisting chunks.
-
-### 3.4 Stage 3 — Source adapters
-
-#### 3.4.1 `web_page_list`
-
-- **Requires** `urls` (non-empty list).
-- Passes `**location`** and `**month_year`** from the manifest into `WebAddition.add_web_content(url=..., location=..., month_year=...)`.
-- Success/failure is tracked per URL; chunks added and duplicate skips are aggregated from the tool response.
-
-#### 3.4.2 `pdf_dir`
-
-- Iterates PDFs under the configured directory and calls `**PDFAddition.add_pdf_content**` with the same metadata pattern as web sources.
-
-#### 3.4.3 `csv`
-
-- Implements **row → structured narrative → chunk → dedupe → `collection.add`**, using `ContentUtils` and hash checks like web/PDF.
-- Optional `**id_field**` maps a CSV column to stable record IDs.
-- Rows that cannot resolve location (per adapter rules) are treated as failures so metadata stays reliable.
-
-### 3.5 Stage 4 — Run report
-
-After all sources finish, a JSON report is written next to the persistence parent:
-
-- **Filename pattern:** `preload_run_report_<YYYY-MM-DD_HHMMSS>.json`
-- **Location:** `out_dir = persist_dir.parent` (see `preload_pipeline/preload/pipeline/report.py`)
-
-The report includes manifest path, persist dir, collection name, timestamps, optional backup path, per-source success/failure counts, and item-level processed/added/skipped/failed totals.
-
-### 3.6 Helper: generating `web_page_list` YAML from names
-
-For many URLs sharing one base path and metadata, use the flow documented in `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md`:
-
-- Inputs: `**--base-url`** and exactly one of `**--names-file`** (one name per line) or `**--urls-file**` (one full URL per line), plus optional `**--output**`, `**--location**`, `**--entity-type**`, `**--source-org**`, repeatable `**--tag**`, etc.
-- In names mode, names are normalized to URL slugs; in URL mode, full URLs are preserved and source names are derived using the `--base-url` context.
-
-### 3.7 How to run preload
-
-From the **repository root**, install dependencies once:
-
-```bash
-pip install -r requirments.txt
-```
-
-Filename spelling (`**requirments**`) is deliberate. Details: **[§8.7](#87-example-python-environment-hpc-style-sglang)**.
-
-Then run preload from `**preload_pipeline/`** (or with adjusted paths):
+### 3.2 Data flow per state
 
 ```text
-python bootstrap.py \
-  --manifest manifest.yaml \
-  --persist-dir ../rag_agent/chroma_database/chroma_db \
-  --collection meta-mirage_collection \
-  --rag-agent-dir ../rag_agent
+Source discovery
+→ Extraction + normalization
+→ Canonical persistence + SQLite ledger
+→ Global deduplication
+→ Qualification
+→ Accept/reject decision
+→ RAG chunking + metadata enrichment + metadata validation
+→ Batch embedding + batch Qdrant upsert
+→ Retry failed units
+→ Terminal-state validation
+→ Cumulative snapshot + manifest
+→ Atomic update of current state in crop_occurrences.json
 ```
 
-Important flags:
+### 3.3 Input and support files
 
+- Inputs are auto-discovered from the working directory with at most one matching PDF zip, one CSV zip, and one URL file pattern.
+- At least one source type must be present for a run.
+- `county_state_hardiness_zone.csv` and `crop_occurrences.json` must exist at the build root.
 
-| Flag              | Meaning                                                                 |
-| ----------------- | ----------------------------------------------------------------------- |
-| `--manifest`      | Path to YAML                                                            |
-| `--persist-dir`   | Chroma persistence **directory** (not a single file)                    |
-| `--collection`    | Must match runtime (`meta-mirage_collection` by default in `MainAgent`) |
-| `--rag-agent-dir` | Directory containing the `rag_agent` package                            |
-| `--embed-model`   | Must match `rag_agent` / `generate.py`                                  |
-| `--device`        | Must match embedding runtime                                            |
-| `--dry-run`       | Exercise pipeline without writing chunks                                |
+### 3.4 State progression and snapshots
 
+- Runs are sequenced per build (for example `001_IL`, `002_IN`, `003_IA`).
+- Each completed run emits a cumulative Qdrant snapshot and a run manifest under `runs/<build>/<run_id>/`.
+- Snapshots are used for restart/reuse across compute allocations.
 
-**Recommended workflow:** stop anything using the DB → run preload → inspect `preload_run_report_*.json` → restart consumers.
+### 3.5 Deduplication, retries, and terminal states
 
-**Requirements summary:** matching embed model, device, collection name, and persist path; for web/PDF sources, manifest `**location`**; copy the **entire** Chroma folder when moving machines—do not copy only SQLite files in isolation.
+- Document identity is content-hash based and global across states.
+- Duplicate documents are recorded and skipped before qualification/indexing.
+- Failures are retried by stage within the current run; unrecoverable items become permanently failed terminal units.
+- Runs can still complete when terminal validation passes with documented permanent failures.
 
-### 3.8 Building the vector database — working directory and example commands
+### 3.6 Crop occurrences behavior in preload
 
-**Always run `bootstrap.py` and preload-related commands from the `preload_pipeline/` directory** so relative paths in manifests and scripts match the layout described in `preload_pipeline/docs/README.md`.
+- `crop_occurrences.json` is a single cumulative artifact for all states.
+- Each run updates only the current state section and preserves all other states untouched.
+- State updates are atomic to avoid partial-file corruption.
 
-#### If ingesting URL lists (generate manifest sources, then preload)
+### 3.7 How to run (notebook path)
 
-1. Generate manifest-ready `web_page_list` YAML from either a names file or a full URLs file (example paths below are relative to `**preload_pipeline/`**):
+From `preload_pipeline/NEW-ARCHITECTURE/`:
 
-```bash
-python Ingestion/URLs/scripts/generate_web_sources.py \
-  --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "Ingestion/URLs/names/uiuc.txt" \
-  --location "Illinois" \
-  --entity-type "disease" \
-  --source-org "Illinois Extension" \
-  --output "Ingestion/URLs/Outputs/uiuc_generated_sources.yaml"
-```
+1. Start Qdrant with storage path configured.
+2. Verify server health with `curl http://127.0.0.1:6333/collections`.
+3. Open and run `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` top-to-bottom.
+4. Set build/state/run identifiers and confirm discovered inputs.
+5. Enable `RUN_PIPELINE = True` in a dedicated cell, then execute the pipeline cell.
 
-Alternative URL-file mode:
+For detailed commands and safeguards, use:
 
-```bash
-python Ingestion/URLs/scripts/generate_web_sources.py \
-  --base-url "https://extension.illinois.edu/plant-problems/" \
-  --urls-file "Ingestion/URLs/names/uiuc_urls.txt" \
-  --location "Illinois" \
-  --entity-type "disease" \
-  --source-org "Illinois Extension" \
-  --output "Ingestion/URLs/Outputs/uiuc_generated_sources.yaml"
-```
-
-1. Run the preload pipeline against that manifest (still from `**preload_pipeline/**`). Use the same YAML path you passed to `--output` in step 1:
-
-```bash
-python bootstrap.py \
-  --manifest Ingestion/URLs/Outputs/uiuc_generated_sources.yaml \
-  --persist-dir ./chroma_database_src/chroma_db \
-  --collection meta-mirage_collection \
-  --rag-agent-dir ../rag_agent
-```
-
-Adjust `--manifest`, `--persist-dir`, and `--rag-agent-dir` to your actual files and output locations. If you copy or save the generated YAML under `Ingestion/URLs/YAMLfiles/` instead (as in `preload_pipeline/docs/README.md`), set `--manifest` to that path consistently.
-
-#### If ingesting PDFs only
-
-Prepare a manifest (for example under `Ingestion/PDFs/YAMLfiles/`) and run (from `**preload_pipeline/**`):
-
-```bash
-python bootstrap.py \
-  --manifest Ingestion/PDFs/YAMLfiles/uiuc_batches.yaml \
-  --persist-dir ./chroma_database_src/chroma_db \
-  --collection meta-mirage_collection \
-  --rag-agent-dir ../rag_agent
-```
+- `preload_pipeline/NEW-ARCHITECTURE/run.md`
+- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`
+- `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`
 
 ---
 
@@ -783,9 +695,10 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 ### 8.1 Before preload
 
 - Install `**pip install -r requirments.txt`** from the **repository root** (see §8.7). Filename `**requirments.txt`** (**spelling deliberate**).
-- Prepare `**manifest.yaml`** with valid `sources` and required **location** fields.
-- Ensure enough disk for **backup +** new chunks.
-- **Stop** any service or batch job using the target `**--persist-dir`**.
+- Start Qdrant on the same node/session as Jupyter and verify `curl http://127.0.0.1:6333/collections` works.
+- Ensure support files exist in the preload working directory: `county_state_hardiness_zone.csv` and `crop_occurrences.json`.
+- Ensure only intended state input files are present for auto-discovery (PDF zip / CSV zip / URL file patterns).
+- Ensure enough disk for canonical storage, snapshots, and run artifacts.
 
 ### 8.2 Before batch inference (`generate.py`)
 
@@ -857,21 +770,21 @@ Illustrative steps for a clean venv. Install the **single** consolidated pin lis
 
 ```bash
 module purge
-module load python/3.12.1   # example; use your site's module
+module load python/3.12.1
 python --version
 python3 -m venv mirage
 source mirage/bin/activate
 pip install --upgrade pip wheel setuptools
 cd /path/to/MIRAGE-RAG    # MIRAGE-RAG repository root — adjust checkout path
-pip install -r requirments.txt
+pip install -r requirements.txt
 python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
 ```
 
-If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirments.txt**` (expect some “already satisfied” lines).
+If `**pip install -r requirements.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirements.txt**` (expect some “already satisfied” lines).
 
-### 8.7.1 `requirments.txt` — consolidated environment
+### 8.7.1 `requirements.txt` — consolidated environment
 
-Repo-root **`requirments.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Qdrant client**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirements.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Qdrant client**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -909,9 +822,9 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Ablation settings map                                                      | `rag_agent/ablation_configs.json`                                       |
 | Instruction templates (`confidence_`*, `ablation_*`)                       | `rag_agent/model_instructions.md`                                       |
 | Query enrichment                                                           | `rag_agent/crop_query_enrichment.py`                                    |
-| Preload CLI                                                                | `preload_pipeline/bootstrap.py`                                         |
-| Manifest example                                                           | `preload_pipeline/docs/manifest.example.yaml`                           |
-| Preload config validation                                                  | `preload_pipeline/preload/config.py`                                    |
+| Preload notebook orchestrator                                              | `preload_pipeline/NEW-ARCHITECTURE/MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` |
+| Preload architecture reference                                             | `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` |
+| Preload run guide                                                          | `preload_pipeline/NEW-ARCHITECTURE/run.md`                              |
 | Crop dictionary build                                                      | `preload_pipeline/Dict-Value-Database/scripts/build_crop_dictionary.py` |
 | Python dependency pins (`pip install -r`)                                  | `requirments.txt` (repo root; see §8.7.1)                               |
 
@@ -921,9 +834,11 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 
 | Document                                                               | Contents                                                                                        |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping, preload migration notes, testing checklist                         |
+| `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping and migration history                                                |
 | `Documentation.md`                                                     | Multi-GPU queue design, Rank0 reset, RAG failure handling, keyword extractor note               |
-| `preload_pipeline/docs/README.md`                                      | Preload stages, metadata policy, CLI, persistence strategy                                      |
+| `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` | Final notebook preload architecture and persistence model                                        |
+| `preload_pipeline/NEW-ARCHITECTURE/run.md`                            | Step-by-step execution for state runs                                                            |
+| `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`     | Qdrant server setup, snapshot create/restore, and notebook integration                           |
 | `Inference/README.md`                                                  | Crop DB filename and enrichment flags                                                           |
 | `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`     | Enrichment design and `effective_query` data flow                                               |
 | `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md`      | Manifest `web_page_list` YAML generation                                                        |

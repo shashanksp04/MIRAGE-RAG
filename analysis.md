@@ -15,11 +15,11 @@ MIRAGE-RAG is an agricultural, multimodal retrieval-augmented generation system 
 - LLM-as-a-judge evaluation for identification and management-oriented questions.
 - Ablation configurations for comparing progressively richer RAG behaviors.
 
-The database migration is **partially complete**:
+The preload/runtime architecture is now aligned on Qdrant:
 
-- **Qdrant is the active vector store for the runtime `rag_agent` path.** `MainAgent`, retrieval, confidence evaluation, runtime web ingestion, and runtime PDF ingestion use `QdrantClient` and `QdrantStore`.
-- **The preload pipeline still uses ChromaDB.** It creates a `chromadb.PersistentClient`, writes to a local Chroma persistence directory, and retains Chroma-specific adapters and CLI terminology.
-- Therefore, the project is not yet a single-backend Qdrant system. It currently has a Qdrant runtime backend and a separate Chroma preload backend. The existing `README.MD` describes Chroma too broadly and is out of date for the runtime architecture.
+- **Qdrant is the active vector store for runtime `rag_agent` paths.**
+- **Preload has moved to notebook orchestration** under `preload_pipeline/NEW-ARCHITECTURE/`, with canonical persistence, SQLite processing ledger, batch embedding/upsert, and cumulative per-state Qdrant snapshots.
+- The preload pipeline is intentionally decoupled from inference startup and executed as an offline Jupyter workflow.
 
 `Guide.md` is the most current architectural reference, although it also contains at least one operational mismatch: it describes a rank-0 collection reset that the current `Inference/generate.py` does not appear to enable in its checked-in startup path.
 
@@ -68,21 +68,22 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Manifest[manifest.yaml] --> Bootstrap[preload_pipeline/bootstrap.py]
-    Bootstrap --> Lock[File lock]
-    Lock --> Backup[Persistence backup]
-    Backup --> Adapters[CSV / web list / PDF directory adapters]
-    Adapters --> Chroma[(Local ChromaDB persistence)]
-    Adapters --> Report[JSON run report]
+  Sources[PDF ZIP / CSV ZIP / URL file] --> Extract[Extraction + normalization]
+  Extract --> Canonical[(Canonical store)]
+  Canonical --> Ledger[(SQLite processing ledger)]
+  Ledger --> Qualify[Qualification + accept/reject]
+  Qualify --> RagChunk[RAG chunking + metadata validation]
+  RagChunk --> Embed[Batch embeddings]
+  Embed --> Qdrant[(Qdrant cumulative collection)]
+  Qdrant --> Snapshots[(Per-state cumulative snapshots + manifests)]
+  Qualify --> CropOcc[(crop_occurrences.json state update)]
 ```
 
-This is a separate implementation path. `preload_pipeline/preload/rag_agent_integration.py` imports `chromadb`, creates a `PersistentClient`, and constructs a Chroma collection. `preload_pipeline/preload/pipeline/chunk_upsert.py` also defines a standalone `ChromaUpserter`.
+This notebook path runs offline, keeps deterministic state across runs, and supports resume/retry semantics without reprocessing completed units.
 
-The preload output is not automatically a Qdrant collection. A Chroma directory cannot be passed to the current runtime `MainAgent`, which expects a reachable Qdrant server and collection.
+## 3. Database and Preload Status
 
-## 3. Database Migration Status
-
-### 3.1 What has migrated to Qdrant
+### 3.1 Runtime Qdrant path
 
 The following runtime responsibilities are implemented with Qdrant:
 
@@ -113,25 +114,18 @@ The following runtime responsibilities are implemented with Qdrant:
 - `rag_agent/test_qdrant_migration.py`
   - Exercises embedding helpers, filter translation, collection lifecycle, upsert, deduplication, and search.
 
-### 3.2 What remains Chroma-specific
+### 3.2 Notebook preload path
 
-The following preload components still use ChromaDB directly:
+The preload path now operates under `preload_pipeline/NEW-ARCHITECTURE/`:
 
-- `preload_pipeline/bootstrap.py` uses Chroma terminology in its `--persist-dir`, `--collection`, and `--dry-run` help text.
-- `preload_pipeline/preload/pipeline/chunk_upsert.py` imports `chromadb` and writes through `PersistentClient` and `collection.upsert`.
-- `preload_pipeline/preload/rag_agent_integration.py` imports `chromadb`, creates the persistent collection, and exposes a Chroma-shaped interface to the adapters.
-- `preload_pipeline/docs/README.md` describes the preload output as a compatible Chroma database for the RAG agent. That statement is no longer correct for the current Qdrant runtime unless a separate migration/import step is performed.
-- Existing preload artifacts and logs use paths such as `chroma_database_src/chroma_db`.
-
-The migration guide in `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md` is useful as a design reference, but its opening inventory describes the pre-migration state and should not be read as a current inventory of all runtime code.
+- `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` orchestrates run configuration, source discovery, extraction, qualification, chunking, embedding, upsert, validation, snapshot, and manifest generation.
+- `metamirage_preload_final_architecture_updated.md` defines persistence contracts and run invariants (canonical store, SQLite ledger, global deduplication, terminal states).
+- `run.md` defines run order, state sequencing, Qdrant startup, and resume behavior.
+- `qdrant_delta_setup_context.md` documents snapshot creation, download, restore, and reuse across sessions.
 
 ### 3.3 Practical conclusion
 
-The accurate description is:
-
-> Qdrant is the current runtime vector backend, while the manifest-driven preload pipeline remains ChromaDB-based and has not yet been integrated with the Qdrant server.
-
-This distinction is the most important README correction. A user following the current README may believe that preload and runtime share the same Chroma persistence directory, which is not true in the current implementation.
+The current architecture uses Qdrant for both runtime retrieval and notebook-driven preload builds, while keeping preload execution decoupled from inference-time orchestration.
 
 ## 4. Embeddings, Chunking, and Storage Model
 
@@ -147,7 +141,7 @@ The embedding model and device must be aligned across all producers and consumer
 
 `ContentUtils` uses a Hugging Face tokenizer and enforces a maximum of 512 tokens. The configured PDF and web chunk limits are lower, with overlap to preserve context across boundaries. Chunks are decoded back into text and stored with a formatted title prefix on the runtime ingestion paths.
 
-The preload pipeline also delegates important work to runtime ingestion utilities in some paths, but it retains additional standalone Chroma ingestion code. This increases the risk of behavior divergence between preload and runtime chunking, embedding, and metadata handling.
+The notebook preload path uses deterministic chunking and metadata contracts designed to stay compatible with runtime retrieval expectations.
 
 ### 4.3 Qdrant point representation
 
@@ -179,7 +173,7 @@ Typical metadata includes:
 
 The system treats location as a retrieval signal rather than simply a display field. A location is normalized and passed through hardiness-zone lookup utilities. The resulting `hardiness_zone` can be used with title and month/year filters.
 
-The preload manifest validates that:
+The notebook preload preflight/validation expects that:
 
 - CSV sources provide either a source-level `location` or a row-level `location_field`.
 - Web-page-list and PDF-directory sources provide a source-level `location`.
@@ -355,21 +349,17 @@ The framework provides a stable runtime entrypoint for controlled comparisons. T
 
 ## 10. Preload Pipeline
 
-The preload subsystem is manifest-driven and provides several useful operational safeguards:
+The preload subsystem is notebook-orchestrated and provides several useful operational safeguards:
 
-- Manifest schema validation.
+- Input discovery and configuration validation.
 - Location metadata validation.
 - File locking to avoid concurrent preload writers.
-- Persistence-directory backups before write-heavy operations.
-- CSV, web-page-list, and recursive PDF-directory adapters.
-- Aggregate JSON run reports.
-- Dry-run support.
+- State-scoped retries and terminal-state validation.
+- Global deduplication via canonical content hashing.
+- Cumulative per-state Qdrant snapshots and manifests.
+- Atomic updates to cumulative `crop_occurrences.json` state sections.
 
-The adapters are relatively thin and delegate ingestion to shared or related RAG utilities. CSV ingestion processes rows and tracks added, skipped, and failed counts. Web and PDF adapters call runtime-style ingestion tools.
-
-The architectural problem is backend ownership: the integration layer still supplies Chroma collections to tools whose current runtime versions expect `QdrantStore`. This creates an explicit migration boundary that has not been resolved. The preload documentation therefore describes a subsystem that may work independently, but it does not currently describe a complete path into the active Qdrant collection.
-
-An existing preload report also contains machine-specific paths and aggregate failure counters without corresponding item-level error entries. The reporting format is useful for run summaries but should not be treated as a complete audit log.
+The pipeline is now notebook-driven and offline, with explicit resume behavior through persisted canonical content, SQLite ledger state, and snapshot restore support.
 
 ## 11. Evaluation and Benchmarking
 
@@ -408,13 +398,11 @@ LLM-as-a-judge scores provide useful comparative evidence but are not equivalent
 
 ### `README.MD`
 
-The README is a good high-level starting point, but it is stale in the most important architectural section. It says offline preload writes to persistent Chroma, presents Chroma as the central database in diagrams, and says runtime web augmentation writes back to Chroma. The runtime code now writes to Qdrant.
-
-Its setup sanity check imports `chromadb`, while the current runtime dependency list includes `qdrant-client`. The preload-specific Chroma statements are still relevant, but they need to be scoped explicitly to preload rather than presented as the whole system.
+README should describe preload as the notebook-based NEW-ARCHITECTURE flow and keep runtime storage references centered on Qdrant. Any remaining Chroma-specific language should be treated as historical unless explicitly tied to legacy folders.
 
 ### `Guide.md`
 
-This is the strongest current reference for the Qdrant runtime, server startup, metadata strategy, retrieval scoring, and batch architecture. It explicitly documents the split between Qdrant runtime storage and Chroma preload storage.
+Guide should present runtime Qdrant behavior and notebook preload behavior as complementary but operationally separate paths.
 
 It should still be reconciled with the current `generate.py` startup behavior, particularly the rank-0 reset description.
 
@@ -424,9 +412,9 @@ This is a detailed migration design and API mapping document. It explains the co
 
 It reads partly like a pre-implementation plan. Current runtime code has completed much of the `rag_agent` migration, but preload files remain in the older state.
 
-### `preload_pipeline/docs/README.md`
+### `preload_pipeline/NEW-ARCHITECTURE/*`
 
-This document is internally consistent for a Chroma-based preload subsystem, but its claim that preload produces the database used directly by `rag_agent` conflicts with the current Qdrant runtime architecture.
+The NEW-ARCHITECTURE docs are the primary preload reference for current operations (run order, persistence model, snapshotting, and resume behavior).
 
 ### `MSCdocs/Documentation.md` and other notes
 
@@ -435,7 +423,7 @@ These documents preserve valuable design history around queues, worker behavior,
 ## 13. Strengths of the Implementation
 
 - Clear separation between runtime RAG, generation, and evaluation.
-- Qdrant server mode is a sensible response to multi-process access problems with a shared local Chroma directory.
+- Qdrant server mode is a sensible response to multi-process access and lifecycle issues in distributed inference workloads.
 - Deterministic point IDs make runtime upserts repeatable.
 - Metadata payload indexes support the location, time, title, and deduplication use cases.
 - Progressive retrieval retains semantic-only fallback instead of failing when metadata is incomplete.
@@ -449,42 +437,38 @@ These documents preserve valuable design history around queues, worker behavior,
 
 ### High priority
 
-1. **Backend split is not fully integrated.** Chroma preload output does not directly populate the Qdrant collection used by runtime retrieval.
-2. **Collection lifecycle behavior is ambiguous.** The reset method exists and documentation describes it, but the current inference startup path appears to disable it for all workers.
-3. **README architecture is misleading.** It identifies Chroma as the active system-wide database and gives commands that do not match the Qdrant runtime.
-4. **Experiment state can leak.** Runtime web ingestion mutates the shared Qdrant collection, so reproducibility depends on collection reset or snapshots.
+1. **Collection lifecycle behavior is ambiguous.** The reset method exists and documentation describes it, but the current inference startup path appears to disable it for all workers.
+2. **README preload/runtime wording can drift.** Preload notebook flow and runtime flow must remain clearly separated in documentation.
+3. **Experiment state can leak.** Runtime web ingestion mutates the shared Qdrant collection, so reproducibility depends on collection reset or snapshots.
 
 ### Medium priority
 
-5. **Preload and runtime APIs have divergent abstractions.** Chroma-shaped collection methods remain alongside `QdrantStore`, increasing maintenance and migration risk.
+5. **Preload and runtime operational contracts must stay synchronized.** Metadata schema, chunking assumptions, and collection naming conventions need routine consistency checks.
 6. **Documentation and launcher defaults drift from repository contents.** Some scripts reference benchmark directories or modes not present in the visible layout.
 7. **Failure handling is heuristic.** Hard/soft classification uses error-message substrings and RAG workers do not have a per-request timeout.
 8. **Run reports are aggregate-heavy.** Item failures may be counted without a structured item-level error record.
-9. **Score terminology retains migration history.** Chroma naming remains in Qdrant filter translation helpers and comments, which can obscure current ownership.
+9. **Score terminology retains migration history.** Legacy naming in filter translation helpers/comments can obscure current ownership.
 
 ### Lower priority
 
 10. **Evaluation artifacts lack one canonical experiment manifest.** Results need external context to reconstruct exact model, judge, ablation, database, and endpoint conditions.
 11. **The dependency file is named `requirments.txt`.** The spelling is deliberate in existing documentation but remains an avoidable source of installation mistakes.
-12. **Some comments and disabled code paths describe the old local-Chroma lifecycle.** They can confuse future maintenance even when they are no longer active.
+12. **Some comments and disabled code paths describe older lifecycle assumptions.** They can confuse future maintenance even when they are no longer active.
 
 ## 15. Recommended Next Engineering Sequence
 
 This report does not modify the existing implementation. Based on the current state, the lowest-risk engineering sequence would be:
 
-1. Decide whether Qdrant is the sole intended backend.
-2. If yes, replace or isolate the Chroma preload integration behind a Qdrant-backed preload adapter that uses the same embedding, metadata, dedupe, and chunk contracts as runtime ingestion.
-3. Define an explicit data migration/import procedure for existing Chroma persistence directories.
-4. Make collection lifecycle policy explicit in inference: reset, reuse, or select a named run collection.
-5. Reconcile `README.MD`, preload documentation, and `Guide.md` with executable defaults.
-6. Add a small integration check that starts or connects to Qdrant, creates the collection, inserts one chunk, filters it, retrieves it, and verifies deduplication.
-7. Add a reproducibility manifest containing benchmark path, model endpoints, embedding model, Qdrant URL/collection, ablation ID, and collection reset state.
-8. Improve preload reports with per-item structured error records and machine-independent paths where appropriate.
+1. Make collection lifecycle policy explicit in inference: reset, reuse, or select a named run collection.
+2. Keep `README.MD`, `Guide.md`, and NEW-ARCHITECTURE preload docs synchronized with executable defaults.
+3. Add a small integration check that starts or connects to Qdrant, creates the collection, inserts one chunk, filters it, retrieves it, and verifies deduplication.
+4. Add a reproducibility manifest containing benchmark path, model endpoints, embedding model, Qdrant URL/collection, ablation ID, and collection reset state.
+5. Extend preload reporting validation with clearer per-unit failure categorization and portable path handling.
 
 ## 16. Bottom Line
 
-The project has made a meaningful migration from ChromaDB to Qdrant, but only the runtime RAG subsystem has completed that transition. The active architecture is now Qdrant server mode plus in-process embeddings, while the offline preload pipeline remains Chroma-based.
+The project architecture now aligns preload and runtime storage around Qdrant, with preload executed through an offline notebook workflow that manages canonical persistence, processing ledger state, and cumulative snapshots.
 
-The README should therefore not be described as merely slightly outdated. Its central database diagram and several operational commands describe the old or partial architecture. The most accurate current mental model is a two-backend transitional system with a Qdrant runtime, a Chroma preload path, a crop-dictionary enrichment sidecar, and a multi-process RAG-to-generation batch pipeline.
+The most accurate mental model is a Qdrant-centered system with two distinct execution modes: notebook-based offline preload and multi-process runtime RAG/generation inference.
 
 This analysis is based on static inspection of the repository files and existing documentation. No inference job, Qdrant server, preload run, or evaluation run was executed as part of this report.

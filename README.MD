@@ -6,7 +6,7 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 
 ## Architecture At A Glance
 
-- **Offline preload** writes chunked, embedded, metadata-rich documents into persistent Chroma.
+- **Offline preload** runs as a notebook-orchestrated pipeline and builds a cumulative Qdrant collection with snapshots.
 - **Optional query enrichment** injects crop context into the user question when crop names are implicit.
 - **Runtime RAG workers** retrieve evidence, score confidence, and optionally augment via web ingestion.
 - **Generation stage** combines `effective_query` and retrieved context to produce final outputs.
@@ -15,8 +15,10 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 ```mermaid
 flowchart LR
   rawSources[RawSources]
-  preload[PreloadPipeline]
-  chroma[(ChromaDB)]
+  preload[NotebookPreloadPipeline]
+  canonical[(CanonicalStore+SQLiteLedger)]
+  qdrant[(QdrantServerCollection)]
+  snap[(PerStateSnapshots)]
   cropDict[CropDictionaryJSON]
   dataset[InferenceDataset]
   enrich[QueryEnrichment]
@@ -26,13 +28,15 @@ flowchart LR
   out[JSONLOutput]
 
   rawSources --> preload
-  preload --> chroma
+  preload --> canonical
+  canonical --> qdrant
+  qdrant --> snap
   dataset --> enrich
   cropDict --> enrich
   enrich --> rag
-  chroma --> rag
+  qdrant --> rag
   rag -->|"low_confidence"| webAug
-  webAug --> chroma
+  webAug --> qdrant
   rag --> gen
   gen --> out
 ```
@@ -63,13 +67,13 @@ pip install -r requirments.txt
 
 Install **from the repository root** so `pip` resolves paths correctly.
 
-**Pin file.** **`requirments.txt`** (spelling deliberate) is the single consolidated **`package==version`** snapshot for preload, Chroma/embeddings, **`sglang`/`vllm`**, ADK-era clients, and CUDA-associated wheels (**~346** pins; **`pip`/`setuptools`/`wheel`** are omitted). Refresh from **`pip freeze`** when you recreate a canonical environment (**`Guide.md` §§8.7–8.7.1**).
+**Pin file.** **`requirments.txt`** (spelling deliberate) is the single consolidated **`package==version`** snapshot for preload tooling, embeddings, Qdrant client/runtime dependencies, **`sglang`/`vllm`**, ADK-era clients, and CUDA-associated wheels (**~346** pins; **`pip`/`setuptools`/`wheel`** are omitted). Refresh from **`pip freeze`** when you recreate a canonical environment (**`Guide.md` §§8.7–8.7.1**).
 
 ### Optional sanity check
 
 ```bash
 python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'))"
-python -c "import chromadb, sentence_transformers; print('chromadb + sentence-transformers OK')"
+python -c "import qdrant_client, sentence_transformers; print('qdrant-client + sentence-transformers OK')"
 ```
 
 ### Runtime servers and HPC
@@ -81,27 +85,30 @@ python -c "import chromadb, sentence_transformers; print('chromadb + sentence-tr
 
 ### 1) Offline Vector DB Preload
 
-The preload pipeline (`preload_pipeline/bootstrap.py`) ingests configured sources into Chroma using a manifest and shared `rag_agent` ingestion utilities.
+The preload pipeline is now notebook-based in `preload_pipeline/NEW-ARCHITECTURE/` and runs fully independent of inference startup.
 
-- Acquires a preload lock to prevent concurrent writes.
-- Creates a backup of the persistence directory before write-heavy runs.
-- Validates manifest schema and required metadata.
-- Processes source types (`csv`, `web_page_list`, `pdf_dir`) via adapters.
-- Writes a run report with item-level success/failure and dedupe stats.
+- Uses canonical extraction persistence plus a SQLite processing ledger.
+- Performs global deduplication, qualification, acceptance/rejection, chunking, embedding, and Qdrant upsert.
+- Produces a cumulative snapshot and manifest after each state run.
+- Updates one cumulative `crop_occurrences.json` in place for the active state section.
 
-After completing **Setup**, run preload from **`preload_pipeline/`**:
+Run sequence (high level):
 
-```bash
-python bootstrap.py \
-  --manifest manifest.yaml \
-  --persist-dir ../rag_agent/chroma_database/chroma_db \
-  --collection meta-mirage_collection \
-  --rag-agent-dir ../rag_agent
-```
+1. Start Qdrant server on the same compute node as Jupyter.
+2. Verify `http://127.0.0.1:6333/collections` is reachable.
+3. Open `preload_pipeline/NEW-ARCHITECTURE/MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb`.
+4. Configure `BUILD_ID`, `STATE_NAME`, `STATE_CODE`, and `RUN_SEQUENCE`.
+5. Set `RUN_PIPELINE = True` and execute pipeline cells.
+
+Primary docs:
+
+- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`
+- `preload_pipeline/NEW-ARCHITECTURE/run.md`
+- `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`
 
 ### 2) Optional Crop Dictionary Pipeline (Query Enrichment)
 
-This pipeline builds a state-organized crop dictionary used only for query rewriting. It does **not** write to Chroma and does **not** replace retrieval.
+This pipeline builds a state-organized crop dictionary used only for query rewriting. It does **not** replace vector retrieval.
 
 - Generates URL batch YAML for crop-specific pages.
 - Builds a crop dictionary JSON from web content + crop-frequency data.
@@ -238,20 +245,19 @@ This framework enables controlled experiments while keeping the runtime entrypoi
 
 Two artifacts are intentionally distinct:
 
-- **Chroma DB**: chunk embeddings + metadata used for retrieval.
+- **Qdrant collection**: chunk embeddings + metadata used for retrieval.
 - **Crop dictionary JSON**: optional query rewrite context only.
 
 Critical alignment requirements:
 
-- Match Chroma `--persist-dir` between preload and runtime.
-- Keep collection name aligned (`meta-mirage_collection` by default).
+- Keep Qdrant collection and metadata contract aligned between preload and runtime.
 - Match embedding model/device between preload and inference.
-- Move/copy the entire Chroma persistence directory across environments.
+- Preserve canonical store + SQLite ledger + run snapshots for resumable state processing.
 
 ## Repository Map
 
 - `rag_agent/`: main RAG agent, tools, retrieval logic, confidence evaluator, ablation controls.
-- `preload_pipeline/`: manifest-driven ingestion, adapters, backup/lock/report pipeline.
+- `preload_pipeline/`: notebook-orchestrated offline preload architecture and crop dictionary tooling.
 - `Inference/`: batch runtime orchestration (`generate.py`, launch scripts, output flow).
 - `chat_models/`: model client utilities for answer generation flows.
 - `Datasets/`: metadata support tables (state/domain/hardiness mappings).
@@ -260,14 +266,14 @@ Critical alignment requirements:
 
 Before preload:
 
-- Validate manifest `sources` and location-related required fields.
-- Stop active writers pointing to the same Chroma path.
-- Confirm disk space for backup + ingestion output.
+- Start Qdrant on the same compute node as Jupyter and verify connectivity.
+- Ensure support files exist: `county_state_hardiness_zone.csv` and `crop_occurrences.json`.
+- Ensure only intended state input files are present for auto-discovery.
 
 Before inference:
 
 - Verify OpenAI-compatible model endpoints are reachable.
-- Verify Chroma path, collection, embedding model, and device alignment.
+- Verify Qdrant URL/collection, embedding model, and device alignment.
 - Verify ablation config (`ABLATION_ID`) and template references.
 - Verify crop dictionary placement if enrichment is enabled.
 
@@ -288,6 +294,8 @@ This project is built on and extends MIRAGE benchmark assets and concepts. Pleas
 
 - `Guide.md`: full architecture and implementation details.
 - `Documentation.md`: runtime queue/worker design and failure handling.
-- `preload_pipeline/docs/README.md`: manifest schema and preload policies.
+- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`: finalized preload architecture.
+- `preload_pipeline/NEW-ARCHITECTURE/run.md`: state-run execution guide.
+- `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`: Qdrant setup and snapshot reuse.
 - `Inference/README.md`: runtime arguments and enrichment flags.
 - `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`: enrichment behavior and safeguards.
