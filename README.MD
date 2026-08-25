@@ -6,9 +6,9 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 
 ## Architecture At A Glance
 
-- **Offline preload** runs as a notebook-orchestrated pipeline and builds a cumulative Qdrant collection with snapshots.
+- **Offline preload** runs as a notebook-orchestrated pipeline and builds the curated, read-only `mirage_base` Qdrant collection with snapshots.
 - **Optional query enrichment** injects crop context into the user question when crop names are implicit.
-- **Runtime RAG workers** retrieve evidence, score confidence, and optionally augment via web ingestion.
+- **Runtime RAG workers** retrieve merged evidence from `mirage_base` plus an ablation-scoped `mirage_runtime_<ABLATION_ID>_<timestamp>` collection, score confidence, and optionally augment the runtime collection via web/PDF ingestion.
 - **Generation stage** combines `effective_query` and retrieved context to produce final outputs.
 - **Ablation controls** toggle key mechanisms (progressive filtering, confidence, web search, domain filtering, ingestion loop) for controlled experiments.
 
@@ -17,7 +17,8 @@ flowchart LR
   rawSources[RawSources]
   preload[NotebookPreloadPipeline]
   canonical[(CanonicalStore+SQLiteLedger)]
-  qdrant[(QdrantServerCollection)]
+  base[(mirage_base<br/>read-only)]
+  runtime[(mirage_runtime_<ABLATION_ID>_<timestamp><br/>run-scoped read/write)]
   snap[(PerStateSnapshots)]
   cropDict[CropDictionaryJSON]
   dataset[InferenceDataset]
@@ -29,14 +30,15 @@ flowchart LR
 
   rawSources --> preload
   preload --> canonical
-  canonical --> qdrant
-  qdrant --> snap
+  canonical --> base
+  base --> snap
   dataset --> enrich
   cropDict --> enrich
   enrich --> rag
-  qdrant --> rag
+  base --> rag
+  runtime --> rag
   rag -->|"low_confidence"| webAug
-  webAug --> qdrant
+  webAug --> runtime
   rag --> gen
   gen --> out
 ```
@@ -139,7 +141,7 @@ Batch inference (`Inference/generate.py`) coordinates RAG and generation across 
 
 - Reads input JSON and skips already successful items in output JSONL.
 - Uses multiprocessing (`spawn`) and GPU-aware endpoint assignment.
-- Starts rank0 RAG worker first (collection reset path), then remaining workers.
+- Resolves the base/runtime collections once before workers start; rank0 starts first, then remaining workers receive the same runtime collection name.
 - Builds user prompt with optional location prefix.
 - Applies query enrichment (optional) -> `effective_query`.
 - Runs RAG retrieval/confidence/web-augmentation flow.
@@ -152,6 +154,19 @@ bash bash_generate.sh
 ```
 
 `bash_generate.sh` sets experiment configuration (including `ABLATION_ID`) and launches `generate.py`.
+
+The database lifecycle can also be controlled directly:
+
+```bash
+python generate.py \
+  --input_file DATA.json \
+  --output_file results.jsonl \
+  --ablation_id full_system \
+  --runtime_mode resume \
+  --base_collection mirage_base
+```
+
+Useful overrides are `--runtime_mode fresh`, `--runtime_collection_override NAME`, `--use_base_collection false`, and `--snapshot_runtime`. Resume is the default. A fresh run deletes only live runtime collections matching the current ablation; it never deletes `mirage_base`.
 
 ```mermaid
 flowchart LR
@@ -178,6 +193,16 @@ flowchart LR
 ```
 
 ## Core Runtime Mechanisms
+
+### Base/runtime database isolation
+
+Inference uses one immutable curated collection and one mutable run-scoped collection:
+
+- `mirage_base`: must already exist for normal/final inference and is never created, reset, deleted, or upserted by inference.
+- `mirage_runtime_<ABLATION_ID>_<YYYYMMDD>_<HHMMSS>`: created for a new run, shared across all queries in that run, preserved on failure, optionally snapshotted on success, and deleted after successful finalization.
+- `USE_BASE_COLLECTION=False`: disables only base verification, base retrieval, and base-side deduplication. The same lifecycle, dual retriever, confidence path, and runtime-only ingestion remain active.
+
+The dual retriever searches both collections for each retrieval strategy, merges and content-hash-deduplicates hits, prefers the base copy on duplicate hashes, globally ranks by the existing cosine-derived distance, and attaches `retrieval_source` (`base` or `runtime`). Web/PDF ingestion always writes to runtime; when base is enabled, duplicate checks inspect base before runtime.
 
 ### Progressive Filtering and Metadata Strategy
 
@@ -245,7 +270,8 @@ This framework enables controlled experiments while keeping the runtime entrypoi
 
 Two artifacts are intentionally distinct:
 
-- **Qdrant collection**: chunk embeddings + metadata used for retrieval.
+- **`mirage_base` Qdrant collection**: curated chunk embeddings + metadata used for normal retrieval; immutable during inference.
+- **`mirage_runtime_<...>` Qdrant collection**: run-scoped runtime chunks and web/PDF augmentation; lifecycle-managed by inference.
 - **Crop dictionary JSON**: optional query rewrite context only.
 
 Critical alignment requirements:
@@ -273,7 +299,8 @@ Before preload:
 Before inference:
 
 - Verify OpenAI-compatible model endpoints are reachable.
-- Verify Qdrant URL/collection, embedding model, and device alignment.
+- Verify Qdrant URL and that `mirage_base` exists for normal inference (or deliberately pass `--use_base_collection false`).
+- Verify runtime mode, ablation ID, embedding model, and device alignment. Do not manually construct runtime collection names unless using the explicit override.
 - Verify ablation config (`ABLATION_ID`) and template references.
 - Verify crop dictionary placement if enrichment is enabled.
 

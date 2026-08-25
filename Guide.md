@@ -39,11 +39,14 @@ Run batch jobs from the `Inference/` directory. Before starting workers, run the
 
 ## 2. Core concepts and shared artifacts
 
-### 2.1 Qdrant server and collection name
+### 2.1 Qdrant server and base/runtime collections
 
-- The RAG stack uses **Qdrant** with a named collection. The default collection name in code is **`meta-mirage_collection`** (see `rag_agent/main.py` and preload `--collection`).
+- Inference uses two isolated Qdrant collections: **`mirage_base`** and one run-scoped **`mirage_runtime_<ABLATION_ID>_<YYYYMMDD>_<HHMMSS>`** collection.
+- `mirage_base` is the curated offline preload database. Inference treats it as read-only: it may verify, search, scroll, and count it, but never creates, resets, deletes, or upserts it.
+- The runtime collection is created or resumed by `InferenceDatabaseManager`, shared by all workers for one run, and receives web/PDF augmentation. It is deleted only after successful completion; failures and interruptions preserve it for resume.
+- Set `USE_BASE_COLLECTION=False` (CLI: `--use_base_collection false`) only for runtime-only development/testing while `mirage_base` is unavailable. This skips base verification, retrieval, and base deduplication but uses the same lifecycle, retriever, ingestion, and confidence path.
 - `MainAgent` connects with `QdrantClient(url=...)` to a **running Qdrant server**. Set the URL via environment variable **`QDRANT_URL`** (default `http://127.0.0.1:6333`) or constructor argument `qdrant_url=...`. Optional **`QDRANT_API_KEY`** for secured deployments.
-- **On-disk storage** is owned by the Qdrant **server process**, not by each worker. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§5.9](#59-starting-the-qdrant-server)).
+- **On-disk storage** is owned by the Qdrant **server process**, not by each worker. Inference never discovers, copies, restores, or directly reads Qdrant storage directories. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§5.9](#59-starting-the-qdrant-server)).
 - **Embeddings** are computed in-process by `SentenceTransformerEmbeddingFunction`; vectors are sent to Qdrant on upsert and query via `rag_agent/utils/qdrant_store.py` (`QdrantStore`).
 - **Embedding model** should stay aligned between notebook preload and runtime retrieval to avoid vector/schema mismatches.
 - **Device** for the sentence-transformer embedder should match (`--device` / `device`, often `"None"` for auto).
@@ -53,7 +56,7 @@ Run batch jobs from the `Inference/` directory. Before starting workers, run the
 Previously, each RAG worker opened the same Chroma persistence directory with `chromadb.PersistentClient(path=...)`. That caused problems in multi-worker batch inference:
 
 - **Unsafe concurrent writes:** multiple workers reading/writing the same local SQLite/HNSW files risked contention and corruption.
-- **Stale collection handles:** when rank-0 called `reset_collection()`, other workers cached invalid Chroma collection UUIDs and crashed until manually rebound.
+- **Stale collection handles:** in the historical Chroma implementation, rank-0 collection resets could invalidate other workers' cached collection UUIDs. The current Qdrant architecture uses an externally managed server and a driver-owned runtime name, so workers do not perform resets.
 
 **Qdrant server mode** fixes this: one Qdrant process owns storage on NVMe; all workers are HTTP clients to that single server. Concurrent upserts and queries are handled safely server-side.
 
@@ -85,7 +88,7 @@ For migration details, see [MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md](MSCdocs/CHR
 
 | Artifact                            | Purpose                                                                                                                             | Consumed by                                                                                      |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Qdrant collection** (chunks + embeddings) | Retrieval for agricultural/extension content                                                                                        | `MainAgent` retrieve / confidence / optional web ingest                                          |
+| **Qdrant base/runtime collections** (chunks + embeddings) | Curated retrieval plus run-scoped runtime augmentation | `DualCollectionRetriever`, confidence, and runtime-only web/PDF ingestion |
 | **Crop dictionary JSON**            | Optional **query enrichment** only: may insert crop names into the user question when the query implies a crop but does not name it | `CropQueryEnricher` in `rag_agent/crop_query_enrichment.py`, called from `Inference/generate.py` |
 
 
@@ -215,6 +218,18 @@ The notebook preload pipeline remains aligned with runtime retrieval contracts a
 - Embedding + Qdrant insertion in batches with retry handling.
 
 Operationally, preload now runs as an offline notebook workflow and no longer depends on inference-time bootstrap steps.
+
+#### 2.4.1 Base/runtime isolation
+
+The preload pipeline is responsible for constructing the curated `mirage_base` collection. Inference connects to the already-running Qdrant server and does not own base storage or promote runtime data into it.
+
+```text
+DualCollectionRetriever:       read base + read runtime
+WebAddition / PDFAddition:     read base for dedupe, write runtime only
+USE_BASE_COLLECTION=False:     read/write runtime only
+```
+
+Runtime content is run-scoped. A later query in the same run can retrieve content added by an earlier query; a new run gets a new runtime collection unless it explicitly resumes an interrupted one.
 
 ---
 
@@ -370,19 +385,30 @@ Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Dat
 - Each worker binds to `**api_base`** for the LLM (RAG agent + enrichment both use that base URL).
 - Port numbering starts at **11434** and increments by one per GPU when using default host.
 
-### 5.3 Rank0 barrier and Qdrant collection reset
+### 5.3 Database lifecycle and worker barrier
 
-Only **rank0** starts with **`do_reset_collection=True`**, calling **`MainAgent.reset_collection()`** once so the remote collection is dropped and recreated cleanly (including payload indexes).
+The inference driver, not an individual worker, owns collection lifecycle. Before workers start, it:
 
-Other workers start with **`do_reset_collection=False`** and connect to the **existing** collection on the Qdrant server. No per-worker local database copies or collection-handle rebind is required.
+1. Connects to Qdrant.
+2. Verifies `mirage_base` only when `USE_BASE_COLLECTION=True`.
+3. In `resume` mode, selects the newest matching runtime collection for the current ablation, or creates a new timestamped one.
+4. In `fresh` mode, deletes only matching runtime collections for the current ablation, then creates a new empty runtime collection.
+5. Creates/verifies runtime payload indexes and passes the selected runtime name explicitly to every worker.
 
-**Why the rank0 barrier remains:** rank0 must finish reset before other workers ingest or query, so everyone sees the same empty (or freshly recreated) collection at run start. Workers still wait for rank0 **READY** on `rag_status_q` before processing items.
+Workers all connect to the same `mirage_base` (when enabled) and the same active runtime collection. No worker resets a collection, discovers a different runtime, or mutates the base. The rank-0 READY barrier still prevents request processing until all worker agents are initialized.
+
+Runtime modes:
+
+- `--runtime_mode resume` (default): reuses interrupted runtime state and existing JSONL query/evaluation progress.
+- `--runtime_mode fresh`: abandons current-ablation runtime collections and starts inference from query 0. Existing output progress is ignored for that run.
+- `--runtime_collection_override NAME`: explicitly resumes one existing runtime collection; valid only with `resume`.
+- `--snapshot_runtime`: requests a Qdrant snapshot on successful completion before deleting the live runtime collection. Snapshot failure preserves the runtime.
 
 ### 5.4 Qdrant connectivity during inference
 
 If Qdrant is unreachable (server stopped, wrong `QDRANT_URL`, network error), retrieval and ingestion tools fail and may classify as hard or soft RAG failures per **§5.5**. **Keep the Qdrant server running** for the full inference job (Terminal 1 in [§2.1.1](#211-why-we-moved-from-chromadb-to-qdrant-server-mode)).
 
-The old Chroma **stale-handle self-heal** (rebind after collection delete) was removed from `MainAgent`—it is unnecessary with server mode.
+The old single-collection reset and Chroma **stale-handle self-heal** paths are not part of normal inference. If the run fails, the active runtime collection remains available for `resume`; `mirage_base` is never deleted or changed.
 
 ### 5.5 RAG failure classification
 
@@ -616,7 +642,9 @@ Because of this, the exact tool-call sequence is **template-dependent per ablati
 
 - An **OpenAI-compatible** server is reachable at **`api_base`** for the tool-calling model.
 - A **Qdrant server** is running and reachable at **`QDRANT_URL`** (default `http://127.0.0.1:6333`).
-- The collection may start **empty**; rank0 **`reset_collection()`** clears it at worker startup; chunks are added during the run via web/PDF ingestion tools when enabled.
+- `mirage_base` must already exist for normal inference. The active runtime collection starts empty for a new/fresh run and accumulates chunks during the run via web/PDF ingestion tools when enabled.
+- Runtime schema is fixed to `BAAI/bge-base-en-v1.5`, 768 dimensions, cosine distance, with payload indexes for `hardiness_zone`, `month_year`, `title`, and `content_hash`.
+- If `USE_BASE_COLLECTION=False`, `mirage_base` need not exist and no placeholder base collection is created.
 - **Embedding model** and tokenizer settings align with how chunks were ingested (default `BAAI/bge-base-en-v1.5`).
 
 ---
@@ -705,7 +733,9 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 - **Start Qdrant** and verify connectivity (**§5.9**): `curl http://127.0.0.1:6333/collections`.
 - **`export QDRANT_URL=http://127.0.0.1:6333`** (or your server host/port) in the worker environment.
 - Start one **LLM server per GPU** on the expected ports (or configure **`--openai_api_base`** host consistently with `_build_endpoints`).
-- Expect **rank0** to **`reset_collection()`** on startup—do not rely on pre-existing Qdrant data unless you change that behavior.
+- Normal runs require the curated **`mirage_base`** collection to exist before startup. The driver creates or resumes an ablation-scoped runtime collection; it never resets the base.
+- Choose `--runtime_mode resume` to continue an interrupted run, or `--runtime_mode fresh` to delete only the current ablation’s runtime collections and restart from query 0.
+- Use `--use_base_collection false` only for runtime-only development/testing. Use `--snapshot_runtime` when a successful run should be snapshotted before runtime cleanup.
 - Match **`--embed_model_name`** and **`--device`** to your embedding setup.
 - Set run-level ablation in `Inference/bash_generate.sh` via **`ABLATION_ID`** (forwarded as `--ablation_id`).
 - Confirm the selected `ABLATION_ID` exists in `rag_agent/ablation_configs.json` (currently documented IDs: 2,3,4,5,7,8).
@@ -835,7 +865,7 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Document                                                               | Contents                                                                                        |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping and migration history                                                |
-| `Documentation.md`                                                     | Multi-GPU queue design, Rank0 reset, RAG failure handling, keyword extractor note               |
+| `Documentation.md`                                                     | Multi-GPU queue design, shared runtime collection, RAG failure handling, keyword extractor note |
 | `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` | Final notebook preload architecture and persistence model                                        |
 | `preload_pipeline/NEW-ARCHITECTURE/run.md`                            | Step-by-step execution for state runs                                                            |
 | `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`     | Qdrant server setup, snapshot create/restore, and notebook integration                           |
