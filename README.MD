@@ -6,7 +6,7 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 
 ## Architecture At A Glance
 
-- **Offline preload** runs as a notebook-orchestrated pipeline and builds the curated, read-only `mirage_base` Qdrant collection with snapshots.
+- **Qdrant** provides the curated `mirage_base` collection and run-scoped runtime collections used by inference.
 - **Optional query enrichment** injects crop context into the user question when crop names are implicit.
 - **Runtime RAG workers** retrieve merged evidence from `mirage_base` plus an ablation-scoped `mirage_runtime_<ABLATION_ID>_<timestamp>` collection, score confidence, and optionally augment the runtime collection via web/PDF ingestion.
 - **Generation stage** combines `effective_query` and retrieved context to produce final outputs.
@@ -14,9 +14,6 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 
 ```mermaid
 flowchart LR
-  rawSources[RawSources]
-  preload[NotebookPreloadPipeline]
-  canonical[(CanonicalStore+SQLiteLedger)]
   base[(mirage_base<br/>read-only)]
   runtime[(mirage_runtime_<ABLATION_ID>_<timestamp><br/>run-scoped read/write)]
   snap[(PerStateSnapshots)]
@@ -28,9 +25,6 @@ flowchart LR
   gen[AnswerGeneration]
   out[JSONLOutput]
 
-  rawSources --> preload
-  preload --> canonical
-  canonical --> base
   base --> snap
   dataset --> enrich
   cropDict --> enrich
@@ -85,57 +79,33 @@ python -c "import qdrant_client, sentence_transformers; print('qdrant-client + s
 
 ## Pipeline Components
 
-### 1) Offline Vector DB Preload
+### Runtime Batch Inference
 
-The preload pipeline is now notebook-based in `preload_pipeline/NEW-ARCHITECTURE/` and runs fully independent of inference startup.
+#### Original/direct command
 
-- Uses canonical extraction persistence plus a SQLite processing ledger.
-- Performs global deduplication, qualification, acceptance/rejection, chunking, embedding, and Qdrant upsert.
-- Produces a cumulative snapshot and manifest after each state run.
-- Updates one cumulative `crop_occurrences.json` in place for the active state section.
-
-Run sequence (high level):
-
-1. Start Qdrant server on the same compute node as Jupyter.
-2. Verify `http://127.0.0.1:6333/collections` is reachable.
-3. Open `preload_pipeline/NEW-ARCHITECTURE/MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb`.
-4. Configure `BUILD_ID`, `STATE_NAME`, `STATE_CODE`, and `RUN_SEQUENCE`.
-5. Set `RUN_PIPELINE = True` and execute pipeline cells.
-
-Primary docs:
-
-- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`
-- `preload_pipeline/NEW-ARCHITECTURE/run.md`
-- `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`
-
-### 2) Optional Crop Dictionary Pipeline (Query Enrichment)
-
-This pipeline builds a state-organized crop dictionary used only for query rewriting. It does **not** replace vector retrieval.
-
-- Generates URL batch YAML for crop-specific pages.
-- Builds a crop dictionary JSON from web content + crop-frequency data.
-- Used at runtime by `CropQueryEnricher` to produce `effective_query`.
-- Enrichment is fail-safe: if checks fail, the original query is returned unchanged.
-
-Run from `preload_pipeline/Dict-Value-Database/`:
+For the original command-line setup, run from `Inference/`:
 
 ```bash
-python scripts/generate_web_sources.py \
-  --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "../Ingestion/URLs/names/uiuc.txt" \
-  --state "Illinois" \
-  --category "disease" \
-  --output "YAMLfilesForDict/uiuc.yaml"
-
-python scripts/build_crop_dictionary.py \
-  --config YAMLfilesForDict/uiuc.yaml \
-  --csv ../../Datasets/county_crops_frequency_multi_year_cleaned.csv \
-  --output output/crop_dictionary_output.json
+python generate.py \
+  --input_file ../Datasets/standard/standard_benchmark.json \
+  --output_file results/base_web_search/Llama-3.2-11B-Vision-Instruct.json \
+  --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --openai_api_base http://127.0.0.1:11434/v1 \
+  --num_processes 8 \
+  --embed_model_name BAAI/bge-base-en-v1.5 \
+  --test_model meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --device None \
+  --ablation_id <ABLATION_ID>
 ```
 
-Place/copy dictionary output to `Inference/CropDatabase.json` or pass `--crop_dictionary_path`.
+`BENCH_TYPE` is specified in `Inference/bash_generate.sh` and determines the input dataset path:
 
-### 3) Runtime Batch Inference
+```bash
+BENCH_TYPE="standard"
+INPUT_FILE="../Datasets/${BENCH_TYPE}/${BENCH_TYPE}_benchmark.json"
+```
+
+Use the exact ablation key from `rag_agent/ablation_configs.json`, for example `ablation_2_static_rag` or `ablation_7_full_no_domain_filter`. An unknown key falls back to default runtime toggles and is not suitable for a controlled ablation run.
 
 Batch inference (`Inference/generate.py`) coordinates RAG and generation across multiple workers and endpoints.
 

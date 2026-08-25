@@ -1,6 +1,6 @@
 # MIRAGE-RAG — End-to-end pipeline guide
 
-This document describes how data moves through the project: from offline preparation of the vector database and optional crop dictionary, through batch RAG inference and answer generation. It is aligned with the six in-repo Markdown references in **Section 8.2** and with the current implementation in `rag_agent/`, `preload_pipeline/`, and `Inference/`.
+This document describes the current Qdrant-backed runtime, batch inference, and evaluation workflows.
 
 ---
 
@@ -12,16 +12,14 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 
 **Batch inference** (`Inference/generate.py`) runs many items through that RAG stack and then a separate **generation** step, using a multi-process, GPU-aware layout so RAG load is controlled and scalable.
 
-**Offline ingestion** now runs from the notebook-first preload architecture in `preload_pipeline/NEW-ARCHITECTURE/` and is executed independently from inference (see [§3](#3-offline-pipeline-a--building-the-vector-database-preload)).
-
 ### 1.2 Main directories
 
 
 | Path                | Role                                                                                                                                                                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `rag_agent/`        | Qdrant client (`QdrantStore`), embeddings, chunking utilities, tools (retrieve, confidence, web search, web/PDF ingestion, keywords), and `MainAgent` (Google ADK `LlmAgent` + `InMemoryRunner`). |
-| `preload_pipeline/` | Notebook-orchestrated preload pipeline: canonical store + SQLite ledger + qualification + embedding + cumulative Qdrant snapshots.                                                                                                                           |
 | `Inference/`        | `generate.py`: dataset → RAG queue → per-GPU workers → generation pool → JSONL output. Optional crop **query enrichment** before RAG.                                                                                                                        |
+| `Evaluation/`       | LLM-as-a-judge scoring for identification and management benchmarks, plus score summaries.                                                                                                  |
 | `chat_models/`      | Clients used by generation (and related chat flows).                                                                                                                                                                                                         |
 | `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                                                                                                      |
 
@@ -30,10 +28,10 @@ Run batch jobs from the `Inference/` directory. Before starting workers, run the
 
 ### 1.3 How to read this guide
 
-- **Sections 2–4** cover shared concepts, **preload** (vector DB), and the **crop dictionary** (query enrichment only—not stored in Qdrant).
+- **Sections 2–4** cover shared Qdrant concepts, runtime inference, and evaluation.
 - **Sections 5–6** cover **batch inference** and **runtime RAG agent** behavior.
 - **Section 7** covers ablation controls and the run matrix; **Section 8** is an operational checklist (cluster jobs, pre-run checks, monitoring, environment setup); **Section 9** lists primary files and doc references.
-- **§3.8** and **§4.5** collect **working-directory-specific** commands for the vector DB and crop dictionary; **§5.8** covers local LLM servers; **§5.9** covers **starting the Qdrant server** (copy-paste steps).
+- **§5.8** covers local LLM servers; **§5.9** covers **starting the Qdrant server** (copy-paste steps).
 
 ---
 
@@ -96,20 +94,15 @@ The crop dictionary does **not** replace or duplicate the vector store; it only 
 
 ### 2.3 Metadata — policy, storage, retrieval, and search
 
-Project policy (see `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` and `preload_pipeline/NEW-ARCHITECTURE/run.md`) includes:
+Project metadata policy includes:
 
 - `**location`**: Used to derive `**hardiness_zone`** via `rag_agent.utils.metadata` helpers. Preferred forms: `**"State"**` or `**"State, County"**` (full state name or two-letter abbreviation).
 - `**hardiness_zone**`: Expected when `location` resolves; may be empty if lookup cannot resolve.
-- `**month_year**`: For preload web/PDF sources, provide `**YYYY-MM`** where available. CSV ingestion may leave `month_year` empty by design. Runtime web-search ingestion derives/validates `month_year` from search/page metadata per `rag_agent` tools.
-
-Notebook preload preflight/input validation enforces:
-
-- **CSV**: each source must have `**location`** or `**location_field`** (for per-row location).
-- `**web_page_list` and `pdf_dir**`: each source must have `**location**` (for hardiness derivation).
+- `**month_year**`: Runtime web-search ingestion derives/validates `month_year` from search/page metadata per `rag_agent` tools.
 
 #### 2.3.1 Canonical metadata stored on each chunk
 
-Ingestion paths (web, PDF, CSV preload) ultimately attach metadata through `rag_agent.utils.metadata.build_canonical_chunk_metadata`. Typical **canonical keys** stored in each chunk **payload** in Qdrant include:
+Runtime ingestion paths (web and PDF) attach metadata through `rag_agent.utils.metadata.build_canonical_chunk_metadata`. Typical **canonical keys** stored in each chunk **payload** in Qdrant include:
 
 
 | Field            | Role                                                                                                                                                                                          |
@@ -129,7 +122,7 @@ Ingestion paths (web, PDF, CSV preload) ultimately attach metadata through `rag_
 
 Extra keys may be merged via `extra_metadata` on some paths (e.g. CSV tags). Empty or unknown values are often stored as sentinel placeholders in tools (`__null__` / `-1` patterns in `MainAgent`), while retrieval treats strings like `NULL`, `N/A` as missing when filtering.
 
-**Why `location` is required at preload manifest level:** without a resolvable location, `hardiness_zone` may be empty, weakening metadata filters and making extension-style retrieval less precise.
+**Why `location` matters:** without a resolvable location, `hardiness_zone` may be empty, weakening metadata filters and making extension-style retrieval less precise.
 
 #### 2.3.2 How query-time inputs map to filters
 
@@ -199,29 +192,18 @@ normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 
 `WebSearch.web_search` accepts `**use_domain_filter`** (default `True`). When this flag is `True`, and `**location`** is provided, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. When `use_domain_filter` is `False`, web search runs as an open query (no `.edu` site-clause restriction). In `MainAgent`, `_tracked_web_search` supports an optional per-call override and otherwise uses the code-controlled class setting `self.use_domain_filter` for run-level ablations. Results carry `**month_year`** derived from `page_age` (or validated provider fields) for downstream `**_tracked_add_web_content`** so ingestion stays consistent with retrieval policies.
 
-#### 2.3.7 Runtime vs preload responsibilities
+#### 2.3.7 Runtime metadata responsibilities
 
 
 | Stage               | Who sets `location` / zone / `month_year`                                                                             |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Preload manifest    | You set `location` (and usually `month_year` for web/PDF); tools compute `hardiness_zone` at chunk write time.        |
 | Runtime web ingest  | Search tool + `WebAddition` set `month_year` and often derive location from `.edu` domains when not explicitly given. |
 | Batch `generate.py` | `get_prompt` builds `[User location: …]`; worker sets `current_location` for tools.                                   |
 
 
-### 2.4 Shared ingestion behavior (preload vs runtime)
+### 2.4 Base/runtime isolation
 
-The notebook preload pipeline remains aligned with runtime retrieval contracts at the data level:
-
-- Deterministic content identity and global deduplication via content hash.
-- Metadata-normalized chunk payloads for location/hardiness/time-aware retrieval.
-- Embedding + Qdrant insertion in batches with retry handling.
-
-Operationally, preload now runs as an offline notebook workflow and no longer depends on inference-time bootstrap steps.
-
-#### 2.4.1 Base/runtime isolation
-
-The preload pipeline is responsible for constructing the curated `mirage_base` collection. Inference connects to the already-running Qdrant server and does not own base storage or promote runtime data into it.
+The curated `mirage_base` collection is treated as read-only by inference. The inference driver creates and manages only the run-scoped runtime collection.
 
 ```text
 DualCollectionRetriever:       read base + read runtime
@@ -233,226 +215,45 @@ Runtime content is run-scoped. A later query in the same run can retrieve conten
 
 ---
 
-## 3. Offline pipeline A — Building the vector database (preload)
-
-The preload pipeline now runs as a notebook-orchestrated offline build in `preload_pipeline/NEW-ARCHITECTURE/` and is intentionally decoupled from inference execution.
-
-### 3.1 Architecture and execution model
-
-- The orchestrator is the notebook `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb`.
-- Qdrant runs as a separate server process on the same compute node and is accessed at `http://127.0.0.1:6333`.
-- The pipeline persists state in four layers: SQLite processing ledger, canonical content store, Qdrant retrieval index, and cumulative snapshots.
-- One cumulative working collection is used (for example `mirage_base_build`) and advanced state-by-state.
-
-### 3.2 Data flow per state
-
-```text
-Source discovery
-→ Extraction + normalization
-→ Canonical persistence + SQLite ledger
-→ Global deduplication
-→ Qualification
-→ Accept/reject decision
-→ RAG chunking + metadata enrichment + metadata validation
-→ Batch embedding + batch Qdrant upsert
-→ Retry failed units
-→ Terminal-state validation
-→ Cumulative snapshot + manifest
-→ Atomic update of current state in crop_occurrences.json
-```
-
-### 3.3 Input and support files
-
-- Inputs are auto-discovered from the working directory with at most one matching PDF zip, one CSV zip, and one URL file pattern.
-- At least one source type must be present for a run.
-- `county_state_hardiness_zone.csv` and `crop_occurrences.json` must exist at the build root.
-
-### 3.4 State progression and snapshots
-
-- Runs are sequenced per build (for example `001_IL`, `002_IN`, `003_IA`).
-- Each completed run emits a cumulative Qdrant snapshot and a run manifest under `runs/<build>/<run_id>/`.
-- Snapshots are used for restart/reuse across compute allocations.
-
-### 3.5 Deduplication, retries, and terminal states
-
-- Document identity is content-hash based and global across states.
-- Duplicate documents are recorded and skipped before qualification/indexing.
-- Failures are retried by stage within the current run; unrecoverable items become permanently failed terminal units.
-- Runs can still complete when terminal validation passes with documented permanent failures.
-
-### 3.6 Crop occurrences behavior in preload
-
-- `crop_occurrences.json` is a single cumulative artifact for all states.
-- Each run updates only the current state section and preserves all other states untouched.
-- State updates are atomic to avoid partial-file corruption.
-
-### 3.7 How to run (notebook path)
-
-From `preload_pipeline/NEW-ARCHITECTURE/`:
-
-1. Start Qdrant with storage path configured.
-2. Verify server health with `curl http://127.0.0.1:6333/collections`.
-3. Open and run `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` top-to-bottom.
-4. Set build/state/run identifiers and confirm discovered inputs.
-5. Enable `RUN_PIPELINE = True` in a dedicated cell, then execute the pipeline cell.
-
-For detailed commands and safeguards, use:
-
-- `preload_pipeline/NEW-ARCHITECTURE/run.md`
-- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`
-- `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`
+---
 
 ---
 
-## 4. Offline pipeline B — Crop dictionary for query enrichment
 
-### 4.1 Purpose
+## 3. Inference pipeline
 
-Some user questions refer to **category-level** crop information (pests, diseases, fields in a structured crop record) **without naming the crop**. Optional **query enrichment** uses a **JSON crop dictionary** (organized by state) and a **single LLM call** to insert **allowed** crop names into the **question body only**, then recombine with an unchanged `**[User location: …]`** prefix. Details: `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`.
-
-### 4.2 Building the dictionary
-
-- The authoritative build scripts live under `preload_pipeline/Dict-Value-Database/scripts/` (e.g. `**build_crop_dictionary.py`**).
-- YAML `**url_batches**` for that pipeline can be produced with `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.py` (see `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.md`): `**--base-url**`, `**--names-file**`, `**--state**`, `**--category**`, `**--output**`, optional `**--url-style**`.
-
-### 4.3 Runtime placement and CLI (`Inference/`)
-
-- Default: place `**CropDatabase.json**` in the same directory as `Inference/generate.py`, or pass `**--crop_dictionary_path**` (relative paths resolve against `Inference/`).
-- `**--disable_query_enrichment**`: turns enrichment off even if a file path is set.
-- Empty `**--crop_dictionary_path**` (`""`) disables enrichment.
-
-If the file is missing, `Generate` logs and runs with enrichment effectively off.
-
-### 4.4 Implementation behavior (`rag_agent/crop_query_enrichment.py`)
-
-- **Not** dependent on Qdrant or ADK; uses the OpenAI-compatible client against the **same `api_base` and model** as that RAG worker.
-- Splits the full user string into `**prefix`** (optional `[User location: …]\n\n`) and `**body`** via regex.
-- If enrichment is enabled and a dictionary is loaded, the worker passes a **state slice** of the JSON (matching the state from the location line) plus an **allowlist** of crop names into one chat completion.
-- **Fallback:** on any failure (missing state in dict, empty list, serialize error, LLM error, bad JSON, or model output that is not a pure **insertion** supersequence of the original body), `**enrich()` returns the original full query unchanged**.
-- Dictionary size is capped for prompting (`_MAX_DICT_JSON_CHARS`); allowlist text may truncate with a note.
-
-### 4.5 Creating the crop database for query enrichment — working directory and commands
-
-**Run the Dict–Value–Database scripts from `preload_pipeline/Dict-Value-Database/`** (the project’s “Dict-Value Database” directory—not the repo root) so relative paths such as `../Datasets/...` resolve as in `preload_pipeline/docs/README.md`.
-
-Example sequence:
+Run from `Inference/` after starting Qdrant and the OpenAI-compatible model server:
 
 ```bash
-cd preload_pipeline/Dict-Value-Database
+cd /path/to/MIRAGE-RAG/Inference
 
-python scripts/generate_web_sources.py \
-  --base-url "https://extension.illinois.edu/plant-problems/" \
-  --names-file "../Ingestion/URLs/names/uiuc.txt" \
-  --state "Illinois" \
-  --category "disease" \
-  --output "YAMLfilesForDict/uiuc.yaml"
-
-python scripts/build_crop_dictionary.py \
-  --config YAMLfilesForDict/uiuc.yaml \
-  --csv ../../Datasets/county_crops_frequency_multi_year_cleaned.csv \
-  --output output/crop_dictionary_output.json
+python generate.py \
+  --input_file ../Datasets/standard/standard_benchmark.json \
+  --output_file results/base_web_search/Llama-3.2-11B-Vision-Instruct.json \
+  --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --openai_api_base http://127.0.0.1:11434/v1 \
+  --num_processes 8 \
+  --embed_model_name BAAI/bge-base-en-v1.5 \
+  --test_model meta-llama/Llama-3.2-11B-Vision-Instruct \
+  --device None \
+  --ablation_id ablation_2_static_rag
 ```
 
-Here `../Ingestion/...` reaches `preload_pipeline/Ingestion/...`, and `../../Datasets/...` reaches the repo-root `Datasets/` CSV. If your checkout layout differs, use absolute paths. Copy or symlink the built JSON to `Inference/CropDatabase.json` (or pass `--crop_dictionary_path`) for batch runs.
+The benchmark is selected by the input path. In `Inference/bash_generate.sh`, set `BENCH_TYPE` and the script builds:
 
----
-
-## 5. Runtime pipeline — Batch inference (`Inference/generate.py`)
-
-### 5.1 End-to-end data flow
-
-1. Load JSON dataset from `**--input_file**`.
-2. Skip items already successfully written to `**--output_file**` (JSONL) for the chosen answer model key.
-3. Build a **multiprocessing** context with `**spawn`**.
-4. Detect **GPU count** (`torch.cuda.device_count()`); if zero, treat as **one** logical GPU.
-5. Build one OpenAI-compatible **endpoint per GPU**: `http://<host>:<11434 + i>/v1` unless `--openai_api_base` supplies a host/scheme (see `_build_endpoints`).
-6. Create `**rag_request_q`** (bounded by `num_gpus * rag_inflight_per_gpu`, default inflight 2 per GPU) and `**rag_response_q`**.
-7. Start **rank-0** RAG worker first; wait until it signals **READY** on `**rag_status_q`** (timeout 300s). If rank0 fails, abort.
-8. Start remaining RAG workers; wait until all **READY**.
-9. For each item, `**get_prompt`** builds `prompt["user"]` (optional `[User location: state, county]\n\n` + question), `**images`**, and `**location**`.
-10. The run-level `**ablation_id**` is provided by `Inference/bash_generate.sh` (`ABLATION_ID`) to `Inference/generate.py` (`--ablation_id`) and forwarded into each `MainAgent` instance.
-11. Workers dequeue `(item_id, prompt["user"], location, attempt)`, set `**current_location**`, run `**CropQueryEnricher.enrich**` → `**effective_query**`, then `**run_debug(effective_query, session_id=...)**`.
-12. Inside `MainAgent`, the agent resolves `ablation_id` against `rag_agent/ablation_configs.json`, applies toggles, builds the tool list from toggles, and resolves the instruction template key.
-13. Main process receives `**(item_id, rag_answer, error, web_search_flag, endpoint, attempt, effective_query)**`.
-14. On **successful** RAG (not soft failure), build
-  `**enhanced = effective_query + "\n\nadditional context: " + rag_answer`**  
-    and dispatch `**generation_worker`** with that string.
-15. On **soft** RAG failure, `**enhanced = effective_query`** (no context block), generation still runs.
-16. On **hard** RAG failure, optional **retry** up to `**max_rag_attempts`** (2); else write item with hard-fail status and **skip generation**.
-
-### 5.2 GPU endpoints and scaling
-
-- Each worker binds to `**api_base`** for the LLM (RAG agent + enrichment both use that base URL).
-- Port numbering starts at **11434** and increments by one per GPU when using default host.
-
-### 5.3 Database lifecycle and worker barrier
-
-The inference driver, not an individual worker, owns collection lifecycle. Before workers start, it:
-
-1. Connects to Qdrant.
-2. Verifies `mirage_base` only when `USE_BASE_COLLECTION=True`.
-3. In `resume` mode, selects the newest matching runtime collection for the current ablation, or creates a new timestamped one.
-4. In `fresh` mode, deletes only matching runtime collections for the current ablation, then creates a new empty runtime collection.
-5. Creates/verifies runtime payload indexes and passes the selected runtime name explicitly to every worker.
-
-Workers all connect to the same `mirage_base` (when enabled) and the same active runtime collection. No worker resets a collection, discovers a different runtime, or mutates the base. The rank-0 READY barrier still prevents request processing until all worker agents are initialized.
-
-Runtime modes:
-
-- `--runtime_mode resume` (default): reuses interrupted runtime state and existing JSONL query/evaluation progress.
-- `--runtime_mode fresh`: abandons current-ablation runtime collections and starts inference from query 0. Existing output progress is ignored for that run.
-- `--runtime_collection_override NAME`: explicitly resumes one existing runtime collection; valid only with `resume`.
-- `--snapshot_runtime`: requests a Qdrant snapshot on successful completion before deleting the live runtime collection. Snapshot failure preserves the runtime.
-
-### 5.4 Qdrant connectivity during inference
-
-If Qdrant is unreachable (server stopped, wrong `QDRANT_URL`, network error), retrieval and ingestion tools fail and may classify as hard or soft RAG failures per **§5.5**. **Keep the Qdrant server running** for the full inference job (Terminal 1 in [§2.1.1](#211-why-we-moved-from-chromadb-to-qdrant-server-mode)).
-
-The old single-collection reset and Chroma **stale-handle self-heal** paths are not part of normal inference. If the run fails, the active runtime collection remains available for `resume`; `mirage_base` is never deleted or changed.
-
-### 5.5 RAG failure classification
-
-- `**_is_hard_rag_failure`**: connection/timeouts/5xx/“exception” style errors → retry then hard fail.
-- `**_is_soft_rag_failure`**: short or empty answers, or non-hard errors → fallback to `**effective_query**` without RAG context, still generate.
-
-### 5.6 Other notable parameters
-
-- `**max_retries` / `retry_delay**`: generation retries per item (defaults 5 / 5s).
-- RAG workers periodically **re-instantiate** `MainAgent` every **1000** requests to limit drift (see `RESTART_INTERVAL` in `generate.py`).
-
-### 5.7 Diagram (batch path)
-
-```mermaid
-flowchart LR
-  subgraph input [Input]
-    DS[JSON dataset]
-  end
-  subgraph ragLayer [RAG layer]
-    RQ[rag_request_q]
-    W1[Worker GPU0]
-    WN[Worker GPU N-1]
-    RR[rag_response_q]
-  end
-  subgraph genLayer [Generation]
-    GP[Process pool]
-    OUT[JSONL output]
-  end
-  DS --> getPrompt[get_prompt]
-  getPrompt --> RQ
-  RQ --> W1
-  RQ --> WN
-  W1 --> RR
-  WN --> RR
-  RR --> decide{RAG ok?}
-  decide -->|soft fail| GP
-  decide -->|success| GP
-  decide -->|hard fail| OUT
-  GP --> OUT
+```bash
+BENCH_TYPE="standard"
+INPUT_FILE="../Datasets/${BENCH_TYPE}/${BENCH_TYPE}_benchmark.json"
 ```
 
+Use an exact key from `rag_agent/ablation_configs.json` for `--ablation_id`. The wrapper command is:
 
+```bash
+cd /path/to/MIRAGE-RAG/Inference
+bash bash_generate.sh
+```
 
-### 5.8 Serving LLM backends (OpenAI-compatible API)
+### 3.1 Serving LLM backends (OpenAI-compatible API)
 
 Batch inference and the RAG agent expect an **OpenAI-compatible** HTTP API (for example `**http://127.0.0.1:11434/v1`** for the first GPU). `**Inference/generate.py`** builds endpoints starting at port **11434** and increments by one per detected GPU.
 
@@ -493,7 +294,7 @@ python -m vllm.entrypoints.openai.api_server \
 
 Model IDs, ports, and templates should match your deployment; align `**--test_model` / `--model_name**` in `generate.py` with the served model name.
 
-### 5.9 Starting the Qdrant server
+### 3.2 Starting the Qdrant server
 
 Follow these steps **before** starting `Inference/generate.py` or any `MainAgent` worker. **`pip install qdrant-client` installs the Python client only**—it does **not** install the `qdrant` server command.
 
@@ -617,6 +418,25 @@ python rag_agent/test_qdrant_migration.py
 ```
 
 ---
+
+## Evaluation
+
+Run evaluation from `Evaluation/` after inference outputs have been split into identification and management files.
+
+Configure `BENCH_TYPES`, `JUDGE_NAME`, `SUBJECT_NAME`, `OPENAI_API_BASE`, and `NUM_PROCESSES` in `Evaluation/bash_LLMsAsJudges.sh`, then run:
+
+```bash
+cd /path/to/MIRAGE-RAG/Evaluation
+bash bash_LLMsAsJudges.sh
+```
+
+For aggregate scores, configure `BENCH_TYPE`, `MODE`, `SUBJECT_NAME`, and `JUDGE_NAME` in `Evaluation/bash_print_scores.sh`, then run:
+
+```bash
+bash bash_print_scores.sh
+```
+
+Use `MODE="ID"` for identification accuracy and reasoning accuracy, or `MODE="MG"` for management accuracy, relevance, completeness, parsimony, and the weighted score.
 
 ## 6. Runtime pipeline — RAG agent behavior (`rag_agent`)
 
@@ -806,15 +626,15 @@ python3 -m venv mirage
 source mirage/bin/activate
 pip install --upgrade pip wheel setuptools
 cd /path/to/MIRAGE-RAG    # MIRAGE-RAG repository root — adjust checkout path
-pip install -r requirements.txt
+pip install -r requirments.txt
 python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
 ```
 
-If `**pip install -r requirements.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirements.txt**` (expect some “already satisfied” lines).
+If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirments.txt**` (expect some “already satisfied” lines).
 
-### 8.7.1 `requirements.txt` — consolidated environment
+### 8.7.1 `requirments.txt` — consolidated environment
 
-Repo-root **`requirements.txt`** is the **only** pinned dependency manifest: **preload**, **embedding + Qdrant client**, **`sglang`** / **`vllm`**, ADK / Google client stacks, and CUDA-associated wheels (**~348** `package==version` entries, **`pip`** / **`setuptools`** / **`wheel`** and **Jupyter/notebook tooling** intentionally omitted — not part of this codebase). Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirments.txt`** is the **only** pinned dependency manifest for embeddings, Qdrant, SGLang, Google ADK/LiteLLM clients, and CUDA-associated wheels. Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -852,10 +672,6 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Ablation settings map                                                      | `rag_agent/ablation_configs.json`                                       |
 | Instruction templates (`confidence_`*, `ablation_*`)                       | `rag_agent/model_instructions.md`                                       |
 | Query enrichment                                                           | `rag_agent/crop_query_enrichment.py`                                    |
-| Preload notebook orchestrator                                              | `preload_pipeline/NEW-ARCHITECTURE/MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` |
-| Preload architecture reference                                             | `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` |
-| Preload run guide                                                          | `preload_pipeline/NEW-ARCHITECTURE/run.md`                              |
-| Crop dictionary build                                                      | `preload_pipeline/Dict-Value-Database/scripts/build_crop_dictionary.py` |
 | Python dependency pins (`pip install -r`)                                  | `requirments.txt` (repo root; see §8.7.1)                               |
 
 
@@ -866,13 +682,7 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping and migration history                                                |
 | `Documentation.md`                                                     | Multi-GPU queue design, shared runtime collection, RAG failure handling, keyword extractor note |
-| `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md` | Final notebook preload architecture and persistence model                                        |
-| `preload_pipeline/NEW-ARCHITECTURE/run.md`                            | Step-by-step execution for state runs                                                            |
-| `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`     | Qdrant server setup, snapshot create/restore, and notebook integration                           |
 | `Inference/README.md`                                                  | Crop DB filename and enrichment flags                                                           |
-| `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`     | Enrichment design and `effective_query` data flow                                               |
-| `preload_pipeline/Ingestion/URLs/scripts/generate_web_sources.md`      | Manifest `web_page_list` YAML generation                                                        |
-| `preload_pipeline/Dict-Value-Database/scripts/generate_web_sources.md` | Dict-builder batch YAML generation                                                              |
 
 
 ---
