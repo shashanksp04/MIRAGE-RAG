@@ -12,6 +12,7 @@ from .tools.keyword_extractor import KeywordExtractor
 from .utils.ContentUtils import ContentUtils
 from .utils.Embedding import SentenceTransformerEmbeddingFunction
 from .utils.qdrant_store import QdrantStore
+from .utils.dual_collection_retriever import DualCollectionRetriever, CrossCollectionDeduplicator
 from google.adk.agents import LlmAgent
 from google.adk.runners import InMemoryRunner
 from google.adk.models.lite_llm import LiteLlm
@@ -27,6 +28,9 @@ class MainAgent:
         api_base: str = "http://127.0.0.1:11434/v1",
         ablation_id: str = "default",
         qdrant_url: Optional[str] = None,
+        base_collection: str = "mirage_base",
+        use_base_collection: bool = True,
+        runtime_collection: Optional[str] = None,
     ):
         self.test_model = test_model
         self.api_base = api_base
@@ -40,9 +44,28 @@ class MainAgent:
             api_key=qdrant_api_key,
             check_compatibility=False,
         )
-        self.collection_name = "meta-mirage_collection"
-        self.store = QdrantStore(self.client, self.collection_name, self.embedding_function)
-        self.store.ensure_collection()
+        self.base_collection = base_collection
+        self.use_base_collection = use_base_collection
+        if not runtime_collection:
+            raise ValueError(
+                "MainAgent requires the lifecycle-selected runtime_collection; "
+                "resolve it with InferenceDatabaseManager first."
+            )
+        self.collection_name = runtime_collection
+        self.base_store = None
+        if self.use_base_collection:
+            existing = [c.name for c in self.client.get_collections().collections]
+            if self.base_collection not in existing:
+                raise RuntimeError(
+                    f"Required base Qdrant collection '{self.base_collection}' was not found. "
+                    "Run with USE_BASE_COLLECTION=False for runtime-only development/testing."
+                )
+            self.base_store = QdrantStore(
+                self.client, self.base_collection, self.embedding_function, require_existing=True
+            )
+        self.runtime_store = QdrantStore(self.client, self.collection_name, self.embedding_function)
+        self.runtime_store.ensure_collection()
+        self.store = self.runtime_store  # compatibility for existing callers
 
         print(f"[RAG Init] Qdrant URL: {resolved_qdrant_url}", flush=True)
         try:
@@ -58,10 +81,14 @@ class MainAgent:
             embed_model=embed_model_name,
             embedding_fn=self.embedding_function,
         )
-        self.pdf_addition = PDFAddition(self.store, self.content_utils, self.null_str)
+        self.dual_retriever = DualCollectionRetriever(
+            self.base_store, self.runtime_store, self.content_utils
+        )
+        self.deduplicator = CrossCollectionDeduplicator(self.base_store, self.runtime_store)
+        self.pdf_addition = PDFAddition(self.runtime_store, self.content_utils, self.null_str, self.deduplicator)
         self.web_search = WebSearch()
-        self.web_addition = WebAddition(self.store, self.content_utils, self.null_str, self.null_int)
-        self.confidence_evaluator = ConfidenceEvaluator(self.store, self.content_utils)
+        self.web_addition = WebAddition(self.runtime_store, self.content_utils, self.null_str, self.null_int, self.deduplicator)
+        self.confidence_evaluator = ConfidenceEvaluator(self.dual_retriever, self.content_utils)
         self.keyword_extractor = KeywordExtractor(model_name=test_model, openai_api_base=api_base)
         self.current_location: Optional[str] = None
         # Ablation toggle: set False to disable location-aware domain filtering for all web searches.
@@ -252,16 +279,18 @@ class MainAgent:
         
     def _rebind_store_tools(self) -> None:
         """Rebind ingestion/retrieval tools after collection lifecycle changes."""
-        self.pdf_addition = PDFAddition(self.store, self.content_utils, self.null_str)
-        self.web_addition = WebAddition(self.store, self.content_utils, self.null_str, self.null_int)
-        self.confidence_evaluator = ConfidenceEvaluator(self.store, self.content_utils)
+        self.pdf_addition = PDFAddition(self.runtime_store, self.content_utils, self.null_str, self.deduplicator)
+        self.web_addition = WebAddition(self.runtime_store, self.content_utils, self.null_str, self.null_int, self.deduplicator)
+        self.confidence_evaluator = ConfidenceEvaluator(self.dual_retriever, self.content_utils)
 
     def reset_collection(self) -> None:
         """Drop and recreate the collection (clean slate)."""
         name = self.collection_name
+        if name == self.base_collection:
+            raise RuntimeError("Inference is not allowed to mutate mirage_base.")
 
         try:
-            self.store.delete_collection()
+            self.runtime_store.delete_collection()
             print(f"[RAG reset_collection] Deleted collection: {name}")
         except Exception as e:
             msg = str(e).lower()
@@ -271,12 +300,12 @@ class MainAgent:
                 print(f"[RAG reset_collection] Delete failed (continuing for test): {e}")
 
         try:
-            self.store.ensure_collection()
+            self.runtime_store.ensure_collection()
             print(f"[RAG reset_collection] Created/loaded collection: {name}")
         except Exception as e:
             print(f"[RAG reset_collection] ensure_collection failed, retrying once: {e}")
             time.sleep(0.5)
-            self.store.ensure_collection()
+            self.runtime_store.ensure_collection()
 
         self._rebind_store_tools()
 
@@ -478,15 +507,14 @@ class MainAgent:
                 "results": [],
             }
 
-        print(f"[RAG Tools] collection.count()={self.store.count()}", flush=True)
+        print(f"[RAG Tools] runtime collection.count()={self.runtime_store.count()}", flush=True)
         effective_use_progressive_filtering = (
             use_progressive_filtering
             if use_progressive_filtering is not None
             else self.use_progressive_filtering
         )
-        used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
+        used_filter, strategy, results = self.dual_retriever.retrieve_with_priority_filters(
             query=query,
-            store=self.store,
             location=location,
             month_year=month_year,
             title=title,

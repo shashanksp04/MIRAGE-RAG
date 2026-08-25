@@ -40,10 +40,11 @@ def chroma_where_to_qdrant_filter(where: dict) -> Filter:
 class QdrantStore:
     """Thin adapter over QdrantClient for rag_agent ingest and retrieval."""
 
-    def __init__(self, client: QdrantClient, collection_name: str, embedding_fn):
+    def __init__(self, client: QdrantClient, collection_name: str, embedding_fn, *, require_existing: bool = False):
         self.client = client
         self.collection_name = collection_name
         self.embedding_fn = embedding_fn
+        self.require_existing = require_existing
 
     def _collection_names(self) -> List[str]:
         return [c.name for c in self.client.get_collections().collections]
@@ -65,6 +66,8 @@ class QdrantStore:
     def ensure_collection(self) -> None:
         """Create the collection and payload indexes if they do not exist."""
         if self.collection_name not in self._collection_names():
+            if self.require_existing:
+                raise RuntimeError(f"Required Qdrant collection does not exist: {self.collection_name}")
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(

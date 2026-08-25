@@ -70,15 +70,16 @@ class ConfidenceEvaluator:
                 "error_message": "Empty query provided"
             }
 
-        used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
-            query=query,
-            store=self.store,
-            location=location,
-            month_year=month_year,
-            title=title,
-            k=k,
-            use_progressive_filtering=use_progressive_filtering,
-        )
+        if hasattr(self.store, "retrieve_with_priority_filters"):
+            used_filter, strategy, results = self.store.retrieve_with_priority_filters(
+                query=query, location=location, month_year=month_year, title=title,
+                k=k, use_progressive_filtering=use_progressive_filtering,
+            )
+        else:
+            used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
+                query=query, store=self.store, location=location, month_year=month_year,
+                title=title, k=k, use_progressive_filtering=use_progressive_filtering,
+            )
 
         if not results:
             return {

@@ -43,6 +43,7 @@ class WebAddition:
         content_utils,
         null_str: str = "",
         null_int: int = -1,
+        deduplicator=None,
     ):
         """
         Args:
@@ -55,6 +56,7 @@ class WebAddition:
         self.content_utils = content_utils
         self.null_str = null_str
         self.null_int = null_int
+        self.deduplicator = deduplicator
 
     def clean_webpage_text(self, text: str) -> str:
 
@@ -298,10 +300,12 @@ class WebAddition:
                 skipped += 1
                 continue
 
-            if self.content_utils.content_hash_exists(
-                self.store,
-                content_hash
-            ):
+            duplicate_source = (
+                self.deduplicator.find_duplicate(content_hash)
+                if self.deduplicator is not None
+                else ("runtime" if self.content_utils.content_hash_exists(self.store, content_hash) else None)
+            )
+            if duplicate_source:
                 skipped += 1
                 continue
 

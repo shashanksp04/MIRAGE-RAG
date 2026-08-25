@@ -211,6 +211,9 @@ def rag_worker_process(
     crop_dictionary_path: Optional[str],
     enable_query_enrichment: bool,
     ablation_id: str,
+    base_collection: str,
+    use_base_collection: bool,
+    runtime_collection: str,
 ):
     import asyncio
     from rag_agent.main import MainAgent
@@ -228,19 +231,11 @@ def rag_worker_process(
             device=device,
             api_base=api_base,
             ablation_id=ablation_id,
+            base_collection=base_collection,
+            use_base_collection=use_base_collection,
+            runtime_collection=runtime_collection,
         )
-
-        if do_reset_collection:
-            print(f"[RAG Worker] Endpoint {api_base}: Resetting collection (rank0 only)...")
-            try:
-                rag_agent.reset_collection()
-                print(f"[RAG Worker] Endpoint {api_base}: ✓ Collection reset")
-            except Exception as e:
-                print(f"[RAG Worker] Endpoint {api_base}: ✗ reset_collection failed: {e}")
-                rag_status_q.put(("FAILED", api_base, str(e)))
-                return
-        else:
-            print(f"[RAG Worker] Endpoint {api_base}: Skipping reset_collection (non-rank0)")
+        print(f"[RAG Worker] Endpoint {api_base}: Using runtime collection {runtime_collection}")
 
         # (Optional hardening) Re-bind collection handle explicitly in non-rank0 workers
         # to avoid any chance of stale collection handles if reset happened elsewhere.
@@ -425,7 +420,12 @@ class Generate:
                  no_rag: bool = False,
                  ablation_id: str = "default",
                  allowed_states: Optional[List[str]] = None,
-                 debug_single_item: bool = False):
+                 debug_single_item: bool = False,
+                 base_collection: str = "mirage_base",
+                 use_base_collection: bool = True,
+                 runtime_mode: str = "resume",
+                 runtime_collection_override: Optional[str] = None,
+                 snapshot_runtime: bool = False):
 
         self.raw_data_file = raw_data_file
         self.output_file = output_file
@@ -446,6 +446,12 @@ class Generate:
         self.ablation_id = (ablation_id or "").strip() or "default"
         self.allowed_states = _normalize_allowed_states(allowed_states)
         self.debug_single_item = bool(debug_single_item)
+        self.base_collection = base_collection
+        self.use_base_collection = use_base_collection
+        self.runtime_mode = runtime_mode
+        self.runtime_collection_override = runtime_collection_override
+        self.snapshot_runtime = snapshot_runtime
+        self.database_manager = None
 
         self.max_retries = 5
         self.retry_delay = 5
@@ -566,7 +572,7 @@ class Generate:
             data = json.load(f)
 
         processed_ids = set()
-        if os.path.exists(self.output_file):
+        if self.runtime_mode != "fresh" and os.path.exists(self.output_file):
             with open(self.output_file, "r", encoding="utf-8") as f:
                 for line in f:
                     try:
@@ -598,6 +604,22 @@ class Generate:
             self._generate_no_rag(items)
             return
 
+        from qdrant_client import QdrantClient
+        from rag_agent.utils.inference_database_manager import InferenceDatabaseManager
+        client = QdrantClient(
+            url=os.getenv("QDRANT_URL", "http://127.0.0.1:6333"),
+            api_key=os.getenv("QDRANT_API_KEY") or None,
+            check_compatibility=False,
+        )
+        self.database_manager = InferenceDatabaseManager(
+            client, base_collection=self.base_collection,
+            use_base_collection=self.use_base_collection,
+            ablation_id=self.ablation_id, runtime_mode=self.runtime_mode,
+            runtime_collection_override=self.runtime_collection_override,
+            snapshot_runtime=self.snapshot_runtime,
+        )
+        active_runtime_collection = self.database_manager.resolve_runtime_collection()
+
         ctx = multiprocessing.get_context("spawn")
 
         num_gpus = _detect_num_gpus() or 1
@@ -626,6 +648,9 @@ class Generate:
                 self.crop_dictionary_path,
                 self.enable_query_enrichment,
                 self.ablation_id,
+                self.base_collection,
+                self.use_base_collection,
+                active_runtime_collection,
             ),
         )
         p0.start()
@@ -654,6 +679,9 @@ class Generate:
                     self.crop_dictionary_path,
                     self.enable_query_enrichment,
                     self.ablation_id,
+                    self.base_collection,
+                    self.use_base_collection,
+                    active_runtime_collection,
                 ),
             )
             p.start()
@@ -797,6 +825,7 @@ class Generate:
             p.join()
 
         pbar.close()
+        self.database_manager.finalize_success()
         print("Processing completed.")
 
 
@@ -817,6 +846,11 @@ if __name__ == "__main__":
         default="default",
         help="Run label for ablation plumbing (behavioral mapping handled separately).",
     )
+    parser.add_argument("--base_collection", default="mirage_base")
+    parser.add_argument("--use_base_collection", type=lambda v: v.lower() in {"1", "true", "yes", "on"}, default=True)
+    parser.add_argument("--runtime_mode", choices=("resume", "fresh"), default="resume")
+    parser.add_argument("--runtime_collection_override", default=None)
+    parser.add_argument("--snapshot_runtime", action="store_true")
     # Crop DB: default CropDatabase.json beside this file; use "" to disable enrichment.
     parser.add_argument(
         "--crop_dictionary_path",
@@ -865,6 +899,11 @@ if __name__ == "__main__":
         ablation_id=args.ablation_id,
         allowed_states=args.allowed_states,
         debug_single_item=args.debug_single_item,
+        base_collection=args.base_collection,
+        use_base_collection=args.use_base_collection,
+        runtime_mode=args.runtime_mode,
+        runtime_collection_override=args.runtime_collection_override,
+        snapshot_runtime=args.snapshot_runtime,
     )
 
     generator.generate()

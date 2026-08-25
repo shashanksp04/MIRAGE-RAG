@@ -15,6 +15,7 @@ class PDFAddition:
         store,
         content_utils,
         null_str: str = "",
+        deduplicator=None,
     ):
         """
         Args:
@@ -25,6 +26,7 @@ class PDFAddition:
         self.store = store
         self.content_utils = content_utils
         self.null_str = null_str
+        self.deduplicator = deduplicator
 
     def clean_pdf_text(self, text: str) -> str:
         # Remove hyphenation at line breaks: "exam-\nple" → "example"
@@ -205,10 +207,12 @@ class PDFAddition:
                     skipped += 1
                     continue
 
-                if self.content_utils.content_hash_exists(
-                    self.store,
-                    content_hash
-                ):
+                duplicate_source = (
+                    self.deduplicator.find_duplicate(content_hash)
+                    if self.deduplicator is not None
+                    else ("runtime" if self.content_utils.content_hash_exists(self.store, content_hash) else None)
+                )
+                if duplicate_source:
                     skipped += 1
                     continue
 
