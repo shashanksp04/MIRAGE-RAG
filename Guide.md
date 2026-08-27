@@ -24,14 +24,14 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 | `Datasets/`         | Reference data (e.g. land-grant universities for URL-derived location).                                                                                                                                                                                      |
 
 
-Run batch jobs from the `Inference/` directory. Before starting workers, run the **Qdrant server** and set `QDRANT_URL` (see [§2.1](#21-qdrant-server-and-collection-name) and [§5.9](#59-starting-the-qdrant-server)).
+Run batch jobs from the `Inference/` directory. Before starting workers, run the **Qdrant server** and set `QDRANT_URL` (see [§2.1](#21-qdrant-server-and-base-runtime-collections) and [§3.2](#32-starting-the-qdrant-server)).
 
 ### 1.3 How to read this guide
 
 - **Sections 2–4** cover shared Qdrant concepts, runtime inference, and evaluation.
 - **Sections 5–6** cover **batch inference** and **runtime RAG agent** behavior.
 - **Section 7** covers ablation controls and the run matrix; **Section 8** is an operational checklist (cluster jobs, pre-run checks, monitoring, environment setup); **Section 9** lists primary files and doc references.
-- **§5.8** covers local LLM servers; **§5.9** covers **starting the Qdrant server** (copy-paste steps).
+- **§3.1** covers local LLM servers; **§3.2** covers **starting the Qdrant server** (copy-paste steps).
 
 ---
 
@@ -44,7 +44,7 @@ Run batch jobs from the `Inference/` directory. Before starting workers, run the
 - The runtime collection is created or resumed by `InferenceDatabaseManager`, shared by all workers for one run, and receives web/PDF augmentation. It is deleted only after successful completion; failures and interruptions preserve it for resume.
 - Set `USE_BASE_COLLECTION=False` (CLI: `--use_base_collection false`) only for runtime-only development/testing while `mirage_base` is unavailable. This skips base verification, retrieval, and base deduplication but uses the same lifecycle, retriever, ingestion, and confidence path.
 - `MainAgent` connects with `QdrantClient(url=...)` to a **running Qdrant server**. Set the URL via environment variable **`QDRANT_URL`** (default `http://127.0.0.1:6333`) or constructor argument `qdrant_url=...`. Optional **`QDRANT_API_KEY`** for secured deployments.
-- **On-disk storage** is owned by the Qdrant **server process**, not by each worker. Inference never discovers, copies, restores, or directly reads Qdrant storage directories. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§5.9](#59-starting-the-qdrant-server)).
+- **On-disk storage** is owned by the Qdrant **server process**, not by each worker. Inference never discovers, copies, restores, or directly reads Qdrant storage directories. On this cluster, the typical storage path is `/work/nvme/bfox/ssingh38/qdrant_database`, configured when starting the server with **`QDRANT__STORAGE__STORAGE_PATH`** (see [§3.2](#32-starting-the-qdrant-server)).
 - **Embeddings** are computed in-process by `SentenceTransformerEmbeddingFunction`; vectors are sent to Qdrant on upsert and query via `rag_agent/utils/qdrant_store.py` (`QdrantStore`).
 - **Embedding model** should stay aligned between notebook preload and runtime retrieval to avoid vector/schema mismatches.
 - **Device** for the sentence-transformer embedder should match (`--device` / `device`, often `"None"` for auto).
@@ -236,7 +236,9 @@ python generate.py \
   --embed_model_name BAAI/bge-base-en-v1.5 \
   --test_model meta-llama/Llama-3.2-11B-Vision-Instruct \
   --device None \
-  --ablation_id ablation_2_static_rag
+  --ablation_id ablation_2_static_rag \
+  --runtime_mode resume \
+  --use_base_collection true
 ```
 
 The benchmark is selected by the input path. In `Inference/bash_generate.sh`, set `BENCH_TYPE` and the script builds:
@@ -273,7 +275,7 @@ CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
   --enable-multimodal \
   --trust-remote-code \
   --mem-fraction-static 0.9 \
-  --max-total-tokens 32768
+  --max-total-tokens 32768 \
   --attention-backend flashinfer
 ```
 
@@ -397,17 +399,17 @@ You should receive JSON (possibly an empty `collections` list on first start).
 ```bash
 export QDRANT_URL=http://127.0.0.1:6333
 cd /path/to/MIRAGE-RAG   # repository root
-python -c "from rag_agent.main import MainAgent; a=MainAgent(device='cuda'); print('count', a.store.count())"
+python -c "from qdrant_client import QdrantClient; c=QdrantClient(url='http://127.0.0.1:6333'); print(c.get_collections())"
 ```
 
-Expected log lines include `[RAG Init] Qdrant URL: http://127.0.0.1:6333`.
+This verifies server connectivity and lists available collections. `MainAgent` is created by `generate.py` only after `InferenceDatabaseManager` has selected the active runtime collection.
 
 #### Step 7 — Three-terminal layout for a full run
 
 | Terminal | Role | What to run |
 | -------- | ---- | ----------- |
 | **1** | Qdrant server | `QDRANT__STORAGE__STORAGE_PATH=... ~/bin/qdrant` |
-| **2** | LLM + RAG workers | Start SGLang/vLLM per **§5.8**, then `export QDRANT_URL=...` and `python Inference/generate.py ...` |
+| **2** | LLM + RAG workers | Start SGLang/vLLM per **§3.1**, then `export QDRANT_URL=...` and `python Inference/generate.py ...` |
 | **3** | Batch driver | `Inference/bash_generate.sh` or your inference script |
 
 **Smoke test** (optional, no LLM required beyond embeddings):
@@ -416,6 +418,21 @@ Expected log lines include `[RAG Init] Qdrant URL: http://127.0.0.1:6333`.
 export QDRANT_URL=http://127.0.0.1:6333
 python rag_agent/test_qdrant_migration.py
 ```
+
+### 3.3 Batch orchestration and collection lifecycle
+
+`Inference/generate.py` first resolves the Qdrant database lifecycle, then starts the RAG workers. The driver validates `mirage_base` when base participation is enabled, selects the run-scoped runtime collection, and passes that same runtime collection name to every worker. Rank 0 is started first and must report `READY`; remaining workers start only after that barrier. This startup coordination is for worker readiness, not for resetting the curated base collection.
+
+The runtime collection is the only collection inference may mutate. It is shared across successive queries in the same run so newly ingested evidence can be reused. On successful completion, the driver optionally snapshots it and deletes it. On interruption or failure, the collection is preserved and can be selected by a later `resume` run. A `fresh` run deletes only matching runtime collections for the selected ablation. `mirage_base` is never reset, deleted, upserted, or otherwise modified by inference.
+
+The full data path is:
+
+```text
+Dataset → bounded RAG request queue → per-GPU RAG workers
+        → RAG response queue → generation pool → JSONL output
+```
+
+Soft RAG failures continue to generation with the effective query. Hard failures are retried; after the retry limit, generation is skipped for that item and the failure is recorded.
 
 ---
 
@@ -550,7 +567,7 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.2 Before batch inference (`generate.py`)
 
-- **Start Qdrant** and verify connectivity (**§5.9**): `curl http://127.0.0.1:6333/collections`.
+- **Start Qdrant** and verify connectivity (**§3.2**): `curl http://127.0.0.1:6333/collections`.
 - **`export QDRANT_URL=http://127.0.0.1:6333`** (or your server host/port) in the worker environment.
 - Start one **LLM server per GPU** on the expected ports (or configure **`--openai_api_base`** host consistently with `_build_endpoints`).
 - Normal runs require the curated **`mirage_base`** collection to exist before startup. The driver creates or resumes an ablation-scoped runtime collection; it never resets the base.
@@ -564,10 +581,10 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.3 Troubleshooting pointers
 
-- **Qdrant `Connection refused` on `:6333`:** server not running—start Terminal 1 per **§5.9**.
-- **`GLIBC_2.38 not found` when running `./qdrant`:** use the **musl** tarball, not the gnu build (**§5.9** Step 2).
+- **Qdrant `Connection refused` on `:6333`:** server not running—start Terminal 1 per **§3.2**.
+- **`GLIBC_2.38 not found` when running `./qdrant`:** use the **musl** tarball, not the gnu build (**§3.2** Step 2).
 - **`unexpected argument '--storage-path'`:** Qdrant 1.18+ uses **`QDRANT__STORAGE__STORAGE_PATH`**, not `--storage-path`.
-- **`qdrant: command not found`:** `pip install qdrant-client` does not install the server binary—download from GitHub releases (**§5.9** Step 2).
+- **`qdrant: command not found`:** `pip install qdrant-client` does not install the server binary—download from GitHub releases (**§3.2** Step 2).
 - **Keyword extraction reliability:** `Documentation.md` notes a **fresh client per `extract_keywords` call** in `KeywordExtractor` to avoid context overflow when reusing sessions.
 - **Enrichment disabled unexpectedly:** missing file at resolved path, or **`--disable_query_enrichment`**; workers log when the dictionary is missing or enrichment is off.
 
@@ -636,7 +653,7 @@ If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your 
 
 Repo-root **`requirments.txt`** is the **only** pinned dependency manifest for embeddings, Qdrant, SGLang, Google ADK/LiteLLM clients, and CUDA-associated wheels. Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
 
-Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§5.8**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
+Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§3.1**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
@@ -653,7 +670,7 @@ CUDA_VISIBLE_DEVICES=0 python -m sglang.launch_server \
 
 Use `CUDA_VISIBLE_DEVICES=1`, port **11435**, and so on, for additional GPUs to match `generate.py`'s endpoint list.
 
-Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, etc.) with this server (model ID and multimodal/tool settings must agree with `**--model-path**` above). On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node. For a vLLM-based alternative server, see **§5.8**.
+Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, etc.) with this server (model ID and multimodal/tool settings must agree with `**--model-path**` above). On clusters, prefer job scripts that load modules, activate the venv, and launch the server on the allocated node. For a vLLM-based alternative server, see **§3.1**.
 
 ---
 
@@ -682,7 +699,7 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping and migration history                                                |
 | `Documentation.md`                                                     | Multi-GPU queue design, shared runtime collection, RAG failure handling, keyword extractor note |
-| `Inference/README.md`                                                  | Crop DB filename and enrichment flags                                                           |
+| `Inference/README.md`                                                  | Batch inference architecture, Qdrant collection lifecycle, crop DB filename, and enrichment flags |
 
 
 ---

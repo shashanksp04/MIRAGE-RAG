@@ -70,16 +70,40 @@ class ConfidenceEvaluator:
                 "error_message": "Empty query provided"
             }
 
-        if hasattr(self.store, "retrieve_with_priority_filters"):
-            used_filter, strategy, results = self.store.retrieve_with_priority_filters(
-                query=query, location=location, month_year=month_year, title=title,
-                k=k, use_progressive_filtering=use_progressive_filtering,
-            )
-        else:
-            used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
-                query=query, store=self.store, location=location, month_year=month_year,
-                title=title, k=k, use_progressive_filtering=use_progressive_filtering,
-            )
+        # Tool-calling models can occasionally emit an invalid value for the
+        # optional result-count argument. Normalize it here so confidence
+        # evaluation cannot terminate an otherwise recoverable RAG request.
+        try:
+            k = max(1, int(k))
+        except (TypeError, ValueError):
+            k = 5
+
+        try:
+            if hasattr(self.store, "retrieve_with_priority_filters"):
+                used_filter, strategy, results = self.store.retrieve_with_priority_filters(
+                    query=query, location=location, month_year=month_year, title=title,
+                    k=k, use_progressive_filtering=use_progressive_filtering,
+                )
+            else:
+                used_filter, strategy, results = self.content_utils.retrieve_with_priority_filters(
+                    query=query, store=self.store, location=location, month_year=month_year,
+                    title=title, k=k, use_progressive_filtering=use_progressive_filtering,
+                )
+        except Exception as exc:
+            # Confidence is a routing signal. If its verification retrieval
+            # fails, treat the evidence as low confidence so the agent can use
+            # its existing web-augmentation path instead of crashing the item.
+            return {
+                "status": "success",
+                "confidence_score": 0.0,
+                "confidence_level": "low",
+                "diagnostics": {
+                    "reason": "confidence_retrieval_failed",
+                    "error_message": str(exc),
+                    "strategy_used": "no_results",
+                    "num_chunks": 0,
+                },
+            }
 
         if not results:
             return {

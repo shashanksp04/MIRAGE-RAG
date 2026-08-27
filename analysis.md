@@ -1,6 +1,6 @@
 # MIRAGE-RAG Repository Analysis
 
-**Assessment date:** 2026-08-19
+**Assessment date:** 2026-08-27
 
 ## Executive Summary
 
@@ -21,7 +21,9 @@ The preload/runtime architecture is now aligned on Qdrant:
 - **Preload has moved to notebook orchestration** under `preload_pipeline/NEW-ARCHITECTURE/`, with canonical persistence, SQLite processing ledger, batch embedding/upsert, and cumulative per-state Qdrant snapshots.
 - The preload pipeline is intentionally decoupled from inference startup and executed as an offline Jupyter workflow.
 
-`Guide.md` is the most current architectural reference, although it also contains at least one operational mismatch: it describes a rank-0 collection reset that the current `Inference/generate.py` does not appear to enable in its checked-in startup path.
+`Guide.md` is the most current architectural reference for runtime and preload behavior. The checked-in inference path now resolves a run-scoped runtime collection before starting workers and uses rank 0 as a readiness barrier rather than as a collection-reset owner.
+
+The current inference lifecycle is now base/runtime isolated: `mirage_base` is curated and read-only, while each ablation run uses a run-scoped `mirage_runtime_<ablation>_<timestamp>` collection for runtime web/PDF augmentation. The runtime collection is resumed after interruption or cleaned up after successful completion, so runtime ingestion does not contaminate the curated base or a separate run.
 
 ## 1. System Purpose and Design Goals
 
@@ -47,8 +49,9 @@ The architecture favors batch experimentation and cluster execution over a small
 flowchart LR
     Sources[Web / PDF / CSV sources] --> RuntimeIngest[Runtime ingestion tools]
     RuntimeIngest --> Embed[SentenceTransformer embeddings]
-    Embed --> Qdrant[(Qdrant server)]
-    Qdrant --> Retrieve[Progressive retrieval]
+    Embed --> Runtime[(Run-scoped runtime collection)]
+    Base[(Curated mirage_base)] --> Retrieve[Dual-collection progressive retrieval]
+    Runtime --> Retrieve
     Query[Benchmark question + location] --> Enrich[Optional crop query enrichment]
     Enrich --> Agent[Google ADK MainAgent]
     Agent --> Retrieve
@@ -62,7 +65,7 @@ flowchart LR
     Generate --> Output[JSONL inference output]
 ```
 
-`MainAgent` is the runtime owner of the Qdrant connection. It creates a `QdrantClient` from `QDRANT_URL`, defaults to `http://127.0.0.1:6333`, and uses the `meta-mirage_collection` collection name. The Qdrant server owns persistence; RAG workers communicate with it over HTTP.
+`InferenceDatabaseManager` owns inference collection lifecycle. It validates the optional read-only `mirage_base` collection and selects or creates the run-scoped runtime collection. `MainAgent` is then the runtime owner of the Qdrant connection for that selected runtime collection: it creates a `QdrantClient` from `QDRANT_URL`, defaults to `http://127.0.0.1:6333`, and composes the base/runtime retriever and runtime-only ingestion tools. The Qdrant server owns persistence; RAG workers communicate with it over HTTP.
 
 ### 2.2 Preload architecture
 
@@ -92,7 +95,7 @@ The following runtime responsibilities are implemented with Qdrant:
   - Resolves `QDRANT_URL` and optional `QDRANT_API_KEY`.
   - Creates a `QdrantStore`.
   - Ensures the collection exists.
-  - Resets or reloads the remote collection through Qdrant APIs.
+  - Uses the lifecycle-selected runtime collection; inference does not mutate `mirage_base`.
   - Passes the store to retrieval, confidence, web, and PDF tools.
 - `rag_agent/utils/qdrant_store.py`
   - Creates collections with an explicit vector size and cosine distance.
@@ -249,9 +252,9 @@ This is a heuristic confidence model rather than a calibrated probability estima
 
 ### 6.2 Web augmentation
 
-Low-confidence retrieval can lead to web search and ingestion. The system includes location-aware domain filtering, with agricultural and educational sources prioritized when enabled. Newly ingested content is embedded and upserted into the same Qdrant collection used by retrieval.
+Low-confidence retrieval can lead to web search and ingestion. The system includes location-aware domain filtering, with agricultural and educational sources prioritized when enabled. Newly ingested content is embedded and upserted into the active run-scoped runtime Qdrant collection, while the curated base collection remains read-only.
 
-This makes the runtime database mutable during inference. It is a deliberate design for knowledge expansion, but it also means experiment reproducibility depends on collection reset, collection snapshotting, or a controlled starting collection.
+This makes only the run-scoped runtime database mutable during inference. Runtime knowledge is available to later queries in the same run, but independent runs use a different runtime collection unless explicitly resumed. A successful run may snapshot the runtime collection before cleanup; interrupted runs preserve it for resume.
 
 ## 7. Query Enrichment
 
@@ -270,7 +273,7 @@ The crop dictionary is therefore not a second vector database and does not repla
 
 ## 8. Batch Inference Architecture
 
-`Inference/generate.py` separates RAG orchestration from final answer generation.
+`Inference/generate.py` separates RAG orchestration from final answer generation and manages the Qdrant runtime lifecycle.
 
 ```mermaid
 flowchart LR
@@ -297,6 +300,8 @@ The main responsibilities include:
 - Sending the combined prompt and images to the generation client.
 - Writing incremental JSONL results.
 
+Before starting workers, the driver uses `InferenceDatabaseManager` to validate `mirage_base` when enabled and select the active runtime collection. It starts rank 0 first, waits for its `READY` status, then starts the remaining per-endpoint workers. All workers receive the same runtime collection name. The bounded request queue controls RAG backpressure; the response queue decouples RAG completion from the independent generation pool.
+
 ### 8.1 Failure handling
 
 RAG failures are classified using text heuristics:
@@ -309,11 +314,11 @@ Generation has its own retry loop and writes `-1` plus an error field when all r
 
 This layered failure model is useful for long batch jobs because a weak retrieval response does not necessarily prevent answer generation. The main limitations are that classification depends on error-message text and there is no per-request timeout inside the RAG worker itself.
 
-### 8.2 Collection reset discrepancy
+### 8.2 Collection lifecycle
 
-The design documentation describes rank 0 resetting the Qdrant collection before other workers begin. The worker function supports a `do_reset_collection` flag and `MainAgent.reset_collection()` is implemented.
+The current startup path does not reset a shared collection from rank 0. Instead, the main process resolves a run-scoped runtime collection before workers start. Rank 0 reports `READY`, then the remaining workers are launched with the same selected collection. The curated `mirage_base` collection is never reset or mutated by inference.
 
-However, the checked-in startup path in `generate.py` currently passes `do_reset_collection=False` when creating workers. Consequently, the documented reset behavior should be treated as an intended or historical operational model, not as verified current behavior. This matters because runtime web ingestion can make successive experiments share state unless the collection is reset externally or the startup path is corrected.
+`--runtime_mode resume` selects the newest matching runtime collection for the ablation, while `--runtime_mode fresh` deletes matching runtime collections and creates a new timestamped one. `--runtime_collection_override` can select a specific existing runtime collection in resume mode. On success, `--snapshot_runtime` creates a Qdrant snapshot before the runtime collection is deleted; on failure or interruption, the runtime collection is preserved.
 
 ### 8.3 Launch-script drift
 
@@ -345,7 +350,7 @@ The toggles control:
 
 `MainAgent` applies the runtime toggles and chooses the tool set. It also loads instruction templates from `rag_agent/model_instructions.md`, using a fallback template when an ablation-specific instruction is not found.
 
-The framework provides a stable runtime entrypoint for controlled comparisons. The main reproducibility concern is mutable Qdrant state: full-system experiments that ingest web content can influence later runs unless each run starts from a known collection state.
+The framework provides a stable runtime entrypoint for controlled comparisons. Runtime web content is isolated to the selected run collection, while all runs can share the immutable curated base. Reproducibility still requires recording the ablation ID, runtime mode/collection, Qdrant endpoint, embedding model, and whether runtime snapshotting was enabled.
 
 ## 10. Preload Pipeline
 
@@ -396,9 +401,9 @@ LLM-as-a-judge scores provide useful comparative evidence but are not equivalent
 
 ## 12. Documentation Consistency Review
 
-### `README.MD`
+### `Inference/README.md`
 
-README should describe preload as the notebook-based NEW-ARCHITECTURE flow and keep runtime storage references centered on Qdrant. Any remaining Chroma-specific language should be treated as historical unless explicitly tied to legacy folders.
+The inference README should describe the staged batch flow, base/runtime collection roles, Qdrant server prerequisite, runtime resume/fresh behavior, and crop-dictionary options. Any remaining Chroma-specific language should be treated as historical unless explicitly tied to legacy folders.
 
 ### `Guide.md`
 
@@ -410,7 +415,7 @@ It should still be reconciled with the current `generate.py` startup behavior, p
 
 This is a detailed migration design and API mapping document. It explains the conceptual differences between Chroma and Qdrant, including explicit embedding, payload storage, point IDs, vector dimensions, filters, and score semantics.
 
-It reads partly like a pre-implementation plan. Current runtime code has completed much of the `rag_agent` migration, but preload files remain in the older state.
+It reads partly like a migration reference. Current runtime code has completed the `rag_agent` migration, and the preload files under `preload_pipeline/NEW-ARCHITECTURE/` document the notebook-driven Qdrant build, canonical persistence, ledger, snapshots, and resume workflow.
 
 ### `preload_pipeline/NEW-ARCHITECTURE/*`
 
@@ -437,9 +442,9 @@ These documents preserve valuable design history around queues, worker behavior,
 
 ### High priority
 
-1. **Collection lifecycle behavior is ambiguous.** The reset method exists and documentation describes it, but the current inference startup path appears to disable it for all workers.
+1. **Run bookkeeping remains important.** Runtime collections are isolated, but reproducibility still depends on recording the selected runtime collection and resume/fresh mode.
 2. **README preload/runtime wording can drift.** Preload notebook flow and runtime flow must remain clearly separated in documentation.
-3. **Experiment state can leak.** Runtime web ingestion mutates the shared Qdrant collection, so reproducibility depends on collection reset or snapshots.
+3. **Runtime snapshots are optional.** A successful run deletes its runtime collection unless `--snapshot_runtime` is enabled, so preserving a completed run requires explicitly requesting a snapshot.
 
 ### Medium priority
 
@@ -459,11 +464,10 @@ These documents preserve valuable design history around queues, worker behavior,
 
 This report does not modify the existing implementation. Based on the current state, the lowest-risk engineering sequence would be:
 
-1. Make collection lifecycle policy explicit in inference: reset, reuse, or select a named run collection.
-2. Keep `README.MD`, `Guide.md`, and NEW-ARCHITECTURE preload docs synchronized with executable defaults.
-3. Add a small integration check that starts or connects to Qdrant, creates the collection, inserts one chunk, filters it, retrieves it, and verifies deduplication.
-4. Add a reproducibility manifest containing benchmark path, model endpoints, embedding model, Qdrant URL/collection, ablation ID, and collection reset state.
-5. Extend preload reporting validation with clearer per-unit failure categorization and portable path handling.
+1. Keep `Inference/README.md`, `Guide.md`, and NEW-ARCHITECTURE preload docs synchronized with executable defaults.
+2. Add a small integration check that starts or connects to Qdrant, creates the collection, inserts one chunk, filters it, retrieves it, and verifies deduplication.
+3. Add a reproducibility manifest containing benchmark path, model endpoints, embedding model, Qdrant URL/collection, ablation ID, and runtime mode.
+4. Extend preload reporting validation with clearer per-unit failure categorization and portable path handling.
 
 ## 16. Bottom Line
 
