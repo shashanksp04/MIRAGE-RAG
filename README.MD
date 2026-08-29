@@ -57,6 +57,17 @@ python -m venv .venv
 # Linux / macOS:
 source .venv/bin/activate
 
+# Store Hugging Face model caches on the 1 TB storage volume.
+mkdir -p /projects/bfox/ssingh38/huggingface_cache/hub
+mkdir -p /projects/bfox/ssingh38/triton_cache
+export HF_HOME=/projects/bfox/ssingh38/huggingface_cache
+export HUGGINGFACE_HUB_CACHE=/projects/bfox/ssingh38/huggingface_cache/hub
+export TRITON_CACHE_DIR=/projects/bfox/ssingh38/triton_cache
+
+echo $HF_HOME
+echo $HUGGINGFACE_HUB_CACHE
+echo $TRITON_CACHE_DIR
+
 python -m pip install --upgrade pip wheel setuptools
 pip install -r requirments.txt
 ```

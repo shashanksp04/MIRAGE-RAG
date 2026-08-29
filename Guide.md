@@ -26,7 +26,23 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 
 Run batch jobs from the `Inference/` directory. Before starting workers, run the **Qdrant server** and set `QDRANT_URL` (see [§2.1](#21-qdrant-server-and-base-runtime-collections) and [§3.2](#32-starting-the-qdrant-server)).
 
-### 1.3 How to read this guide
+### 1.3 Hugging Face cache on cluster storage
+
+Set the Hugging Face cache to the 1 TB storage volume before installing dependencies or launching model servers. This prevents model downloads from filling the home or system filesystem.
+
+```bash
+mkdir -p /projects/bfox/ssingh38/huggingface_cache/hub
+mkdir -p /projects/bfox/ssingh38/triton_cache
+export HF_HOME=/projects/bfox/ssingh38/huggingface_cache
+export HUGGINGFACE_HUB_CACHE=/projects/bfox/ssingh38/huggingface_cache/hub
+export TRITON_CACHE_DIR=/projects/bfox/ssingh38/triton_cache
+
+echo $HF_HOME
+echo $HUGGINGFACE_HUB_CACHE
+echo $TRITON_CACHE_DIR
+```
+
+### 1.4 How to read this guide
 
 - **Sections 2–4** cover shared Qdrant concepts, runtime inference, and evaluation.
 - **Sections 5–6** cover **batch inference** and **runtime RAG agent** behavior.
