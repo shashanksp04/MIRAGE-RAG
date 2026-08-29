@@ -18,7 +18,7 @@ MIRAGE-RAG is an agricultural, multimodal retrieval-augmented generation system 
 The preload/runtime architecture is now aligned on Qdrant:
 
 - **Qdrant is the active vector store for runtime `rag_agent` paths.**
-- **Preload has moved to notebook orchestration** under `preload_pipeline/NEW-ARCHITECTURE/`, with canonical persistence, SQLite processing ledger, batch embedding/upsert, and cumulative per-state Qdrant snapshots.
+- **Preload has moved to notebook orchestration** under `preload_pipeline/NEW-ARCHITECTURE/`, with concurrent state workers, state-local canonical/SQLite persistence, direct shared-Qdrant upserts, and cumulative per-wave snapshots.
 - The preload pipeline is intentionally decoupled from inference startup and executed as an offline Jupyter workflow.
 
 `Guide.md` is the most current architectural reference for runtime and preload behavior. The checked-in inference path now resolves a run-scoped runtime collection before starting workers and uses rank 0 as a readiness barrier rather than as a collection-reset owner.
@@ -78,8 +78,8 @@ flowchart LR
   Qualify --> RagChunk[RAG chunking + metadata validation]
   RagChunk --> Embed[Batch embeddings]
   Embed --> Qdrant[(Qdrant cumulative collection)]
-  Qdrant --> Snapshots[(Per-state cumulative snapshots + manifests)]
-  Qualify --> CropOcc[(crop_occurrences.json state update)]
+  Qdrant --> Snapshots[(Cumulative per-wave snapshots)]
+  Qualify --> CropOcc[(State-local crop output)]
 ```
 
 This notebook path runs offline, keeps deterministic state across runs, and supports resume/retry semantics without reprocessing completed units.
@@ -117,14 +117,22 @@ The following runtime responsibilities are implemented with Qdrant:
 - `rag_agent/test_qdrant_migration.py`
   - Exercises embedding helpers, filter translation, collection lifecycle, upsert, deduplication, and search.
 
-### 3.2 Notebook preload path
+### 3.2 Concurrent notebook preload path
 
-The preload path now operates under `preload_pipeline/NEW-ARCHITECTURE/`:
+The preload path now operates under `preload_pipeline/NEW-ARCHITECTURE/` and
+supports concurrent state ingestion:
 
-- `MetaMIRAGE_Cumulative_Qdrant_Preload_FIXED_FROM_YOURS.ipynb` orchestrates run configuration, source discovery, extraction, qualification, chunking, embedding, upsert, validation, snapshot, and manifest generation.
-- `metamirage_preload_final_architecture_updated.md` defines persistence contracts and run invariants (canonical store, SQLite ledger, global deduplication, terminal states).
-- `run.md` defines run order, state sequencing, Qdrant startup, and resume behavior.
+- `MetaMIRAGE_Concurrent_Preload_Worker.ipynb` is a generic one-state worker. Multiple copies can run concurrently on separate GPU allocations.
+- `preload_coordinator.py` provides state leases, heartbeats, atomic build-level content claims, and wave status through the coordinator API.
+- `new-architecture-preload-pipeline.md` defines the state-local persistence, shared Qdrant, coordinator, wave, snapshot, and resume contracts.
+- `run.md` defines concurrent worker setup, Qdrant/coordinator startup, and wave operations.
 - `qdrant_delta_setup_context.md` documents snapshot creation, download, restore, and reuse across sessions.
+
+Each worker owns a separate `persistent_state/<BUILD_ID>/<STATE_CODE>/` tree
+and writes directly to the shared cumulative Qdrant collection. Global crop
+merging and cumulative snapshots belong to wave finalization, not worker
+completion. The old one-state-at-a-time assumptions must not be used for the
+concurrent build.
 
 ### 3.3 Practical conclusion
 
@@ -358,11 +366,11 @@ The preload subsystem is notebook-orchestrated and provides several useful opera
 
 - Input discovery and configuration validation.
 - Location metadata validation.
-- File locking to avoid concurrent preload writers.
+- Coordinator leases and atomic claims to coordinate concurrent preload workers.
 - State-scoped retries and terminal-state validation.
 - Global deduplication via canonical content hashing.
-- Cumulative per-state Qdrant snapshots and manifests.
-- Atomic updates to cumulative `crop_occurrences.json` state sections.
+- Cumulative per-wave Qdrant snapshots and state manifests.
+- State-local crop outputs merged by wave finalization into cumulative `crop_occurrences.json`.
 
 The pipeline is now notebook-driven and offline, with explicit resume behavior through persisted canonical content, SQLite ledger state, and snapshot restore support.
 

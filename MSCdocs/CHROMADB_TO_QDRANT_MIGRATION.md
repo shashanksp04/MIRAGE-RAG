@@ -1,5 +1,10 @@
 # Migrating MIRAGE-RAG from ChromaDB to Qdrant
 
+> **Status:** This is a migration reference and historical API mapping. The
+> migration is complete in the current runtime and preload paths; current
+> operations use Qdrant as documented in `Guide.md` and
+> `preload_pipeline/NEW-ARCHITECTURE/`.
+
 This document is a comprehensive, file-by-file migration guide for replacing ChromaDB with Qdrant as the vector database backend in the MIRAGE-RAG project.  
 **No code is changed here** — this is a reference guide only.
 

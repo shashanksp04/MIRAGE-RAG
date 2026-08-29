@@ -16,7 +16,8 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 flowchart LR
   base[(mirage_base<br/>read-only)]
   runtime[(mirage_runtime_<ABLATION_ID>_<timestamp><br/>run-scoped read/write)]
-  snap[(PerStateSnapshots)]
+  sources[State source files]
+  preload[Concurrent state preload]
   cropDict[CropDictionaryJSON]
   dataset[InferenceDataset]
   enrich[QueryEnrichment]
@@ -25,7 +26,7 @@ flowchart LR
   gen[AnswerGeneration]
   out[JSONLOutput]
 
-  base --> snap
+  sources --> preload --> base
   dataset --> enrich
   cropDict --> enrich
   enrich --> rag
@@ -91,6 +92,10 @@ python -c "import qdrant_client, sentence_transformers; print('qdrant-client + s
 ## Pipeline Components
 
 ### Runtime Batch Inference
+
+### Concurrent Preload
+
+The preload pipeline is implemented under `preload_pipeline/NEW-ARCHITECTURE/`. Each generic worker notebook processes one state on its own GPU allocation, so multiple states can be ingested concurrently into one cumulative Qdrant collection. State-local SQLite ledgers, canonical stores, crop outputs, and manifests prevent workers from sharing mutable local files. The Preload Coordinator API owns state leases and atomic build-level deduplication claims; workers send vectors directly to Qdrant. A separate wave finalization step validates all expected states, merges crop outputs, and creates the cumulative snapshot. See [`new-architecture-preload-pipeline.md`](preload_pipeline/NEW-ARCHITECTURE/new-architecture-preload-pipeline.md) and [`run.md`](preload_pipeline/NEW-ARCHITECTURE/run.md).
 
 #### Original/direct command
 
@@ -302,8 +307,9 @@ This project is built on and extends MIRAGE benchmark assets and concepts. Pleas
 
 - `Guide.md`: full architecture and implementation details.
 - `Documentation.md`: runtime queue/worker design and failure handling.
-- `preload_pipeline/NEW-ARCHITECTURE/metamirage_preload_final_architecture_updated.md`: finalized preload architecture.
-- `preload_pipeline/NEW-ARCHITECTURE/run.md`: state-run execution guide.
+- `preload_pipeline/NEW-ARCHITECTURE/new-architecture-preload-pipeline.md`: concurrent state-worker architecture and invariants.
+- `preload_pipeline/NEW-ARCHITECTURE/MetaMIRAGE_Concurrent_Preload_Worker.ipynb`: generic one-state worker notebook.
+- `preload_pipeline/NEW-ARCHITECTURE/run.md`: concurrent wave execution guide.
 - `preload_pipeline/NEW-ARCHITECTURE/qdrant_delta_setup_context.md`: Qdrant setup and snapshot reuse.
 - `Inference/README.md`: runtime arguments and enrichment flags.
-- `preload_pipeline/Dict-Value-Database/QUERY_ENRICHMENT_CONTEXT.md`: enrichment behavior and safeguards.
+- `Guide.md` §8.2: runtime query enrichment behavior and safeguards.

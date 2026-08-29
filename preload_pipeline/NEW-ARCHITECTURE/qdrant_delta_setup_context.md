@@ -1,4 +1,4 @@
-# Qdrant Setup, Jupyter Integration, Snapshots, and Reuse on NCSA Delta
+# Qdrant Setup, Concurrent Jupyter Workers, Snapshots, and Reuse on NCSA Delta
 
 ## Purpose
 
@@ -348,7 +348,7 @@ This confirms that stored vectors can be retrieved by similarity.
 
 # 10. Intended Real Preload Flow
 
-The real database-preparation flow should eventually look like:
+The current database-preparation flow uses concurrent state workers:
 
 ```text
 Raw PDF / URL / Document
@@ -368,8 +368,15 @@ accepted?
         Batch embedding
              ↓
         Qdrant upsert
-             ↓
-       Base collection
+        ↓
+  Shared cumulative Qdrant collection
+
+Several workers may execute this flow concurrently, one state per worker. The
+workers use state-local ledgers and canonical stores, while the coordinator
+serializes state leases and global content claims. Workers do not create or
+restore snapshots. After all expected states in a wave complete, a separate
+finalizer validates the wave, merges state-local crop JSON files, and creates
+one cumulative snapshot.
 ```
 
 A conceptual ingestion loop:

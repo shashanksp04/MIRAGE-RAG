@@ -209,7 +209,12 @@ Just start additional model servers on sequential ports.
 
 ---
 
-# 4️⃣ Rank0 Initialization & Collection Reset Design
+# 4️⃣ Historical Rank0 Initialization & Collection Reset Design
+
+> This section documents the former ChromaDB runtime design. It is retained as
+> migration history. The current runtime uses a server-managed Qdrant base and
+> run-scoped runtime collection; rank 0 is a readiness barrier, not a
+> collection-reset owner.
 
 This section documents a critical architectural fix related to ChromaDB.
 
@@ -241,7 +246,7 @@ Even though the collection exists.
 
 ---
 
-## The Solution: Rank0 Barrier Initialization
+## Historical Solution: Rank0 Barrier Initialization
 
 We implemented a startup coordination mechanism.
 
@@ -249,7 +254,7 @@ We implemented a startup coordination mechanism.
 
 ### Step 1: Start Rank0 First
 
-Only the first RAG worker (Rank0):
+In the former Chroma implementation, only the first RAG worker (Rank0):
 
 * Calls `reset_collection()`
 * Recreates the collection
@@ -346,13 +351,15 @@ One RAG worker per GPU.
 
 Auto-detects GPU count.
 
-### ✔ Fault-Tolerant
+### ✔ Qdrant Server Mode
 
-Handles stale collection references.
+Workers use HTTP clients against one server-managed Qdrant instance; the
+curated base collection is read-only during inference.
 
 ### ✔ Deterministic Startup
 
-Rank0 barrier prevents race conditions.
+Rank0 readiness is confirmed before remaining workers start, while collection
+lifecycle is owned by the main driver.
 
 ### ✔ Clean Separation
 
@@ -379,7 +386,7 @@ Example Entry:
 ```
 Date: YYYY-MM-DD
 Change: Added self-healing collection rebinding.
-Reason: Workers crashed due to stale Chroma UUID handles.
+Reason: Workers previously crashed due to stale Chroma UUID handles.
 Impact: Increased reliability in multi-process environment.
 Trade-offs: Slight overhead on first failure detection.
 ```

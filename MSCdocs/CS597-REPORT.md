@@ -1,5 +1,10 @@
 # Semester Report — MetaMIRAGE RAG System Development
 
+> **Status note:** This report preserves the implementation state and terminology
+> from the semester in which it was written. The current repository uses Qdrant
+> for runtime and preload vector storage; the current concurrent preload design
+> is documented in `preload_pipeline/NEW-ARCHITECTURE/`.
+
 ## 1. Overview
 
 This semester, I designed and implemented an end-to-end **retrieval-augmented generation (RAG) system** tailored for domain-specific reasoning, particularly in agriculture. The system, referred to as **MetaMIRAGE**, integrates structured metadata, adaptive retrieval strategies, and dynamic knowledge ingestion to improve the reliability and contextual grounding of model outputs.
@@ -25,7 +30,7 @@ The system follows a modular pipeline:
 
   * Data ingestion (web, PDFs, CSV)
   * Chunking, embedding, and metadata tagging
-  * Storage in a persistent Chroma vector database
+  * Storage in a persistent vector database (Chroma in the historical implementation; Qdrant in the current repository)
 
 * **Runtime Stage**
 
@@ -44,13 +49,13 @@ The system follows a modular pipeline:
 
 ## 3. Vector Database and Ingestion Pipeline
 
-![Offline ingestion: sources, chunking, embedding, and Chroma storage](./figures/offline-ingestion.png)
+![Offline ingestion: sources, chunking, embedding, and vector storage](./figures/offline-ingestion.png)
 
 *Figure 2 — Offline ingestion pipeline from raw sources to the vector database.*
 
 ### 3.1 Database Design
 
-* Implemented a **persistent Chroma vector database**
+* Implemented a persistent vector database; the current repository uses **Qdrant**
 * Used **sentence-transformer embeddings** for semantic search
 * Designed a **canonical metadata schema**, including:
 
@@ -316,7 +321,7 @@ This transforms the system into a research-ready experimentation platform.
 
 ## 11. Tools and Technologies
 
-* **Vector DB:** Chroma
+* **Vector DB:** Qdrant (current repository); Chroma terminology in earlier sections reflects the historical implementation described by this report.
 * **Embeddings:** SentenceTransformers (BGE)
 * **LLM Serving:** OpenAI-compatible APIs (SGLang / vLLM)
 * **Data Processing:** Python, Transformers, Trafilatura, BeautifulSoup
@@ -338,7 +343,7 @@ This transforms the system into a research-ready experimentation platform.
 
 ## 13. Future Work
 
-* Transition to the Qdrant vector database to enhance scalability, reliability, and production readiness
+* Completed the transition to Qdrant for improved scalability, reliability, and production readiness
 * Conduct comprehensive ablation studies over the summer to generate robust experimental results and insights
 * Optimize system performance to significantly reduce latency per query
 

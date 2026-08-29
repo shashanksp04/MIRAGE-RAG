@@ -489,7 +489,7 @@ Because of this, the exact tool-call sequence is **template-dependent per ablati
 ### 6.2 Location handling
 
 - User messages may begin with `**[User location: X]`**; that string is passed through to retrieve and web search as required by the agent instructions.
-- `**_tracked_add_web_content`** does not take a user-supplied location in the same way; location for `.edu` URLs can be **derived** from the institution’s state (see metadata policy in `preload_pipeline/docs/README.md` and `Datasets/land_grant_universities.csv`).
+- `**_tracked_add_web_content`** does not take a user-supplied location in the same way; location for `.edu` URLs can be **derived** from the institution’s state (see `Datasets/land_grant_universities.csv` and the metadata rules in the current preload architecture documentation).
 
 ### 6.3 Assumptions for RAG
 
@@ -580,6 +580,22 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 - Ensure support files exist in the preload working directory: `county_state_hardiness_zone.csv` and `crop_occurrences.json`.
 - Ensure only intended state input files are present for auto-discovery (PDF zip / CSV zip / URL file patterns).
 - Ensure enough disk for canonical storage, snapshots, and run artifacts.
+
+The current preload workflow is state-level concurrent. Use one copy of
+`MetaMIRAGE_Concurrent_Preload_Worker.ipynb` per available GPU allocation; each
+copy must be configured for exactly one `STATE_CODE`, while all workers use the
+same `BUILD_ID`, `WAVE_ID`, coordinator, and cumulative Qdrant collection.
+Workers must not share a SQLite ledger or mutate the global crop JSON. The
+coordinator owns state leases and atomic cross-state deduplication claims.
+
+Workers write vectors directly to Qdrant and produce state-local ledgers,
+canonical data, crop output, and manifests. They do not reset, restore, delete,
+or snapshot the shared collection. Finalize a wave only after every explicitly
+expected state has completed and passed validation; wave finalization merges
+the state crop outputs and creates the cumulative snapshot. Five workers is a
+practical maximum, not a required wave size. See
+`preload_pipeline/NEW-ARCHITECTURE/new-architecture-preload-pipeline.md` for
+the full contract and `run.md` for operations.
 
 ### 8.2 Before batch inference (`generate.py`)
 
@@ -716,6 +732,8 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | `MSCdocs/CHROMADB_TO_QDRANT_MIGRATION.md`                              | Chroma → Qdrant API mapping and migration history                                                |
 | `Documentation.md`                                                     | Multi-GPU queue design, shared runtime collection, RAG failure handling, keyword extractor note |
 | `Inference/README.md`                                                  | Batch inference architecture, Qdrant collection lifecycle, crop DB filename, and enrichment flags |
+| `preload_pipeline/NEW-ARCHITECTURE/new-architecture-preload-pipeline.md` | Concurrent state-worker preload architecture and invariants                         |
+| `preload_pipeline/NEW-ARCHITECTURE/run.md`                              | Concurrent worker, coordinator, wave finalization, and snapshot operations          |
 
 
 ---
