@@ -44,6 +44,65 @@ The main goal is therefore:
 
 > Allow several independent state notebooks to process concurrently while preserving all important correctness guarantees of the existing cumulative preload architecture.
 
+The separate pipelines are summarized below:
+
+```mermaid
+flowchart LR
+    subgraph CONTROL[Control plane]
+        C[Preload Coordinator API<br/>:8001]
+        L[State locks<br/>content claims<br/>leases<br/>status]
+        C --> L
+    end
+
+    subgraph DATA[Data plane]
+        Q[Qdrant<br/>:6333]
+        V[Cumulative vectors]
+        Q --> V
+    end
+
+    subgraph WORKERS[Independent state pipelines]
+        W1[Worker 1<br/>Indiana]
+        W2[Worker 2<br/>New York]
+        WN[Worker N<br/>one state]
+    end
+
+    W1 -->|HTTP claims/status| C
+    W2 -->|HTTP claims/status| C
+    WN -->|HTTP claims/status| C
+    W1 -->|embed + upsert| Q
+    W2 -->|embed + upsert| Q
+    WN -->|embed + upsert| Q
+
+    subgraph FINAL[Serial finalizer pipeline]
+        F[finalize_wave.ipynb]
+        R[Expected states complete]
+        G[Crop merge]
+        S[Qdrant snapshot]
+        M[wave_manifest.json]
+        R --> F --> G --> S --> M
+    end
+
+    C --> R
+    Q --> S
+```
+
+```mermaid
+flowchart TD
+    A[Worker state input] --> B[Extract]
+    B --> C[Canonicalize + hash]
+    C --> D{Coordinator claim}
+    D -->|duplicate| E[Skip]
+    D -->|claimed| F[Qualify]
+    F --> G[Chunk]
+    G --> H[Embed on worker GPU]
+    H --> I[Direct Qdrant upsert]
+    I --> J[Complete claim]
+    E --> K[State manifest]
+    J --> K
+    K --> L[State COMPLETE]
+    L --> M[Wave finalizer]
+```
+
 ---
 
 ## 2. Design Principles

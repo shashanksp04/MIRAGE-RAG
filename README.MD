@@ -13,29 +13,55 @@ This codebase is built on top of the MIRAGE benchmark project and extends it wit
 - **Ablation controls** toggle key mechanisms (progressive filtering, confidence, web search, domain filtering, ingestion loop) for controlled experiments.
 
 ```mermaid
-flowchart LR
-  base[(mirage_base<br/>read-only)]
-  runtime[(mirage_runtime_<ABLATION_ID>_<timestamp><br/>run-scoped read/write)]
-  sources[State source files]
-  preload[Concurrent state preload]
-  cropDict[CropDictionaryJSON]
-  dataset[InferenceDataset]
-  enrich[QueryEnrichment]
-  rag[MainAgentRAG]
-  webAug[WebAugmentation]
-  gen[AnswerGeneration]
-  out[JSONLOutput]
+flowchart TB
+  subgraph preload[Concurrent preload pipeline]
+    inputs[State input files]
+    subgraph service[CPU/service node]
+      coordinator[Preload Coordinator<br/>locks, claims, status :8001]
+      qdrant[Qdrant<br/>mirage_base_build :6333]
+    end
+    subgraph workers[Independent GPU workers]
+      worker1[Worker 1<br/>one state]
+      worker2[Worker 2<br/>one state]
+      workerN[Worker N<br/>one state]
+    end
+    finalizer[Wave finalizer<br/>merge + snapshot + manifest]
 
-  sources --> preload --> base
-  dataset --> enrich
-  cropDict --> enrich
-  enrich --> rag
-  base --> rag
-  runtime --> rag
-  rag -->|"low_confidence"| webAug
-  webAug --> runtime
-  rag --> gen
-  gen --> out
+    inputs --> worker1
+    inputs --> worker2
+    inputs --> workerN
+    worker1 -->|claims/status| coordinator
+    worker2 -->|claims/status| coordinator
+    workerN -->|claims/status| coordinator
+    worker1 -->|embeddings/upserts| qdrant
+    worker2 -->|embeddings/upserts| qdrant
+    workerN -->|embeddings/upserts| qdrant
+    coordinator -->|all expected states complete| finalizer
+    qdrant --> finalizer
+  end
+
+  subgraph inference[Runtime inference pipeline]
+    dataset[Inference dataset]
+    cropDict[Crop dictionary]
+    enrich[Query enrichment]
+    rag[MainAgent RAG]
+    base[(mirage_base<br/>read-only)]
+    runtime[(mirage_runtime_<ABLATION_ID>_<timestamp><br/>run-scoped read/write)]
+    webAug[Web/PDF augmentation]
+    gen[Answer generation]
+    out[JSONL output]
+
+    dataset --> enrich
+    cropDict --> enrich
+    enrich --> rag
+    base --> rag
+    runtime --> rag
+    rag -->|low confidence| webAug
+    webAug --> runtime
+    rag --> gen --> out
+  end
+
+  finalizer -->|curated base snapshot| base
 ```
 
 ## Setup

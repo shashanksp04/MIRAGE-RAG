@@ -12,6 +12,58 @@ MIRAGE-RAG is built around a **retrieval-augmented** workflow backed by a **Qdra
 
 **Batch inference** (`Inference/generate.py`) runs many items through that RAG stack and then a separate **generation** step, using a multi-process, GPU-aware layout so RAG load is controlled and scalable.
 
+### 1.1.1 Current architecture
+
+The repository has separate pipelines for preload, runtime inference, and wave
+finalization. The preload workers communicate with the coordinator for control
+state and write vectors directly to the single Qdrant service.
+
+```mermaid
+flowchart TB
+  subgraph PRELOAD[Concurrent preload pipeline]
+    files[State input files]
+    subgraph SERVICE[CPU/service node]
+      q[Qdrant :6333<br/>mirage_base_build]
+      c[Coordinator :8001<br/>locks, claims, leases, status]
+    end
+    subgraph WORKERS[Independent GPU workers]
+      w1[Worker 1<br/>one state]
+      w2[Worker 2<br/>one state]
+      wn[Worker N<br/>one state]
+    end
+    files --> w1
+    files --> w2
+    files --> wn
+    w1 -->|claims/status| c
+    w2 -->|claims/status| c
+    wn -->|claims/status| c
+    w1 -->|embed/upsert| q
+    w2 -->|embed/upsert| q
+    wn -->|embed/upsert| q
+  end
+
+  subgraph FINALIZE[Serial wave finalization]
+    wait[All expected states COMPLETE]
+    merge[Merge crop outputs]
+    snapshot[Qdrant snapshot]
+    manifest[wave_manifest.json]
+    wait --> merge --> snapshot --> manifest
+  end
+  c --> wait
+  q --> snapshot
+
+  subgraph INFERENCE[Runtime inference pipeline]
+    data[Dataset] --> enrich[Query enrichment] --> rag[MainAgent RAG]
+    base[(mirage_base<br/>read-only)] --> rag
+    runtime[(mirage_runtime_<ABLATION_ID>_<timestamp>)] --> rag
+    rag -->|low confidence| augment[Web/PDF augmentation]
+    augment --> runtime
+    rag --> generate[Generation] --> output[JSONL output]
+  end
+
+  manifest --> base
+```
+
 ### 1.2 Main directories
 
 
