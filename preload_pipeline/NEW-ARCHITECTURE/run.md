@@ -2372,3 +2372,99 @@ The key operational rule is:
 > **Workers are concurrent within a wave; global finalization is serial between waves.**
 
 This preserves crash recovery, global deduplication, state-local persistence, cumulative crop state, and cumulative Qdrant checkpoints while allowing independent 1-GPU notebook allocations to build MetaMIRAGE in parallel.
+
+---
+
+# 61. Startup Sequence: `build_2026_08` / `wave_01`
+
+```bash
+cd "/path/to/Mirage Database"
+hostname -f
+```
+
+```bash
+cd "/path/to/Mirage Database"
+export QDRANT__STORAGE__STORAGE_PATH="$(pwd)/qdrant/storage"
+./qdrant/bin/qdrant
+```
+
+```bash
+cd "/path/to/Mirage Database"
+source ~/metamirage-coordinator-venv/bin/activate
+mkdir -p service
+export METAMIRAGE_COORDINATOR_DB="$(pwd)/service/preload_coordinator.db"
+export METAMIRAGE_COORDINATOR_HOST=0.0.0.0
+export METAMIRAGE_COORDINATOR_PORT=8001
+python preload_coordinator.py
+```
+
+```bash
+curl http://127.0.0.1:6333/collections
+curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:6333/collections/mirage_base_build
+```
+
+```bash
+curl -X PUT \
+  "http://127.0.0.1:6333/collections/mirage_base_build" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vectors": {
+      "size": 768,
+      "distance": "Cosine"
+    }
+  }'
+```
+
+```python
+QDRANT_URL = "http://<SERVICE_HOSTNAME>:6333"
+COORDINATOR_URL = "http://<SERVICE_HOSTNAME>:8001"
+QDRANT_COLLECTION = "mirage_base_build"
+BUILD_ID = "build_2026_08"
+WAVE_ID = "wave_01"
+RUN_MODE = "resume"
+DEBUG_SOURCE_LIMIT = None
+RUN_PIPELINE = False
+```
+
+```bash
+mkdir -p workers/worker_1/input
+mkdir -p workers/worker_2/input
+```
+
+```python
+# worker_1
+STATE_NAME = "Indiana"
+STATE_CODE = "IN"
+RUN_PIPELINE = True
+```
+
+```python
+# worker_2
+STATE_NAME = "New York"
+STATE_CODE = "NY"
+RUN_PIPELINE = True
+```
+
+```bash
+curl \
+  "http://<SERVICE_HOSTNAME>:8001/state/status?build_id=build_2026_08&state_code=IN"
+
+curl \
+  "http://<SERVICE_HOSTNAME>:8001/state/status?build_id=build_2026_08&state_code=NY"
+
+curl \
+  "http://<SERVICE_HOSTNAME>:8001/wave/status?build_id=build_2026_08&wave_id=wave_01"
+```
+
+```python
+BUILD_ID = "build_2026_08"
+WAVE_ID = "wave_01"
+EXPECTED_STATES = ["IN", "NY"]
+QDRANT_URL = "http://<SERVICE_HOSTNAME>:6333"
+COORDINATOR_URL = "http://<SERVICE_HOSTNAME>:8001"
+QDRANT_COLLECTION = "mirage_base_build"
+DOWNLOAD_SNAPSHOT = True
+RUN_FINALIZATION = False
+RUN_FINALIZATION = True
+```
