@@ -117,7 +117,9 @@ class ConfidenceEvaluator:
                 }
             }
 
-        similarities = [1 - r["distance"] for r in results]
+        # Retrieval results expose Qdrant's raw cosine similarity directly;
+        # higher values indicate more relevant evidence.
+        similarities = [float(r["similarity"]) for r in results]
         similarity_score = sum(similarities) / len(similarities)
 
         coverage_score = min(len(results) / 5, 1.0)

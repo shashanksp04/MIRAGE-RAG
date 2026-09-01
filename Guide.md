@@ -220,10 +220,10 @@ Implementation reference: `rag_agent/utils/ContentUtils.py` — `retrieve_with_p
 
 **Concept.** *Priority retrieval* means: for one user query, run **one Qdrant search per candidate strategy** (each with the same query embedding and `limit=k`, default 5). Every strategy that returns at least **`min_results`** hits (default 1) is **valid**. Among valid strategies, the implementation picks the one with the **highest normalized similarity score** (not the first in the list). So a broader filter can win if its top-k hits are semantically stronger than a stricter filter’s hits.
 
-**Per-hit similarity (distance to score).** Qdrant returns a cosine **score** where higher is better. The code normalizes to a Chroma-compatible **distance** (`distance = 1.0 - score`) so downstream confidence logic is unchanged. For each hit `i` with distance `d_i >= 0`, the code converts to a **higher-is-better** similarity in `(0, 1]`:
+**Per-hit similarity.** Qdrant returns a cosine **score** where higher is better. The retrieval pipeline uses that raw score directly as `similarity`; no Chroma-compatible distance conversion is performed:
 
 ```text
-s_i = 1 / (1 + max(d_i, 0))
+s_i = qdrant_score_i
 ```
 
 **Strategy score (normalized score for one candidate).** Let `n` be the number of documents returned for that query (up to `k`). The strategy’s aggregate score is the **mean** of per-hit similarities:
@@ -231,6 +231,8 @@ s_i = 1 / (1 + max(d_i, 0))
 ```text
 normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 ```
+
+`normalized_score` is the arithmetic mean of the raw Qdrant cosine similarities. The mean-scoring method is intentionally unchanged, but the old nonlinear transformation `1 / (2 - q)` is no longer applied. Comparing transformed means with raw means remains a useful follow-up research question because nonlinear transformations can select different strategies; see §2.3.5.
 
 **Winner selection.**
 
@@ -252,15 +254,21 @@ normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 
 **Why this design.** Stricter metadata filters shrink the corpus; if that subset has weak embedding matches, a **looser** filter (or `semantic_only`) can still win on **average similarity**, keeping retrieval grounded in vector relevance while using metadata when it helps.
 
-#### 2.3.5 Confidence scoring and metadata “scope”
+#### 2.3.5 Score semantics follow-up research
 
-`ConfidenceEvaluator.evaluate_retrieval_confidence` calls the same `**retrieve_with_priority_filters`** path, then applies a **separate** confidence model: similarity, coverage, consistency, and a **scope weight** tied to which **strategy name** won in §2.3.4. Higher weights apply when stricter filters win (e.g. `hardiness_zone+month_year+title` vs `semantic_only`). See `scope_weights` in `rag_agent/tools/confidence_evaluator.py` for the exact mapping. That means **better metadata alignment** (zone + month + title) both influences which chunks win priority retrieval and tends to raise **confidence_level**, reducing unnecessary web search.
+The current implementation uses raw Qdrant cosine similarity consistently across priority retrieval, dual-collection merging, and confidence evaluation. This makes the score meaning explicit and keeps higher-is-better ordering everywhere. The strategy aggregate remains a simple mean, preserving the existing scoring structure.
 
-#### 2.3.6 Web search and metadata (`WebSearch`)
+Follow-up research should evaluate whether a different aggregation method—such as a top-hit-weighted mean, a trimmed mean, or a calibrated score—improves strategy selection. In particular, the previous `1 / (2 - q)` transformation was nonlinear, so its mean could disagree with the mean raw cosine score for the same candidate hits. Any future aggregation change should be evaluated separately from this representation cleanup.
+
+#### 2.3.6 Confidence scoring and metadata “scope”
+
+`ConfidenceEvaluator.evaluate_retrieval_confidence` calls the same `**retrieve_with_priority_filters`** path, then applies a **separate** confidence model: raw similarity, coverage, consistency, and a **scope weight** tied to which **strategy name** won in §2.3.4. Higher weights apply when stricter filters win (e.g. `hardiness_zone+month_year+title` vs `semantic_only`). See `scope_weights` in `rag_agent/tools/confidence_evaluator.py` for the exact mapping. That means **better metadata alignment** (zone + month + title) both influences which chunks win priority retrieval and tends to raise **confidence_level**, reducing unnecessary web search.
+
+#### 2.3.7 Web search and metadata (`WebSearch`)
 
 `WebSearch.web_search` accepts `**use_domain_filter`** (default `True`). When this flag is `True`, and `**location`** is provided, `get_filtered_edu_domains_for_search` uses **state-linked** and **hardiness-zone-linked** `.edu` domains from `Datasets/land_grant_universities.csv` and `Datasets/hardiness_zone_edu_domain.csv` to restrict or prioritize extension/university sources. When `use_domain_filter` is `False`, web search runs as an open query (no `.edu` site-clause restriction). In `MainAgent`, `_tracked_web_search` supports an optional per-call override and otherwise uses the code-controlled class setting `self.use_domain_filter` for run-level ablations. Results carry `**month_year`** derived from `page_age` (or validated provider fields) for downstream `**_tracked_add_web_content`** so ingestion stays consistent with retrieval policies.
 
-#### 2.3.7 Runtime metadata responsibilities
+#### 2.3.8 Runtime metadata responsibilities
 
 
 | Stage               | Who sets `location` / zone / `month_year`                                                                             |

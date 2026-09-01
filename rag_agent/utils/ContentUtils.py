@@ -132,7 +132,7 @@ class ContentUtils:
         Returns:
             used_filter: The metadata filter that succeeded (or None)
             strategy: Name of the retrieval strategy used
-            results: List of retrieved chunks with text, metadata, and distance
+            results: List of retrieved chunks with text, metadata, and similarity
         """
 
         def _clean(value: Optional[str], *, upper: bool = False) -> Optional[str]:
@@ -230,11 +230,11 @@ class ContentUtils:
         def _format_results(
             docs: List[str],
             metadatas: List[Dict[str, Any]],
-            distances: List[float],
+            similarities: List[float],
         ) -> List[Dict[str, Any]]:
             return [
-                {"text": doc, "metadata": metadata, "distance": distance}
-                for doc, metadata, distance in zip(docs, metadatas, distances)
+                {"text": doc, "metadata": metadata, "similarity": similarity}
+                for doc, metadata, similarity in zip(docs, metadatas, similarities)
             ]
 
         strategy_evaluations: List[Dict[str, Any]] = []
@@ -265,16 +265,11 @@ class ContentUtils:
 
             docs = [r["text"] for r in formatted]
             metadatas = [r["metadata"] for r in formatted]
-            distances = [r["distance"] for r in formatted]
-
-            similarity_scores = []
-            for distance in distances:
-                # Chroma distances are lower-is-better; convert to a higher-is-better score.
-                similarity_scores.append(1.0 / (1.0 + max(float(distance), 0.0)))
+            similarities = [float(r["similarity"]) for r in formatted]
 
             doc_count = len(docs)
             normalized_score = (
-                sum(similarity_scores) / doc_count
+                sum(similarities) / doc_count
                 if doc_count > 0
                 else 0.0
             )
@@ -286,8 +281,7 @@ class ContentUtils:
                     "doc_count": doc_count,
                     "docs": docs,
                     "metadatas": metadatas,
-                    "distances": distances,
-                    "similarity_scores": similarity_scores,
+                    "similarities": similarities,
                     "normalized_score": normalized_score,
                 }
             )
@@ -312,7 +306,7 @@ class ContentUtils:
                 _format_results(
                     best_strategy["docs"],
                     best_strategy["metadatas"],
-                    best_strategy["distances"],
+                    best_strategy["similarities"],
                 ),
             )
 

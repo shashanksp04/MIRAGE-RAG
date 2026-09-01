@@ -214,7 +214,7 @@ Inference uses one immutable curated collection and one mutable run-scoped colle
 - `mirage_runtime_<ABLATION_ID>_<YYYYMMDD>_<HHMMSS>`: created for a new run, shared across all queries in that run, preserved on failure, optionally snapshotted on success, and deleted after successful finalization.
 - `USE_BASE_COLLECTION=False`: disables only base verification, base retrieval, and base-side deduplication. The same lifecycle, dual retriever, confidence path, and runtime-only ingestion remain active.
 
-The dual retriever searches both collections for each retrieval strategy, merges and content-hash-deduplicates hits, prefers the base copy on duplicate hashes, globally ranks by the existing cosine-derived distance, and attaches `retrieval_source` (`base` or `runtime`). Web/PDF ingestion always writes to runtime; when base is enabled, duplicate checks inspect base before runtime.
+The dual retriever searches both collections for each retrieval strategy, merges and content-hash-deduplicates hits, prefers the base copy on duplicate hashes, globally ranks by raw Qdrant cosine similarity (higher is better), and attaches `retrieval_source` (`base` or `runtime`). Web/PDF ingestion always writes to runtime; when base is enabled, duplicate checks inspect base before runtime.
 
 ### Progressive Filtering and Metadata Strategy
 
@@ -222,7 +222,7 @@ Retrieval in `ContentUtils.retrieve_with_priority_filters` evaluates a ladder of
 
 - Candidate filters combine `hardiness_zone`, `month_year`, and `title` when available.
 - `location` is normalized and used to derive `hardiness_zone`; filtering is not a raw location string match.
-- Each strategy runs a query and is scored by normalized similarity across top-k hits.
+- Each strategy runs a query and is scored by the mean raw Qdrant cosine similarity across top-k hits.
 - Best valid strategy is selected by score, not just first-hit order.
 - Semantic-only retrieval remains the safety fallback.
 

@@ -18,7 +18,8 @@ class DualCollectionRetriever:
             previous = selected.get(key)
             if previous is None or (result.get("retrieval_source") == "base" and previous.get("retrieval_source") != "base"):
                 selected[key] = result
-        return sorted(selected.values(), key=lambda r: r.get("distance", 1.0))
+        # Similarity is canonical here: higher cosine score is better.
+        return sorted(selected.values(), key=lambda r: r.get("similarity", -1.0), reverse=True)
 
     def retrieve_with_priority_filters(self, *, query, location=None, month_year=None,
                                        title=None, k=5, min_results=1,

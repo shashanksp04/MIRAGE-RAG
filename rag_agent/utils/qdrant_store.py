@@ -144,7 +144,8 @@ class QdrantStore:
                 {
                     "text": payload.get("text", ""),
                     "metadata": metadata,
-                    "distance": 1.0 - hit.score,
+                    # Qdrant COSINE scores are higher-is-better similarities.
+                    "similarity": float(hit.score),
                 }
             )
         return results
