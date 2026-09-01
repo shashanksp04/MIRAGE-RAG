@@ -232,6 +232,24 @@ s_i = qdrant_score_i
 normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
 ```
 
+**Worked example.** Suppose two filter strategies each return two chunks for the same query:
+
+| Strategy | Chunk 1 similarity | Chunk 2 similarity | Mean (`normalized_score`) |
+| -------- | -----------------: | -----------------: | ------------------------: |
+| `title` | 0.82 | 0.76 | **0.79** |
+| `semantic_only` | 0.68 | 0.71 | 0.695 |
+
+The `title` strategy wins because `0.79 > 0.695`. Since these are Qdrant cosine similarities, the larger number is always the stronger match. The returned chunks are also ordered from highest similarity to lowest similarity.
+
+**Why the old transformation could matter.** Before raw similarity became canonical, the same comparison used `f(q) = 1 / (2 - q)` and averaged the transformed values. That transformation preserves the order of individual chunks, but not necessarily the order of strategy averages:
+
+| Strategy | Raw Qdrant similarities | Raw mean | Mean after old `1 / (2 - q)` transformation |
+| -------- | ----------------------- | -------: | -------------------------------------------: |
+| A | 0.71, 0.71 | **0.710** | 0.7752 |
+| B | 0.40, 0.99 | 0.695 | **0.8075** |
+
+Raw mean scoring selects **A**, while the old transformed mean selects **B**. This is why the current system keeps the simple arithmetic mean but uses the raw Qdrant scores directly; researching alternative aggregation methods is a separate follow-up.
+
 `normalized_score` is the arithmetic mean of the raw Qdrant cosine similarities. The mean-scoring method is intentionally unchanged, but the old nonlinear transformation `1 / (2 - q)` is no longer applied. Comparing transformed means with raw means remains a useful follow-up research question because nonlinear transformations can select different strategies; see §2.3.5.
 
 **Winner selection.**
