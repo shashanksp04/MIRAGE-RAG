@@ -222,7 +222,7 @@ Retrieval in `ContentUtils.retrieve_with_priority_filters` evaluates a ladder of
 
 - Candidate filters combine `hardiness_zone`, `month_year`, and `title` when available.
 - `location` is normalized and used to derive `hardiness_zone`; filtering is not a raw location string match.
-- Each strategy runs a query and is scored by the mean raw Qdrant cosine similarity across top-k hits.
+- Each strategy runs a query and is scored by the mean of transformed raw Qdrant cosine similarities across top-k hits (`1 / (2 - q)`).
 - Best valid strategy is selected by score, not just first-hit order.
 - Semantic-only retrieval remains the safety fallback.
 

@@ -266,10 +266,13 @@ class ContentUtils:
             docs = [r["text"] for r in formatted]
             metadatas = [r["metadata"] for r in formatted]
             similarities = [float(r["similarity"]) for r in formatted]
+            # Keep raw cosine similarity as the canonical per-hit value, while
+            # preserving the empirically preferred nonlinear strategy score.
+            strategy_scores = [1.0 / (2.0 - similarity) for similarity in similarities]
 
             doc_count = len(docs)
             normalized_score = (
-                sum(similarities) / doc_count
+                sum(strategy_scores) / doc_count
                 if doc_count > 0
                 else 0.0
             )

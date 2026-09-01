@@ -226,20 +226,20 @@ Implementation reference: `rag_agent/utils/ContentUtils.py` — `retrieve_with_p
 s_i = qdrant_score_i
 ```
 
-**Strategy score (normalized score for one candidate).** Let `n` be the number of documents returned for that query (up to `k`). The strategy’s aggregate score is the **mean** of per-hit similarities:
+**Strategy score (normalized score for one candidate).** Let `n` be the number of documents returned for that query (up to `k`). The strategy’s aggregate score is the **mean** of the transformed per-hit similarities:
 
 ```text
-normalized_score = (1 / n) * Σ s_i   for i = 1..n     (or 0 if n = 0)
+normalized_score = (1 / n) * Σ [1 / (2 - s_i)]   for i = 1..n     (or 0 if n = 0)
 ```
 
 **Worked example.** Suppose two filter strategies each return two chunks for the same query:
 
-| Strategy | Chunk 1 similarity | Chunk 2 similarity | Mean (`normalized_score`) |
+| Strategy | Chunk 1 similarity | Chunk 2 similarity | Mean transformed score (`normalized_score`) |
 | -------- | -----------------: | -----------------: | ------------------------: |
-| `title` | 0.82 | 0.76 | **0.79** |
-| `semantic_only` | 0.68 | 0.71 | 0.695 |
+| `title` | 0.82 | 0.76 | **0.827** |
+| `semantic_only` | 0.68 | 0.71 | 0.766 |
 
-The `title` strategy wins because `0.79 > 0.695`. Since these are Qdrant cosine similarities, the larger number is always the stronger match. The returned chunks are also ordered from highest similarity to lowest similarity.
+The `title` strategy wins because `0.827 > 0.766`. Since these are Qdrant cosine similarities, the larger number is always the stronger match. The returned chunks are also ordered from highest raw similarity to lowest raw similarity.
 
 **Why the old transformation could matter.** Before raw similarity became canonical, the same comparison used `f(q) = 1 / (2 - q)` and averaged the transformed values. That transformation preserves the order of individual chunks, but not necessarily the order of strategy averages:
 
@@ -248,9 +248,9 @@ The `title` strategy wins because `0.79 > 0.695`. Since these are Qdrant cosine 
 | A | 0.71, 0.71 | **0.710** | 0.7752 |
 | B | 0.40, 0.99 | 0.695 | **0.8075** |
 
-Raw mean scoring selects **A**, while the old transformed mean selects **B**. This is why the current system keeps the simple arithmetic mean but uses the raw Qdrant scores directly; researching alternative aggregation methods is a separate follow-up.
+The current transformed strategy score selects **B**, while raw mean scoring would select **A**. This is why the current system keeps raw Qdrant scores as the canonical values but applies the nonlinear transformation for progressive strategy selection; researching alternative aggregation methods remains a separate follow-up.
 
-`normalized_score` is the arithmetic mean of the raw Qdrant cosine similarities. The mean-scoring method is intentionally unchanged, but the old nonlinear transformation `1 / (2 - q)` is no longer applied. Comparing transformed means with raw means remains a useful follow-up research question because nonlinear transformations can select different strategies; see §2.3.5.
+`normalized_score` is the arithmetic mean of the transformed raw Qdrant cosine similarities. The mean-scoring method is intentionally unchanged; the nonlinear transformation is applied only for progressive strategy selection. Raw similarities remain available for returned hits and confidence evaluation.
 
 **Winner selection.**
 
@@ -274,9 +274,9 @@ Raw mean scoring selects **A**, while the old transformed mean selects **B**. Th
 
 #### 2.3.5 Score semantics follow-up research
 
-The current implementation uses raw Qdrant cosine similarity consistently across priority retrieval, dual-collection merging, and confidence evaluation. This makes the score meaning explicit and keeps higher-is-better ordering everywhere. The strategy aggregate remains a simple mean, preserving the existing scoring structure.
+The current implementation uses raw Qdrant cosine similarity consistently across per-hit retrieval values, dual-collection merging, and confidence evaluation. Progressive strategy selection applies the nonlinear `1 / (2 - q)` transform to each raw score before taking the arithmetic mean. This preserves higher-is-better ordering while favoring strategies with exceptionally strong hits.
 
-Follow-up research should evaluate whether a different aggregation method—such as a top-hit-weighted mean, a trimmed mean, or a calibrated score—improves strategy selection. In particular, the previous `1 / (2 - q)` transformation was nonlinear, so its mean could disagree with the mean raw cosine score for the same candidate hits. Any future aggregation change should be evaluated separately from this representation cleanup.
+Follow-up research should compare this transformed mean with raw mean scoring and alternatives such as a top-hit-weighted mean, a trimmed mean, or a calibrated score. In particular, the nonlinear transformation can disagree with the raw cosine mean for the same candidate hits. Any future aggregation change should be evaluated separately from this representation cleanup.
 
 #### 2.3.6 Confidence scoring and metadata “scope”
 
