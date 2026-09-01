@@ -96,12 +96,12 @@ echo $HUGGINGFACE_HUB_CACHE
 echo $TRITON_CACHE_DIR
 
 python -m pip install --upgrade pip wheel setuptools
-pip install -r requirments.txt
+pip install -r requirements.txt
 ```
 
 Install **from the repository root** so `pip` resolves paths correctly.
 
-**Pin file.** **`requirments.txt`** (spelling deliberate) is the single consolidated **`package==version`** snapshot for preload tooling, embeddings, Qdrant client/runtime dependencies, **`sglang`/`vllm`**, ADK-era clients, and CUDA-associated wheels (**~346** pins; **`pip`/`setuptools`/`wheel`** are omitted). Refresh from **`pip freeze`** when you recreate a canonical environment (**`Guide.md` §§8.7–8.7.1**).
+**Pin file.** **`requirements.txt`** is the single consolidated **`package==version`** snapshot for preload tooling, embeddings, Qdrant client/runtime dependencies, **`sglang`/`vllm`**, ADK-era clients, and CUDA-associated wheels (**~346** pins; **`pip`/`setuptools`/`wheel`** are omitted). Refresh from **`pip freeze`** when you recreate a canonical environment (**`Guide.md` §§8.7–8.7.1**).
 
 ### Optional sanity check
 
@@ -113,7 +113,7 @@ python -c "import qdrant_client, sentence_transformers; print('qdrant-client + s
 ### Runtime servers and HPC
 
 - Start **OpenAI-compatible** LLM servers (project examples use **SGLang**) and align ports with **`Inference/generate.py`** — see **`Guide.md` §5.8** and **§8.7**.
-- If **`pip install -r requirments.txt`** fails on CUDA wheels, resolve PyTorch/CUDA via your operator’s wheels or modules, then rerun the install (see **`Guide.md` §8.7**).
+- If **`pip install -r requirements.txt`** fails on CUDA wheels, resolve PyTorch/CUDA via your operator’s wheels or modules, then rerun the install (see **`Guide.md` §8.7**).
 
 ## Pipeline Components
 

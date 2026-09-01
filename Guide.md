@@ -627,7 +627,7 @@ The matrix below follows the requested ablation set and ordering. Displayed keys
 
 ### 8.1 Before preload
 
-- Install `**pip install -r requirments.txt`** from the **repository root** (see §8.7). Filename `**requirments.txt`** (**spelling deliberate**).
+- Install `**pip install -r requirements.txt`** from the **repository root** (see §8.7). Filename `**requirements.txt`**.
 - Start Qdrant on the same node/session as Jupyter and verify `curl http://127.0.0.1:6333/collections` works.
 - Ensure support files exist in the preload working directory: `county_state_hardiness_zone.csv` and `crop_occurrences.json`.
 - Ensure only intended state input files are present for auto-discovery (PDF zip / CSV zip / URL file patterns).
@@ -727,15 +727,15 @@ python3 -m venv mirage
 source mirage/bin/activate
 pip install --upgrade pip wheel setuptools
 cd /path/to/MIRAGE-RAG    # MIRAGE-RAG repository root — adjust checkout path
-pip install -r requirments.txt
+pip install -r requirements.txt
 python -c "import torch; import importlib.metadata as m; print('torch', torch.__version__, '| SGLang', m.version('sglang'), '| vLLM', m.version('vllm'))"
 ```
 
-If `**pip install -r requirments.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirments.txt**` (expect some “already satisfied” lines).
+If `**pip install -r requirements.txt**` fails on CUDA or vendor wheels for your GPU driver or cluster policy, install PyTorch and CUDA libraries using your operator’s prescribed index/modules first, `**pip install --no-deps**` selective packages second, then re-run `**pip install -r requirements.txt**` (expect some “already satisfied” lines).
 
-### 8.7.1 `requirments.txt` — consolidated environment
+### 8.7.1 `requirements.txt` — consolidated environment
 
-Repo-root **`requirments.txt`** is the **only** pinned dependency manifest for embeddings, Qdrant, SGLang, Google ADK/LiteLLM clients, and CUDA-associated wheels. Regenerate periodically from `pip freeze` after upgrades and replace this file (**spelling deliberate**).
+Repo-root **`requirements.txt`** is the **only** pinned dependency manifest for embeddings, Qdrant, SGLang, Google ADK/LiteLLM clients, and CUDA-associated wheels. Regenerate periodically from `pip freeze` after upgrades and replace this file.
 
 Then start an OpenAI-compatible **SGLang** server on the port your batch job expects (same invocation as **§3.1**; `Inference/generate.py` defaults map GPU **i** to port **11434 + i** unless you override `--openai_api_base`):
 
@@ -773,7 +773,7 @@ Align `**Inference/generate.py`** flags (`--openai_api_base`, `--test_model`, et
 | Ablation settings map                                                      | `rag_agent/ablation_configs.json`                                       |
 | Instruction templates (`confidence_`*, `ablation_*`)                       | `rag_agent/model_instructions.md`                                       |
 | Query enrichment                                                           | `rag_agent/crop_query_enrichment.py`                                    |
-| Python dependency pins (`pip install -r`)                                  | `requirments.txt` (repo root; see §8.7.1)                               |
+| Python dependency pins (`pip install -r`)                                  | `requirements.txt` (repo root; see §8.7.1)                               |
 
 
 ### 9.2 Cross-references (in-scope Markdown sources)
