@@ -1,0 +1,79 @@
+%% MetaMIRAGE — Experimental Ablation Matrix
+flowchart TB
+
+    subgraph HEADER[" "]
+        direction LR
+        H0["<div style='width:240px;height:44px;display:flex;align-items:center;justify-content:center'>Configuration</div>"]
+        H1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Knowledge<br/>Base</div>"]
+        H2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Crop<br/>Context</div>"]
+        H3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Metadata<br/>Retrieval</div>"]
+        H4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Confidence</div>"]
+        H5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Web<br/>Search</div>"]
+        H6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Domain<br/>Filter</div>"]
+        H7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>Ingestion</div>"]
+    end
+
+    subgraph R1[" "]
+        direction LR
+        B0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Baseline</div>"]; B1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; B7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]
+    end
+    subgraph R2[" "]
+        direction LR
+        S0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Static RAG</div>"]; S1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; S2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; S3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; S4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; S5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; S6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; S7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]
+    end
+    subgraph R3[" "]
+        direction LR
+        C0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Static RAG + Crop Context</div>"]; C1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; C2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; C3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; C4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; C5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; C6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; C7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]
+    end
+    subgraph R4[" "]
+        direction LR
+        P0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Progressive RAG</div>"]; P1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; P2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; P3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; P4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; P5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; P6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; P7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]
+    end
+    subgraph R5[" "]
+        direction LR
+        U0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Uncertainty-Aware RAG</div>"]; U1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; U2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; U3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; U4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; U5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; U6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; U7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]
+    end
+    subgraph R6[" "]
+        direction LR
+        N0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>No Custom DB</div>"]; N1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; N2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; N3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; N4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; N5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; N6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; N7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]
+    end
+    subgraph R7[" "]
+        direction LR
+        O0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>Full System — Open Web</div>"]; O1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; O2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; O3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; O4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; O5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; O6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>—</div>"]; O7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]
+    end
+    subgraph R8[" "]
+        direction LR
+        M0["<div style='width:240px;height:44px;display:flex;align-items:center;padding-left:16px'>MetaMIRAGE — Domain Filtered</div>"]; M1["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M2["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M3["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M4["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M5["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M6["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]; M7["<div style='width:100px;height:44px;display:flex;align-items:center;justify-content:center'>✓</div>"]
+    end
+
+    CAPTION["Each configuration selectively enables system components to isolate their individual and combined contributions."]
+
+    H0 ~~~ H1 ~~~ H2 ~~~ H3 ~~~ H4 ~~~ H5 ~~~ H6 ~~~ H7
+    B0 ~~~ B1 ~~~ B2 ~~~ B3 ~~~ B4 ~~~ B5 ~~~ B6 ~~~ B7
+    S0 ~~~ S1 ~~~ S2 ~~~ S3 ~~~ S4 ~~~ S5 ~~~ S6 ~~~ S7
+    C0 ~~~ C1 ~~~ C2 ~~~ C3 ~~~ C4 ~~~ C5 ~~~ C6 ~~~ C7
+    P0 ~~~ P1 ~~~ P2 ~~~ P3 ~~~ P4 ~~~ P5 ~~~ P6 ~~~ P7
+    U0 ~~~ U1 ~~~ U2 ~~~ U3 ~~~ U4 ~~~ U5 ~~~ U6 ~~~ U7
+    N0 ~~~ N1 ~~~ N2 ~~~ N3 ~~~ N4 ~~~ N5 ~~~ N6 ~~~ N7
+    O0 ~~~ O1 ~~~ O2 ~~~ O3 ~~~ O4 ~~~ O5 ~~~ O6 ~~~ O7
+    M0 ~~~ M1 ~~~ M2 ~~~ M3 ~~~ M4 ~~~ M5 ~~~ M6 ~~~ M7
+
+    HEADER --> R1 --> R2 --> R3 --> R4 --> R5 --> R6 --> R7 --> R8 --> CAPTION
+
+    classDef header fill:#13294B,stroke:#13294B,color:#FFFFFF,stroke-width:2px;
+    classDef label fill:#E8F1FA,stroke:#9BA8B7,color:#13294B,stroke-width:1px;
+    classDef on fill:#FFF1E6,stroke:#FA4D00,color:#13294B,stroke-width:1.5px;
+    classDef off fill:#FFFFFF,stroke:#C7D0D9,color:#52606D,stroke-width:1px;
+    classDef finalLabel fill:#13294B,stroke:#FA4D00,color:#FFFFFF,stroke-width:2.5px;
+    classDef finalOn fill:#FA4D00,stroke:#13294B,color:#FFFFFF,stroke-width:2px;
+    classDef caption fill:#FFFFFF,stroke:#9BA8B7,color:#52606D,stroke-dasharray:3 3;
+
+    class H0,H1,H2,H3,H4,H5,H6,H7 header;
+    class B0,S0,C0,P0,U0,N0,O0 label;
+    class B1,B2,B3,B4,B5,B6,B7,S2,S3,S4,S5,S6,S7,C3,C4,C5,C6,C7,P2,P4,P5,P6,P7,U5,U6,U7 off;
+    class S1,C1,C2,P1,P3,U1,U2,U3,U4,N3,N4,N5,N6,N7,O1,O2,O3,O4,O5,O7 on;
+    class M0 finalLabel;
+    class M1,M2,M3,M4,M5,M6,M7 finalOn;
+    class CAPTION caption;
+
+    linkStyle default stroke:transparent,fill:none;

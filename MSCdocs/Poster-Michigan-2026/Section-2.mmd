@@ -1,0 +1,55 @@
+%% MetaMIRAGE — Domain Knowledge Construction
+flowchart TB
+
+    subgraph SOURCES["Agricultural Knowledge Sources"]
+        direction LR
+        PDF([Agricultural PDFs])
+        WEB([Extension / University Web])
+        DATA([Structured Agricultural Datasets])
+    end
+
+    PROCESS([Document Processing<br/><small>Normalization · Text Extraction · Chunking</small>])
+    META([Metadata Enrichment])
+
+    subgraph CONTEXT["Contextual Dimensions"]
+        direction LR
+        LOCATION([Location<br/><small>Hardiness Zone</small>])
+        TIME([Time<br/><small>Month / Year</small>])
+        CROP([Document / Crop Context])
+        PROVENANCE([Source / Provenance])
+    end
+
+    CHUNKS([Contextualized Agricultural Chunks])
+    EMBED([Embedding Generation<br/><small>BAAI/bge-base-en-v1.5</small>])
+    KB[[Qdrant Context-Aware<br/>Agricultural Knowledge Base<br/><small>Semantic embedding + agricultural metadata + provenance</small>]]
+
+    PDF --> PROCESS
+    WEB --> PROCESS
+    DATA --> PROCESS
+
+    PROCESS --> META
+    META --> LOCATION
+    META --> TIME
+    META --> CROP
+    META --> PROVENANCE
+
+    LOCATION --> CHUNKS
+    TIME --> CHUNKS
+    CROP --> CHUNKS
+    PROVENANCE --> CHUNKS
+
+    CHUNKS --> EMBED
+    EMBED --> KB
+
+    classDef source fill:#E8F1FA,stroke:#13294B,color:#13294B,stroke-width:1.5px;
+    classDef process fill:#FFF1E6,stroke:#FA4D00,color:#13294B,stroke-width:2px;
+    classDef context fill:#DCEAF7,stroke:#13294B,color:#13294B,stroke-width:1.5px;
+    classDef output fill:#13294B,stroke:#FA4D00,color:#FFFFFF,stroke-width:3px;
+
+    class PDF,WEB,DATA source;
+    class PROCESS,META,CHUNKS,EMBED process;
+    class LOCATION,TIME,CROP,PROVENANCE context;
+    class KB output;
+
+    style SOURCES fill:#FFFFFF,stroke:#9BA8B7,stroke-width:1px;
+    style CONTEXT fill:#F7FAFD,stroke:#9BA8B7,stroke-width:1px;

@@ -1,0 +1,49 @@
+%% MetaMIRAGE — Adaptive RAG Architecture
+flowchart TB
+
+    INPUT([Input Query<br/><small>Agricultural image / question<br/>or benchmark item</small>])
+    ENRICH([Query Enrichment<br/><small>Crop context · User / location context</small>])
+    AGENT([MetaMIRAGE Agent])
+    RETRIEVE([Metadata-Aware Retrieval<br/><small>Semantic similarity · Location / hardiness zone<br/>Month / year · Document / title context</small>])
+
+    subgraph STORES["Knowledge Stores"]
+        direction LR
+        BASE[(Curated Base Knowledge<br/><small>Persistent · Read-only<br/>Preloaded agricultural knowledge</small>)]
+        RUNTIME[(Runtime Memory<br/><small>Run-specific · Adaptive<br/>Evidence accumulated during the run</small>)]
+    end
+
+    EVIDENCE([Retrieved Evidence])
+    CONFIDENCE([Confidence Evaluation])
+    SUFFICIENT{Evidence<br/>Sufficient?}
+    SEARCH([Domain-Aware Web Search])
+    INGEST([Evidence Ingestion])
+    REASON([Foundation Model Reasoning])
+    RESPONSE([Identification /<br/>Management Response])
+
+    INPUT --> ENRICH --> AGENT --> RETRIEVE
+    BASE --> RETRIEVE
+    RUNTIME --> RETRIEVE
+    RETRIEVE --> EVIDENCE --> CONFIDENCE --> SUFFICIENT
+
+    SUFFICIENT -->|Yes| REASON
+    SUFFICIENT -->|No| SEARCH --> INGEST --> RUNTIME
+    REASON --> RESPONSE
+
+    classDef flow fill:#E8F1FA,stroke:#13294B,color:#13294B,stroke-width:1.5px;
+    classDef retrieval fill:#FFF1E6,stroke:#FA4D00,color:#13294B,stroke-width:2px;
+    classDef decision fill:#FFF7E8,stroke:#FA4D00,color:#13294B,stroke-width:2px;
+    classDef base fill:#E2E8F0,stroke:#52606D,color:#13294B,stroke-width:2px;
+    classDef runtime fill:#DCEAF7,stroke:#13294B,color:#13294B,stroke-width:2px;
+    classDef output fill:#13294B,stroke:#FA4D00,color:#FFFFFF,stroke-width:3px;
+
+    class INPUT,ENRICH,AGENT,EVIDENCE,CONFIDENCE,SEARCH,INGEST flow;
+    class RETRIEVE retrieval;
+    class SUFFICIENT decision;
+    class BASE base;
+    class RUNTIME runtime;
+    class REASON,RESPONSE output;
+
+    style STORES fill:#FFFFFF,stroke:#9BA8B7,stroke-width:1px;
+    linkStyle 9 stroke:#FA4D00,stroke-width:3px;
+    linkStyle 10 stroke:#FA4D00,stroke-width:3px;
+    linkStyle 11 stroke:#FA4D00,stroke-width:3px;
